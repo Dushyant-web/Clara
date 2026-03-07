@@ -33,7 +33,6 @@ const SignupPage = () => {
         <div className="min-h-screen bg-primary flex items-center justify-center p-6">
             <div className="w-full max-w-md">
                 <div className="text-center mb-16">
-                    <Link to="/" className="text-4xl font-serif font-bold tracking-tighter mb-8 block brand-blue">CLARA.</Link>
                     <div className="h-px w-12 bg-secondary/20 mx-auto" />
                 </div>
 
@@ -57,30 +56,30 @@ const SignupPage = () => {
                                         <User size={14} className="absolute left-0 bottom-4 text-gray-500 group-focus-within:text-secondary transition-colors" />
                                         <input
                                             type="text"
-                                            placeholder="FULL NAME"
+                                            placeholder="Full Name"
                                             value={formData.name}
                                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                            className="w-full bg-transparent pl-8 pb-4 text-xs font-bold tracking-widest focus:outline-none uppercase text-secondary placeholder:text-neutral-800"
+                                            className="w-full bg-transparent pl-8 pb-4 text-xs font-bold tracking-widest focus:outline-none text-secondary placeholder:text-neutral-800"
                                         />
                                     </div>
                                     <div className="relative border-b border-secondary/20 focus-within:border-secondary transition-all group">
                                         <Mail size={14} className="absolute left-0 bottom-4 text-gray-500 group-focus-within:text-secondary transition-colors" />
                                         <input
                                             type="email"
-                                            placeholder="EMAIL ADDRESS"
+                                            placeholder="Email Address"
                                             value={formData.email}
                                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                            className="w-full bg-transparent pl-8 pb-4 text-xs font-bold tracking-widest focus:outline-none uppercase text-secondary placeholder:text-neutral-800"
+                                            className="w-full bg-transparent pl-8 pb-4 text-xs font-bold tracking-widest focus:outline-none text-secondary placeholder:text-neutral-800"
                                         />
                                     </div>
                                     <div className="relative border-b border-secondary/20 focus-within:border-secondary transition-all group">
                                         <Phone size={14} className="absolute left-0 bottom-4 text-gray-500 group-focus-within:text-secondary transition-colors" />
                                         <input
                                             type="tel"
-                                            placeholder="PHONE NUMBER"
+                                            placeholder="Phone Number"
                                             value={formData.phone}
                                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                            className="w-full bg-transparent pl-8 pb-4 text-xs font-bold tracking-widest focus:outline-none uppercase text-secondary placeholder:text-neutral-800"
+                                            className="w-full bg-transparent pl-8 pb-4 text-xs font-bold tracking-widest focus:outline-none text-secondary placeholder:text-neutral-800"
                                         />
                                     </div>
                                 </div>

@@ -65,7 +65,7 @@ const Navbar = () => {
                 {/* Logo */}
                 <Link
                     to="/"
-                    className="flex items-center gap-3 absolute left-1/2 -translate-x-1/2 group"
+                    className="flex items-center gap-2 md:gap-3 absolute left-1/2 -translate-x-1/2 group transition-all"
                 >
                     <div className="w-8 h-8 md:w-10 md:h-10 relative overflow-hidden rounded-full border border-secondary/10 group-hover:scale-110 transition-transform duration-500">
                         <img
@@ -74,8 +74,11 @@ const Navbar = () => {
                             className="w-full h-full object-cover"
                         />
                     </div>
-                    <span className="text-2xl md:text-3xl font-serif font-bold tracking-tighter brand-blue">
+                    <span className="text-xl md:text-3xl font-serif font-bold tracking-tighter brand-blue hidden sm:block">
                         CLARA.
+                    </span>
+                    <span className="text-xl font-serif font-bold tracking-tighter brand-blue sm:hidden">
+                        C.
                     </span>
                 </Link>
 
@@ -134,7 +137,7 @@ const Navbar = () => {
                         animate={{ x: 0 }}
                         exit={{ x: '-100%' }}
                         transition={{ type: 'tween', duration: 0.5, ease: [0.43, 0.13, 0.23, 0.96] }}
-                        className="fixed inset-0 bg-primary z-[60] flex flex-col p-8"
+                        className="fixed inset-0 bg-white dark:bg-black z-[70] flex flex-col p-8"
                     >
                         <div className="flex justify-between items-center mb-16">
                             <div className="flex items-center gap-3">
