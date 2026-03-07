@@ -1,60 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-
-from app.database.db import get_db
-from app.models.cart_item import CartItem
-from app.models.product_variant import ProductVariant
-from backend.app.routes.order import Order
-from app.models.order_item import OrderItem
-
-router = APIRouter()
+from sqlalchemy import Column, Integer, ForeignKey, String, DateTime
+from sqlalchemy.sql import func
+from app.database.db import Base
 
 
-@router.post("/checkout")
-def checkout(user_id: int, db: Session = Depends(get_db)):
+class Order(Base):
 
-    cart_items = db.query(CartItem).filter(CartItem.user_id == user_id).all()
+    __tablename__ = "orders"
 
-    if not cart_items:
-        raise HTTPException(status_code=400, detail="Cart is empty")
+    id = Column(Integer, primary_key=True, index=True)
 
-    total = 0
+    user_id = Column(Integer, ForeignKey("users.id"))
 
-    for item in cart_items:
+    status = Column(String, default="pending")
 
-        variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
+    total_amount = Column(Integer)
 
-        total += variant.price * item.quantity
-
-    order = Order(
-        user_id=user_id,
-        total_amount=total
-    )
-
-    db.add(order)
-    db.commit()
-    db.refresh(order)
-
-    for item in cart_items:
-
-        variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
-
-        order_item = OrderItem(
-            order_id=order.id,
-            variant_id=item.variant_id,
-            quantity=item.quantity,
-            price=variant.price
-        )
-
-        db.add(order_item)
-
-    db.commit()
-
-    db.query(CartItem).filter(CartItem.user_id == user_id).delete()
-    db.commit()
-
-    return {
-        "message": "order created",
-        "order_id": order.id,
-        "total": total
-    }
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
