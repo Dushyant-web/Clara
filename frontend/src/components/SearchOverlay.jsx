@@ -44,7 +44,7 @@ const SearchOverlay = ({ isOpen, onClose }) => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[1000] bg-white dark:bg-black flex flex-col pt-32 transition-colors duration-500"
+                    className="fixed inset-0 z-[1000] bg-primary flex flex-col pt-32"
                 >
                     <button
                         onClick={onClose}
@@ -53,7 +53,7 @@ const SearchOverlay = ({ isOpen, onClose }) => {
                         <X size={32} strokeWidth={1} />
                     </button>
 
-                    <div className="container mx-auto px-6">
+                    <div className="container mx-auto px-6 font-sans">
                         <div className="max-w-4xl mx-auto">
                             <motion.form
                                 onSubmit={handleSearch}
@@ -62,14 +62,14 @@ const SearchOverlay = ({ isOpen, onClose }) => {
                                 transition={{ delay: 0.1 }}
                                 className="relative group mb-16"
                             >
-                                <Search className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-secondary transition-colors" size={32} strokeWidth={1} />
+                                <Search className="absolute left-0 top-1/2 -translate-y-1/2 text-secondary/40 group-focus-within:text-secondary transition-colors" size={32} strokeWidth={1} />
                                 <input
                                     autoFocus
                                     type="text"
-                                    placeholder="SEARCH CLARA..."
+                                    placeholder="Search Clara..."
                                     value={query}
                                     onChange={(e) => setQuery(e.target.value)}
-                                    className="w-full bg-transparent border-b-2 border-secondary/10 py-6 pl-14 text-2xl md:text-5xl font-serif tracking-tighter focus:outline-none focus:border-secondary transition-all uppercase placeholder:text-neutral-800 text-secondary"
+                                    className="w-full bg-transparent border-b-2 border-secondary py-6 pl-14 text-2xl md:text-5xl font-serif tracking-tight focus:outline-none transition-all placeholder:text-secondary/20 text-secondary"
                                 />
                                 <button
                                     type="submit"
@@ -85,7 +85,7 @@ const SearchOverlay = ({ isOpen, onClose }) => {
                                     animate={{ y: 0, opacity: 1 }}
                                     transition={{ delay: 0.2 }}
                                 >
-                                    <h4 className="text-[10px] uppercase tracking-[0.4em] text-gray-500 mb-8 font-bold flex items-center gap-3">
+                                    <h4 className="text-[10px] uppercase tracking-[0.4em] text-secondary/40 mb-8 font-bold flex items-center gap-3">
                                         <TrendingUp size={14} /> Trending Now
                                     </h4>
                                     <div className="flex flex-wrap gap-3">
@@ -93,7 +93,7 @@ const SearchOverlay = ({ isOpen, onClose }) => {
                                             <button
                                                 key={tag}
                                                 onClick={() => handleTagClick(tag)}
-                                                className="px-6 py-3 bg-secondary/5 hover:bg-secondary/10 text-[10px] uppercase tracking-widest font-bold transition-all border border-secondary/5 hover:border-secondary/20 rounded-full text-secondary"
+                                                className="px-6 py-3 bg-secondary/5 hover:bg-secondary text-secondary hover:text-primary text-[10px] uppercase tracking-widest font-bold transition-all border border-secondary/10 rounded-full"
                                             >
                                                 {tag}
                                             </button>
@@ -106,13 +106,13 @@ const SearchOverlay = ({ isOpen, onClose }) => {
                                     animate={{ y: 0, opacity: 1 }}
                                     transition={{ delay: 0.3 }}
                                 >
-                                    <h4 className="text-[10px] uppercase tracking-[0.4em] text-gray-500 mb-8 font-bold">Quick Suggestions</h4>
+                                    <h4 className="text-[10px] uppercase tracking-[0.4em] text-secondary/40 mb-8 font-bold">Quick Suggestions</h4>
                                     <div className="space-y-4">
                                         {['New Arrivals', 'Best Sellers', 'Exclusive Editorial', 'About The Brand'].map((item) => (
                                             <button
                                                 key={item}
                                                 onClick={() => handleTagClick(item)}
-                                                className="block text-xl md:text-2xl font-serif hover:pl-4 hover:text-grayAccent transition-all duration-300 text-secondary"
+                                                className="block text-xl md:text-2xl font-serif hover:pl-4 text-secondary hover:text-secondary/60 transition-all duration-300"
                                             >
                                                 {item}
                                             </button>

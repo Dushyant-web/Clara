@@ -107,12 +107,10 @@ const ShopPage = () => {
                 </div>
 
                 {/* Product Grid */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 md:gap-x-8 gap-y-12 md:gap-y-16">
-                    <AnimatePresence mode='popLayout'>
-                        {filteredProducts.map((product) => (
-                            <ProductCard key={product.id} product={product} />
-                        ))}
-                    </AnimatePresence>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 gap-y-12 md:gap-y-16">
+                    {filteredProducts.map((product) => (
+                        <ProductCard key={product.id} product={product} />
+                    ))}
                 </div>
 
                 {filteredProducts.length === 0 && (
