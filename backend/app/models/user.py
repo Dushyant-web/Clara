@@ -9,7 +9,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
-    phone_number = Column(String, unique=True, index=True)
+    phone_number = Column(String, unique=True, index=True, nullable=False)
 
     email = Column(String, nullable=True)
 

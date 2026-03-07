@@ -1,24 +1,27 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from app.database.db import get_db
+from app.models.user import User
 from app.services.firebase_auth import verify_firebase_token
-from app.utils.jwt_handler import create_token
 
 router = APIRouter()
 
-
 @router.post("/firebase-login")
-def firebase_login(data: dict):
+def firebase_login(data: dict, db: Session = Depends(get_db)):
 
-    id_token = data.get("id_token")
+    token = data.get("id_token")
 
-    if not id_token:
-        return {"error": "token missing"}
+    phone = verify_firebase_token(token)
 
-    phone = verify_firebase_token(id_token)
+    user = db.query(User).filter(User.phone_number == phone).first()
 
-    jwt_token = create_token({"phone": phone})
+    if not user:
+        user = User(phone_number=phone)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
 
     return {
-        "message": "login success",
-        "token": jwt_token,
-        "phone": phone
+        "message": "login successful",
+        "user_id": user.id
     }
