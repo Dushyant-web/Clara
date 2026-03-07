@@ -75,12 +75,6 @@ const Navbar = () => {
                                 className="w-full h-full object-cover"
                             />
                         </div>
-                        <span className="text-xl md:text-3xl font-serif font-bold tracking-tighter brand-blue hidden sm:block">
-                            CLARA.
-                        </span>
-                        <span className="text-xl font-serif font-bold tracking-tighter brand-blue sm:hidden">
-                            C.
-                        </span>
                     </Link>
 
                     {/* Icons */}
@@ -140,12 +134,13 @@ const Navbar = () => {
                         >
                             <div className="flex justify-between items-center mb-16">
                                 <div className="flex items-center gap-3">
-                                    <img
-                                        src="/assets/logo/logo-icon.png"
-                                        alt="CLARA Icon"
-                                        className="w-8 h-8 object-cover rounded-full border border-secondary/10"
-                                    />
-                                    <span className="text-xl font-serif font-bold">CLARA.</span>
+                                    <div className="w-8 h-8 relative overflow-hidden rounded-full border border-secondary/10">
+                                        <img
+                                            src="/assets/logo/logo-icon.png"
+                                            alt="CLARA Icon"
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
                                 </div>
                                 <button onClick={() => setIsMobileMenuOpen(false)}>
                                     <X size={24} />
