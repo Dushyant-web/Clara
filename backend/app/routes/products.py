@@ -4,7 +4,6 @@ from sqlalchemy import and_
 from app.database.db import get_db
 from app.models.product import Product
 from app.models.categories import Category
-from app.models.product_image import ProductImage
 
 router = APIRouter()
 
@@ -19,12 +18,8 @@ def get_products(
     offset = (page - 1) * limit
 
     results = (
-        db.query(Product, Category.name.label("category"), ProductImage.image_url.label("image"))
+        db.query(Product, Category.name.label("category"))
         .outerjoin(Category, Product.category_id == Category.id)
-        .outerjoin(
-            ProductImage,
-            and_(ProductImage.product_id == Product.id, ProductImage.is_primary == True)
-        )
         .offset(offset)
         .limit(limit)
         .all()
@@ -32,13 +27,12 @@ def get_products(
 
     products = []
 
-    for product, category, image in results:
+    for product, category in results:
         products.append({
             "id": product.id,
             "name": product.name,
             "price": product.price,
-            "category": category,
-            "image": image
+            "category": category
         })
 
     return {
