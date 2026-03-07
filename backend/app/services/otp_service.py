@@ -4,6 +4,9 @@ import os
 
 def send_otp(phone):
 
+    # Remove + if user sends +91XXXXXXXXXX
+    phone = phone.replace("+", "")
+
     url = "https://control.msg91.com/api/v5/otp"
 
     payload = {
