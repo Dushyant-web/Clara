@@ -12,7 +12,7 @@ const Footer = () => {
                             CLARA.
                         </Link>
                         <p className="text-gray-400 text-sm leading-relaxed max-w-xs mb-8">
-                            Premium streetwear crafted for the bold. Minimalist designs, high-end quality, and cinematic aesthetics.
+                            Luxury minimal crafted for the bold. Minimalist designs, high-end quality, and cinematic aesthetics.
                         </p>
                         <div className="flex gap-4">
                             <a href="#" className="hover:text-grayAccent transition-colors"><Instagram size={20} /></a>
@@ -48,7 +48,7 @@ const Footer = () => {
                     {/* Newsletter */}
                     <div>
                         <h4 className="text-xs uppercase tracking-[0.3em] font-semibold mb-8">Newsletter</h4>
-                        <p className="text-gray-400 text-sm mb-6">Join the elite list for early drops and exclusive access.</p>
+                        <p className="text-gray-400 text-sm mb-6">Join the elite list for early collections and exclusive access.</p>
                         <form className="relative group">
                             <input
                                 type="email"
@@ -67,7 +67,7 @@ const Footer = () => {
 
                 <div className="flex flex-col md:flex-row justify-between items-center gap-6 pt-12 border-t border-white/5">
                     <p className="text-[10px] uppercase tracking-widest text-gray-500">
-                        © 2026 CLARA STREETWEAR. ALL RIGHTS RESERVED.
+                        © 2026 CLARA LUXURY MINIMAL. ALL RIGHTS RESERVED.
                     </p>
                     <div className="flex items-center gap-6">
                         <span className="text-[10px] uppercase tracking-widest text-gray-500 font-medium">Payment Methods</span>
