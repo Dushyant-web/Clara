@@ -6,6 +6,8 @@ from app.models.order import Order
 from app.models.order_item import OrderItem
 from app.models.product_variant import ProductVariant
 
+router = APIRouter()
+
 
 @router.get("/order/{order_id}")
 def get_order(order_id: int, db: Session = Depends(get_db)):
