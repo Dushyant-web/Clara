@@ -58,7 +58,7 @@ const HomePage = () => {
                         transition={{ duration: 1, delay: 0.8 }}
                         className="text-gray-400 max-w-lg mx-auto mb-12 text-sm md:text-base tracking-widest uppercase leading-relaxed"
                     >
-                        Minimalist aesthetics. High-end quality. <br /> Streetwear redefined for the modern elite.
+                        Minimalist aesthetics. High-end quality. <br /> Luxury minimal redefined for the modern elite.
                     </motion.p>
 
                     <motion.div
@@ -156,7 +156,7 @@ const HomePage = () => {
                             <span className="text-xs uppercase tracking-[0.4em] text-gray-500 mb-6 block">Editorial 01</span>
                             <h2 className="text-4xl md:text-5xl font-serif mb-8 max-w-sm leading-tight text-secondary">THE SILENCE OF STYLE</h2>
                             <p className="text-gray-400 text-sm leading-relaxed mb-10 max-w-md">
-                                Captured in the urban shadows, our latest collection explores the intersection of minimalism and raw street culture. Every piece is a statement of intent.
+                                Captured in the urban shadows, our latest collection explores the intersection of minimalism and modern luxury. Every piece is a statement of intent.
                             </p>
                             <button className="px-10 py-4 border border-white text-xs uppercase tracking-[0.2em] font-bold hover:bg-white hover:text-primary transition-all duration-300">
                                 Explore Lookbook
@@ -170,9 +170,9 @@ const HomePage = () => {
             <section className="py-32 bg-primary border-t border-white/5">
                 <div className="container mx-auto px-6 text-center">
                     <div className="max-w-2xl mx-auto">
-                        <h2 className="text-4xl md:text-6xl font-serif mb-8 tracking-tighter">STAY IN THE RAW</h2>
+                        <h2 className="text-4xl md:text-6xl font-serif mb-8 tracking-tighter">STAY IN THE MINIMAL</h2>
                         <p className="text-gray-400 text-sm uppercase tracking-widest mb-12">
-                            BE THE FIRST TO KNOW ABOUT NEW DROPS, EDITORIALS AND EXCLUSIVES.
+                            BE THE FIRST TO KNOW ABOUT NEW COLLECTIONS, EDITORIALS AND EXCLUSIVES.
                         </p>
                         <form className="flex flex-col md:flex-row gap-4 max-w-md mx-auto">
                             <input
