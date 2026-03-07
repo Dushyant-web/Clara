@@ -1,6 +1,7 @@
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { ArrowRight, ChevronDown } from 'lucide-react'
 import { useRef } from 'react'
+import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import { featuredProducts } from '../utils/mockData'
 
