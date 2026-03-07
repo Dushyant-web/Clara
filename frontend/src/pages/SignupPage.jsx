@@ -26,7 +26,7 @@ const SignupPage = () => {
 
     const handleOtpComplete = () => {
         addNotification('Account Created', 'Welcome to CLARA. Your account is ready.', 'success')
-        navigate('/account')
+        navigate('/shop')
     }
 
     return (

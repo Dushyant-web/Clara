@@ -5,7 +5,7 @@ import os
 # Initialize Firebase only once
 if not firebase_admin._apps:
     cred = credentials.Certificate(
-        "app/config/firebase_key.json"
+        os.getenv("FIREBASE_KEY_PATH", "/etc/secrets/firebase_key.json")
     )
     firebase_admin.initialize_app(cred)
 

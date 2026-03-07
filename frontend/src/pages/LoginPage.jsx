@@ -92,7 +92,7 @@ const LoginPage = () => {
                 'login'
             )
 
-            navigate('/account')
+            navigate('/shop')
         } catch (error) {
             console.error(error)
             showAlert("Invalid OTP", "error")
