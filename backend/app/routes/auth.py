@@ -1,16 +1,20 @@
 from fastapi import APIRouter
-from app.schemas.user_schema import SendOTP
-from app.services.otp_service import send_otp
+from app.services.firebase_auth import verify_firebase_token
+from app.utils.jwt_handler import create_token
 
-router = APIRouter(prefix="/auth", tags=["Auth"])
+router = APIRouter()
 
+@router.post("/firebase-login")
+def firebase_login(data: dict):
 
-@router.post("/send-otp")
-def send_otp_route(data: SendOTP):
+    id_token = data.get("id_token")
 
-    response = send_otp(data.phone_number)
+    phone = verify_firebase_token(id_token)
+
+    token = create_token({"phone": phone})
 
     return {
-        "status": "OTP sent",
-        "provider_response": response
+        "message": "login success",
+        "token": token,
+        "phone": phone
     }
