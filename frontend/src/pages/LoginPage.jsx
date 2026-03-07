@@ -28,11 +28,16 @@ const LoginPage = () => {
 
         try {
 
-            window.recaptchaVerifier = new RecaptchaVerifier(
-                "recaptcha-container",
-                { size: "invisible" },
-                auth
-            )
+            if (!window.recaptchaVerifier) {
+                window.recaptchaVerifier = new RecaptchaVerifier(
+                    auth,
+                    "recaptcha-container",
+                    {
+                        size: "invisible"
+                    }
+                )
+                await window.recaptchaVerifier.render()
+            }
 
             const appVerifier = window.recaptchaVerifier
 
