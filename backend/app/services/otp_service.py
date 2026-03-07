@@ -8,10 +8,11 @@ def send_otp(phone):
 
     payload = {
         "mobile": phone,
-        "authkey": os.getenv("MSG91_AUTHKEY")
+        "template_id": os.getenv("MSG91_TEMPLATE")
     }
 
     headers = {
+        "authkey": os.getenv("MSG91_AUTHKEY"),
         "Content-Type": "application/json"
     }
 
