@@ -1,0 +1,37 @@
+export const featuredProducts = [
+    {
+        id: 1,
+        name: "Oversized 'ESSENTIAL' Hoodie",
+        category: "Hoodies",
+        price: 185,
+        image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=800",
+        image2: "https://images.unsplash.com/photo-1578587018452-892bacefd3f2?auto=format&fit=crop&q=80&w=800",
+        isNew: true,
+    },
+    {
+        id: 2,
+        name: "Distressed Cargo Pants",
+        category: "Bottoms",
+        price: 240,
+        image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&q=80&w=800",
+        image2: "https://images.unsplash.com/photo-1624371414361-e6e8ea302112?auto=format&fit=crop&q=80&w=800",
+        onSale: true,
+    },
+    {
+        id: 3,
+        name: "Graffiti Graphics Tee",
+        category: "T-Shirts",
+        price: 95,
+        image: "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=800",
+        image2: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=800",
+    },
+    {
+        id: 4,
+        name: "Technical Windbreaker",
+        category: "Outerwear",
+        price: 320,
+        image: "https://images.unsplash.com/photo-1544022613-e87ca75a784a?auto=format&fit=crop&q=80&w=800",
+        image2: "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?auto=format&fit=crop&q=80&w=800",
+        isNew: true,
+    }
+]

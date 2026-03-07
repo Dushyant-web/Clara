@@ -1,0 +1,153 @@
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Link, useNavigate } from 'react-router-dom'
+import { Smartphone, ShieldCheck, ArrowRight, User, Mail, Phone } from 'lucide-react'
+import { useNotifications } from '../contexts/NotificationContext'
+
+const SignupPage = () => {
+    const [step, setStep] = useState('info') // 'info' or 'otp'
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        phone: ''
+    })
+    const { showAlert, addNotification } = useNotifications()
+    const [otp, setOtp] = useState(['', '', '', '', '', ''])
+    const navigate = useNavigate()
+
+    const handleInfoSubmit = (e) => {
+        e.preventDefault()
+        if (!formData.name || !formData.email || !formData.phone) {
+            return showAlert('Please fill in all fields', 'error')
+        }
+        setStep('otp')
+        showAlert('OTP sent to ' + formData.phone, 'success')
+    }
+
+    const handleOtpComplete = () => {
+        addNotification('Account Created', 'Welcome to CLARA. Your account is ready.', 'success')
+        navigate('/account')
+    }
+
+    return (
+        <div className="min-h-screen bg-primary flex items-center justify-center p-6">
+            <div className="w-full max-w-md">
+                <div className="text-center mb-16">
+                    <Link to="/" className="text-4xl font-serif font-bold tracking-tighter mb-8 block brand-blue">CLARA.</Link>
+                    <div className="h-px w-12 bg-secondary/20 mx-auto" />
+                </div>
+
+                <AnimatePresence mode="wait">
+                    {step === 'info' && (
+                        <motion.div
+                            key="info"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="space-y-10"
+                        >
+                            <div className="space-y-4 text-center">
+                                <h2 className="text-2xl font-serif tracking-tighter uppercase">Join CLARA</h2>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-widest">Create an account for exclusive access.</p>
+                            </div>
+
+                            <form onSubmit={handleInfoSubmit} className="space-y-8">
+                                <div className="space-y-6">
+                                    <div className="relative border-b border-secondary/20 focus-within:border-secondary transition-all group">
+                                        <User size={14} className="absolute left-0 bottom-4 text-gray-500 group-focus-within:text-secondary transition-colors" />
+                                        <input
+                                            type="text"
+                                            placeholder="FULL NAME"
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            className="w-full bg-transparent pl-8 pb-4 text-xs font-bold tracking-widest focus:outline-none uppercase text-secondary placeholder:text-neutral-800"
+                                        />
+                                    </div>
+                                    <div className="relative border-b border-secondary/20 focus-within:border-secondary transition-all group">
+                                        <Mail size={14} className="absolute left-0 bottom-4 text-gray-500 group-focus-within:text-secondary transition-colors" />
+                                        <input
+                                            type="email"
+                                            placeholder="EMAIL ADDRESS"
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                            className="w-full bg-transparent pl-8 pb-4 text-xs font-bold tracking-widest focus:outline-none uppercase text-secondary placeholder:text-neutral-800"
+                                        />
+                                    </div>
+                                    <div className="relative border-b border-secondary/20 focus-within:border-secondary transition-all group">
+                                        <Phone size={14} className="absolute left-0 bottom-4 text-gray-500 group-focus-within:text-secondary transition-colors" />
+                                        <input
+                                            type="tel"
+                                            placeholder="PHONE NUMBER"
+                                            value={formData.phone}
+                                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                            className="w-full bg-transparent pl-8 pb-4 text-xs font-bold tracking-widest focus:outline-none uppercase text-secondary placeholder:text-neutral-800"
+                                        />
+                                    </div>
+                                </div>
+                                <button
+                                    type="submit"
+                                    className="w-full brand-blue-bg text-white py-5 text-xs font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-white hover:text-primary border border-transparent hover:border-secondary transition-all duration-300"
+                                >
+                                    Continue <ArrowRight size={16} />
+                                </button>
+                            </form>
+
+                            <div className="text-center">
+                                <p className="text-[10px] text-gray-500 uppercase tracking-widest">
+                                    Already have an account? <Link to="/login" className="text-secondary font-bold underline underline-offset-4">Sign In</Link>
+                                </p>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {step === 'otp' && (
+                        <motion.div
+                            key="otp"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="space-y-12"
+                        >
+                            <div className="space-y-4 text-center">
+                                <h2 className="text-2xl font-serif tracking-tighter uppercase">Verification</h2>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed">We've sent a 6-digit code to <br /><span className="text-secondary font-bold">{formData.phone}</span></p>
+                            </div>
+
+                            <div className="grid grid-cols-6 gap-3">
+                                {otp.map((_, idx) => (
+                                    <input
+                                        key={idx}
+                                        type="text"
+                                        maxLength={1}
+                                        className="aspect-square bg-secondary/5 border border-secondary/10 text-center text-xl font-serif focus:outline-none focus:border-secondary transition-all text-secondary"
+                                    />
+                                ))}
+                            </div>
+
+                            <div className="space-y-6">
+                                <button
+                                    onClick={handleOtpComplete}
+                                    className="w-full brand-blue-bg text-white py-5 text-xs font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-white hover:text-primary border border-transparent hover:border-secondary transition-all duration-300"
+                                >
+                                    Complete Signup <ArrowRight size={16} />
+                                </button>
+                                <button
+                                    onClick={() => setStep('info')}
+                                    className="w-full text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-secondary transition-all"
+                                >
+                                    Change Details
+                                </button>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <p className="mt-24 text-center text-[10px] text-gray-600 uppercase tracking-widest leading-relaxed max-w-xs mx-auto">
+                    By joining you agree to our <a href="#" className="underline">Terms</a> & <a href="#" className="underline">Privacy Policy</a>
+                </p>
+            </div>
+        </div>
+    )
+}
+
+export default SignupPage
