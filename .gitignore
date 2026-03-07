@@ -2,3 +2,15 @@ venv
 __pycache__
 *.pyc
 .env
+
+# Firebase secrets
+backend/app/config/firebase_key.json
+
+# Python
+venv/
+__pycache__/
+
+# Node
+node_modules/
+dist/
+.env
