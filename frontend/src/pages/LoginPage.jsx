@@ -74,7 +74,7 @@ const LoginPage = () => {
             const idToken = await result.user.getIdToken()
 
             // Send token to backend for verification
-            const response = await fetch("https://clara-xpfh.onrender.com/auth/firebase-login", {
+            const response = await fetch("https://clara-xpfh.onrender.com/auth/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
