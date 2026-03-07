@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database.db import get_db
 from app.models.cart_item import CartItem
+from app.models.product_variant import ProductVariant
 
 router = APIRouter()
 
@@ -12,6 +13,14 @@ def add_to_cart(data: dict, db: Session = Depends(get_db)):
     user_id = data.get("user_id")
     variant_id = data.get("variant_id")
     quantity = data.get("quantity", 1)
+
+    variant = db.query(ProductVariant).filter(ProductVariant.id == variant_id).first()
+
+    if not variant:
+        raise HTTPException(status_code=404, detail="Variant not found")
+
+    if quantity > variant.stock:
+        raise HTTPException(status_code=400, detail="Not enough inventory")
 
     item = db.query(CartItem).filter(
         CartItem.user_id == user_id,
@@ -37,7 +46,35 @@ def get_cart(user_id: int, db: Session = Depends(get_db)):
 
     items = db.query(CartItem).filter(CartItem.user_id == user_id).all()
 
-    return items
+    cart_items = []
+    subtotal = 0
+
+    for item in items:
+        variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
+
+        if not variant:
+            continue
+
+        price = variant.price
+        item_total = price * item.quantity
+
+        subtotal += item_total
+
+        cart_items.append({
+            "item_id": item.id,
+            "variant_id": item.variant_id,
+            "quantity": item.quantity,
+            "price": price,
+            "item_total": item_total
+        })
+
+    cart_total = subtotal  # shipping/tax can be added later
+
+    return {
+        "items": cart_items,
+        "cart_subtotal": subtotal,
+        "cart_total": cart_total
+    }
 
 @router.delete("/cart/remove/{item_id}")
 def remove_cart_item(item_id: int, db: Session = Depends(get_db)):
@@ -62,6 +99,11 @@ def update_cart(data: dict, db: Session = Depends(get_db)):
 
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
+
+    variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
+
+    if quantity > variant.stock:
+        raise HTTPException(status_code=400, detail="Not enough inventory")
 
     item.quantity = quantity
 

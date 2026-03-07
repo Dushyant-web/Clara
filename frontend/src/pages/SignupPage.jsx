@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
-import { Smartphone, ShieldCheck, ArrowRight, User, Mail, Phone } from 'lucide-react'
+import { ArrowRight, User, Mail, Phone } from 'lucide-react'
+import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth"
+import { auth } from "../firebase"
 import { useNotifications } from '../contexts/NotificationContext'
 
 const SignupPage = () => {
@@ -13,20 +15,84 @@ const SignupPage = () => {
     })
     const { showAlert, addNotification } = useNotifications()
     const [otp, setOtp] = useState(['', '', '', '', '', ''])
+    const [confirmationResult, setConfirmationResult] = useState(null)
     const navigate = useNavigate()
 
-    const handleInfoSubmit = (e) => {
+    const handleInfoSubmit = async (e) => {
         e.preventDefault()
+
         if (!formData.name || !formData.email || !formData.phone) {
             return showAlert('Please fill in all fields', 'error')
         }
-        setStep('otp')
-        showAlert('OTP sent to ' + formData.phone, 'success')
+
+        try {
+            if (!window.recaptchaVerifier) {
+                window.recaptchaVerifier = new RecaptchaVerifier(
+                    auth,
+                    "recaptcha-container",
+                    { size: "invisible" }
+                )
+                await window.recaptchaVerifier.render()
+            }
+
+            const appVerifier = window.recaptchaVerifier
+
+            const fullPhone = "+91" + formData.phone
+
+            const result = await signInWithPhoneNumber(auth, fullPhone, appVerifier)
+
+            setConfirmationResult(result)
+
+            showAlert('OTP sent to ' + formData.phone, 'success')
+
+            setStep('otp')
+
+        } catch (error) {
+            console.error(error)
+            showAlert('Failed to send OTP', 'error')
+        }
     }
 
-    const handleOtpComplete = () => {
-        addNotification('Account Created', 'Welcome to CLARA. Your account is ready.', 'success')
-        navigate('/shop')
+    const handleOtpComplete = async () => {
+
+        try {
+
+            const code = otp.join("")
+
+            const result = await confirmationResult.confirm(code)
+
+            const idToken = await result.user.getIdToken()
+
+            const response = await fetch("https://clara-xpfh.onrender.com/auth/signup", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    id_token: idToken,
+                    name: formData.name,
+                    email: formData.email
+                })
+            })
+
+            const data = await response.json()
+
+            if (data.access_token) {
+                localStorage.setItem("token", data.access_token)
+            }
+
+            addNotification(
+                'Account Created',
+                'Welcome to CLARA. Your account is ready.',
+                'success'
+            )
+
+            navigate('/shop')
+
+        } catch (error) {
+            console.error(error)
+            showAlert('Invalid OTP', 'error')
+        }
     }
 
     return (
@@ -118,6 +184,12 @@ const SignupPage = () => {
                                         key={idx}
                                         type="text"
                                         maxLength={1}
+                                        value={otp[idx]}
+                                        onChange={(e) => {
+                                            const newOtp = [...otp]
+                                            newOtp[idx] = e.target.value
+                                            setOtp(newOtp)
+                                        }}
                                         className="aspect-square bg-secondary/5 border border-secondary/10 text-center text-xl font-serif focus:outline-none focus:border-secondary transition-all text-secondary"
                                     />
                                 ))}
@@ -144,6 +216,7 @@ const SignupPage = () => {
                 <p className="mt-24 text-center text-[10px] text-gray-600 uppercase tracking-widest leading-relaxed max-w-xs mx-auto">
                     By joining you agree to our <a href="#" className="underline">Terms</a> & <a href="#" className="underline">Privacy Policy</a>
                 </p>
+                <div id="recaptcha-container"></div>
             </div>
         </div>
     )

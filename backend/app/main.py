@@ -6,6 +6,9 @@ from app.routes import products
 from app.routes import categories
 from app.routes import cart
 
+from app.routes import checkout
+
+
 app = FastAPI(title="CLARA API")
 
 origins = [
@@ -25,6 +28,7 @@ app.include_router(auth.router, prefix="/auth")
 app.include_router(products.router)
 app.include_router(categories.router)
 app.include_router(cart.router)
+app.include_router(checkout.router)
 
 @app.get("/")
 def root():
