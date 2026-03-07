@@ -151,7 +151,6 @@ const LoginPage = () => {
 
                             </form>
 
-                            <div id="recaptcha-container"></div>
 
                         </motion.div>
 
@@ -213,6 +212,7 @@ const LoginPage = () => {
 
             </div>
 
+            <div id="recaptcha-container"></div>
         </div>
 
     )
