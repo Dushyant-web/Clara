@@ -210,6 +210,16 @@ const LoginPage = () => {
 
                 </AnimatePresence>
 
+                <div className="mt-12 text-center">
+                    <p className="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed">
+                        Don't have an account? <Link to="/signup" className="text-secondary font-bold underline underline-offset-4 ml-2">Create One</Link>
+                    </p>
+                </div>
+
+                <p className="mt-24 text-center text-[10px] text-gray-600 uppercase tracking-widest leading-relaxed max-w-xs mx-auto">
+                    By signing in you agree to our <a href="#" className="underline">Terms</a> & <a href="#" className="underline">Privacy Policy</a>
+                </p>
+
             </div>
 
             <div id="recaptcha-container"></div>
