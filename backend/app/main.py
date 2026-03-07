@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from app.routes import auth
 
 from fastapi.middleware.cors import CORSMiddleware
+from app.routes import products
 
 app = FastAPI(title="CLARA API")
 
@@ -19,7 +20,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router, prefix="/auth")
-
+app.include_router(products.router)
 @app.get("/")
 def root():
     return {"message": "CLARA backend running"}
