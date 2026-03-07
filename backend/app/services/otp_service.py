@@ -10,8 +10,10 @@ def send_otp(phone):
     url = "https://control.msg91.com/api/v5/otp"
 
     payload = {
-        "mobile": phone,
-        "template_id": os.getenv("MSG91_TEMPLATE")
+        "mobile": "91" + phone,
+        "template_id": os.getenv("MSG91_TEMPLATE"),
+        "otp_length": 6,
+        "otp_expiry": 5
     }
 
     headers = {
