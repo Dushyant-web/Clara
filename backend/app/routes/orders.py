@@ -38,3 +38,20 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
         "total": order.total_amount,
         "items": result
     }
+
+@router.get("/orders/{user_id}")
+def get_user_orders(user_id: int, db: Session = Depends(get_db)):
+
+    orders = db.query(Order).filter(Order.user_id == user_id).all()
+
+    result = []
+
+    for order in orders:
+        result.append({
+            "order_id": order.id,
+            "status": order.status,
+            "total": order.total_amount,
+            "created_at": order.created_at
+        })
+
+    return result
