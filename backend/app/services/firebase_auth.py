@@ -1,14 +1,19 @@
 import firebase_admin
 from firebase_admin import credentials, auth
+import os
 
-cred = credentials.Certificate("app/config/firebase_key.json")
+# Initialize Firebase only once
+if not firebase_admin._apps:
+    cred = credentials.Certificate(
+        "app/config/firebase_key.json"
+    )
+    firebase_admin.initialize_app(cred)
 
-firebase_admin.initialize_app(cred)
 
-def verify_firebase_token(id_token):
+def verify_firebase_token(id_token: str):
 
     decoded_token = auth.verify_id_token(id_token)
 
-    phone_number = decoded_token.get("phone_number")
+    phone = decoded_token.get("phone_number")
 
-    return phone_number
+    return phone

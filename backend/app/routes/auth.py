@@ -4,17 +4,21 @@ from app.utils.jwt_handler import create_token
 
 router = APIRouter()
 
+
 @router.post("/firebase-login")
 def firebase_login(data: dict):
 
     id_token = data.get("id_token")
 
+    if not id_token:
+        return {"error": "token missing"}
+
     phone = verify_firebase_token(id_token)
 
-    token = create_token({"phone": phone})
+    jwt_token = create_token({"phone": phone})
 
     return {
         "message": "login success",
-        "token": token,
+        "token": jwt_token,
         "phone": phone
     }
