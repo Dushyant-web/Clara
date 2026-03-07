@@ -3,6 +3,8 @@ from app.routes import auth
 
 from fastapi.middleware.cors import CORSMiddleware
 
+app = FastAPI(title="CLARA API")
+
 origins = [
     "http://localhost:5173",
     "https://clara-test-v1.netlify.app"
@@ -16,13 +18,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app = FastAPI(title="CLARA API")
-
 app.include_router(auth.router, prefix="/auth")
 
 @app.get("/")
 def root():
     return {"message": "CLARA backend running"}
-
-
-
