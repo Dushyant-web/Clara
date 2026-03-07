@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes import products
 from app.routes import categories
 from app.routes import cart
-
+from app.routes import orders
 from app.routes import checkout
 
 
@@ -29,6 +29,7 @@ app.include_router(products.router)
 app.include_router(categories.router)
 app.include_router(cart.router)
 app.include_router(checkout.router)
+app.include_router(orders.router)
 
 @app.get("/")
 def root():
