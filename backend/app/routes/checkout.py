@@ -24,6 +24,9 @@ def checkout(user_id: int, db: Session = Depends(get_db)):
 
         variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
 
+        if variant.stock < item.quantity:
+            raise HTTPException(status_code=400, detail="Product out of stock")
+
         total += variant.price * item.quantity
 
     order = Order(
@@ -38,6 +41,8 @@ def checkout(user_id: int, db: Session = Depends(get_db)):
     for item in cart_items:
 
         variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
+
+        variant.stock -= item.quantity
 
         order_item = OrderItem(
             order_id=order.id,
