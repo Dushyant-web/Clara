@@ -130,7 +130,7 @@ const Navbar = () => {
                             animate={{ x: 0 }}
                             exit={{ x: '-100%' }}
                             transition={{ type: 'tween', duration: 0.5, ease: [0.43, 0.13, 0.23, 0.96] }}
-                            className="fixed inset-0 bg-white dark:bg-black z-[70] flex flex-col p-8"
+                            className="fixed inset-0 bg-primary z-[100] flex flex-col p-8 overflow-y-auto"
                         >
                             <div className="flex justify-between items-center mb-16">
                                 <div className="flex items-center gap-3">

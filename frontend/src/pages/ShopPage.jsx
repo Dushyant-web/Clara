@@ -9,7 +9,10 @@ const ShopPage = () => {
     const [searchParams, setSearchParams] = useSearchParams()
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [selectedCategory, setSelectedCategory] = useState('All')
+    const [selectedPriceRange, setSelectedPriceRange] = useState('All')
+    const [selectedSize, setSelectedSize] = useState('All')
     const [sortBy, setSortBy] = useState('Newest')
+    const [isSortOpen, setIsSortOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
 
     useEffect(() => {
@@ -35,10 +38,23 @@ const ShopPage = () => {
     const sortOptions = ['Newest', 'Price: Low to High', 'Price: High to Low', 'Popular']
 
     const filteredProducts = useMemo(() => {
-        let result = [...featuredProducts] // In a real app, this would be all products
+        let result = [...featuredProducts]
 
         if (selectedCategory !== 'All') {
             result = result.filter(p => p.category === selectedCategory)
+        }
+
+        if (selectedPriceRange !== 'All') {
+            result = result.filter(p => {
+                if (selectedPriceRange === 'Under $100') return p.price < 100
+                if (selectedPriceRange === '$100 - $300') return p.price >= 100 && p.price <= 300
+                if (selectedPriceRange === 'Above $300') return p.price > 300
+                return true
+            })
+        }
+
+        if (selectedSize !== 'All') {
+            result = result.filter(p => p.sizes && p.sizes.includes(selectedSize))
         }
 
         if (searchQuery) {
@@ -52,7 +68,7 @@ const ShopPage = () => {
         if (sortBy === 'Price: High to Low') result.sort((a, b) => b.price - a.price)
 
         return result
-    }, [selectedCategory, sortBy, searchQuery])
+    }, [selectedCategory, selectedPriceRange, selectedSize, sortBy, searchQuery])
 
     return (
         <div className="pt-32 pb-24 min-h-screen bg-primary">
@@ -87,21 +103,40 @@ const ShopPage = () => {
                             ))}
                         </div>
 
-                        <div className="relative group">
-                            <button className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold hover:text-grayAccent transition-colors">
-                                Sort By: {sortBy} <ChevronDown size={14} />
+                        <div className="relative">
+                            <button
+                                onClick={() => setIsSortOpen(!isSortOpen)}
+                                className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold hover:text-grayAccent transition-colors"
+                            >
+                                Sort By: {sortBy} <ChevronDown size={14} className={`transition-transform duration-300 ${isSortOpen ? 'rotate-180' : ''}`} />
                             </button>
-                            <div className="absolute right-0 top-full mt-2 w-48 bg-neutral-900 border border-white/10 p-2 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all z-20">
-                                {sortOptions.map(option => (
-                                    <button
-                                        key={option}
-                                        onClick={() => setSortBy(option)}
-                                        className="w-full text-left px-4 py-2 text-[10px] uppercase tracking-widest hover:bg-white/5 transition-colors"
-                                    >
-                                        {option}
-                                    </button>
-                                ))}
-                            </div>
+                            <AnimatePresence>
+                                {isSortOpen && (
+                                    <>
+                                        <div className="fixed inset-0 z-10" onClick={() => setIsSortOpen(false)} />
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: 10 }}
+                                            className="absolute right-0 top-full mt-2 w-48 bg-primary border border-secondary/10 p-2 z-20 shadow-2xl transition-colors duration-500"
+                                        >
+                                            {sortOptions.map(option => (
+                                                <button
+                                                    key={option}
+                                                    onClick={() => {
+                                                        setSortBy(option)
+                                                        setIsSortOpen(false)
+                                                    }}
+                                                    className={`w-full text-left px-4 py-3 text-[10px] uppercase tracking-widest hover:bg-secondary/5 transition-colors ${sortBy === option ? 'text-secondary font-bold' : 'text-gray-500'
+                                                        }`}
+                                                >
+                                                    {option}
+                                                </button>
+                                            ))}
+                                        </motion.div>
+                                    </>
+                                )}
+                            </AnimatePresence>
                         </div>
                     </div>
                 </div>
@@ -163,9 +198,16 @@ const ShopPage = () => {
                                 <div>
                                     <h3 className="text-[10px] uppercase tracking-[0.3em] font-bold mb-6 text-gray-500">Price Range</h3>
                                     <div className="flex flex-col gap-4">
-                                        <button className="text-left text-xs uppercase tracking-widest text-gray-400 hover:text-white">Under $100</button>
-                                        <button className="text-left text-xs uppercase tracking-widest text-gray-400 hover:text-white">$100 - $300</button>
-                                        <button className="text-left text-xs uppercase tracking-widest text-gray-400 hover:text-white">Above $300</button>
+                                        {['All', 'Under $100', '$100 - $300', 'Above $300'].map(range => (
+                                            <button
+                                                key={range}
+                                                onClick={() => setSelectedPriceRange(range)}
+                                                className={`text-left text-xs uppercase tracking-widest hover:pl-2 transition-all ${selectedPriceRange === range ? 'text-secondary font-bold' : 'text-gray-400'
+                                                    }`}
+                                            >
+                                                {range}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
 
@@ -173,7 +215,12 @@ const ShopPage = () => {
                                     <h3 className="text-[10px] uppercase tracking-[0.3em] font-bold mb-6 text-gray-500">Size</h3>
                                     <div className="grid grid-cols-4 gap-2">
                                         {['S', 'M', 'L', 'XL'].map(size => (
-                                            <button key={size} className="aspect-square border border-white/10 flex items-center justify-center text-[10px] hover:border-white transition-all">
+                                            <button
+                                                key={size}
+                                                onClick={() => setSelectedSize(selectedSize === size ? 'All' : size)}
+                                                className={`aspect-square border flex items-center justify-center text-[10px] transition-all ${selectedSize === size ? 'border-secondary bg-secondary text-primary' : 'border-secondary/10 text-secondary hover:border-secondary'
+                                                    }`}
+                                            >
                                                 {size}
                                             </button>
                                         ))}
