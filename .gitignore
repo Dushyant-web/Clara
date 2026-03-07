@@ -1,9 +1,4 @@
-venv
-__pycache__
-*.pyc
-.env
-
-# Firebase secrets
+# Firebase service account key
 backend/app/config/firebase_key.json
 
 # Python
@@ -13,4 +8,6 @@ __pycache__/
 # Node
 node_modules/
 dist/
+
+# Env files
 .env
