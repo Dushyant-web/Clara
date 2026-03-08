@@ -20,7 +20,7 @@ app = FastAPI(title="CLARA API")
 
 origins = [
     "http://localhost:5173",
-    "https://clara-test-v1.netlify.app"
+    "https://clara-test-v1.netlify.app",
 ]
 
 app.add_middleware(

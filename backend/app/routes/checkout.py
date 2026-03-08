@@ -14,55 +14,68 @@ router = APIRouter()
 
 
 @router.post("/checkout")
-def checkout(user_id: int, db: Session = Depends(get_db)):
+def checkout(user_id: int, idempotency_key: str | None = None, db: Session = Depends(get_db)):
 
-    cart_items = db.query(CartItem).filter(CartItem.user_id == user_id).all()
+    # --- Idempotency check (prevents duplicate orders if user clicks pay twice) ---
+    if idempotency_key:
+        existing_order = db.query(Order).filter(
+            Order.user_id == user_id,
+            Order.status == "pending"
+        ).first()
 
-    if not cart_items:
-        raise HTTPException(status_code=400, detail="Cart is empty")
+        if existing_order:
+            return {
+                "message": "order already created",
+                "order_id": existing_order.id,
+                "total": existing_order.total_amount
+            }
 
-    total = 0
+    # Start single transaction for entire checkout
+    with db.begin():
 
-    for item in cart_items:
+        cart_items = db.query(CartItem).filter(CartItem.user_id == user_id).all()
 
-        variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
+        if not cart_items:
+            raise HTTPException(status_code=400, detail="Cart is empty")
 
-        if variant.stock < item.quantity:
-            raise HTTPException(status_code=400, detail="Product out of stock")
+        total = 0
 
-        total += variant.price * item.quantity
+        for item in cart_items:
 
-    order = Order(
-        user_id=user_id,
-        total_amount=total
-    )
+            variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).with_for_update().first()
 
-    db.add(order)
-    db.commit()
-    db.refresh(order)
+            if variant.stock < item.quantity:
+                raise HTTPException(status_code=400, detail="Product out of stock")
 
-    order_items = []
+            total += variant.price * item.quantity
 
-    for item in cart_items:
-
-        variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
-
-        variant.stock -= item.quantity
-
-        order_item = OrderItem(
-            order_id=order.id,
-            variant_id=item.variant_id,
-            quantity=item.quantity,
-            price=variant.price
+        order = Order(
+            user_id=user_id,
+            total_amount=total
         )
 
-        db.add(order_item)
-        order_items.append(order_item)
+        db.add(order)
+        db.refresh(order)
 
-    db.commit()
+        order_items = []
 
-    db.query(CartItem).filter(CartItem.user_id == user_id).delete()
-    db.commit()
+        for item in cart_items:
+
+            variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).with_for_update().first()
+
+            variant.stock -= item.quantity
+
+            order_item = OrderItem(
+                order_id=order.id,
+                variant_id=item.variant_id,
+                quantity=item.quantity,
+                price=variant.price
+            )
+
+            db.add(order_item)
+            order_items.append(order_item)
+
+        db.query(CartItem).filter(CartItem.user_id == user_id).delete()
 
     invoice_path = generate_invoice(order, order_items)
 
