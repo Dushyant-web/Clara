@@ -42,9 +42,10 @@ def generate_invoice(order_id: int, db: Session = Depends(get_db)):
     # Order information
     pdf.setFont("Helvetica-Bold", 12)
     pdf.drawString(50, 740, f"Invoice for Order #{order.id}")
+    if hasattr(order, "created_at"):
+        pdf.drawString(50, 725, f"Date: {order.created_at.strftime('%d %B %Y')}")
 
     pdf.setFont("Helvetica", 11)
-    pdf.drawString(50, 720, f"Total Amount: ₹{order.total_amount}")
 
     # Customer information
     if user:
@@ -67,6 +68,8 @@ def generate_invoice(order_id: int, db: Session = Depends(get_db)):
 
     pdf.setFont("Helvetica", 11)
 
+    subtotal = 0
+
     for item in items:
         variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
         product_name = "Unknown"
@@ -81,6 +84,7 @@ def generate_invoice(order_id: int, db: Session = Depends(get_db)):
                 product_name = f"{product.name} {color} {size}".strip()
 
         line_total = price * item.quantity
+        subtotal += line_total
 
         pdf.drawString(60, y, product_name)
         pdf.drawString(300, y, str(item.quantity))
@@ -91,8 +95,22 @@ def generate_invoice(order_id: int, db: Session = Depends(get_db)):
 
     pdf.line(50, y-10, 550, y-10)
 
-    pdf.setFont("Helvetica-Bold", 12)
-    pdf.drawString(400, y-40, f"Total: ₹{order.total_amount}")
+    gst = round(subtotal * 0.18, 2)
+    grand_total = order.total_amount
+    promo_discount = round((subtotal + gst) - grand_total, 2)
+
+    pdf.setFont("Helvetica", 11)
+    pdf.drawString(350, y-40, f"Subtotal: ₹{subtotal}")
+
+    pdf.drawString(350, y-60, f"GST (18%): ₹{gst}")
+
+    if promo_discount > 0:
+        pdf.drawString(350, y-80, f"Promo Discount: -₹{promo_discount}")
+        pdf.setFont("Helvetica-Bold", 12)
+        pdf.drawString(350, y-110, f"Grand Total: ₹{grand_total}")
+    else:
+        pdf.setFont("Helvetica-Bold", 12)
+        pdf.drawString(350, y-80, f"Grand Total: ₹{grand_total}")
 
     pdf.save()
 
