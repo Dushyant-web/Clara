@@ -175,3 +175,13 @@ CREATE INDEX idx_products_category ON products(category_id);
 CREATE INDEX idx_variants_product ON product_variants(product_id);
 CREATE INDEX idx_orders_user ON orders(user_id);
 CREATE INDEX idx_cart_user ON cart_items(user_id);
+
+
+--inventor reserve
+CREATE TABLE inventory_reservations (
+    id SERIAL PRIMARY KEY,
+    variant_id INTEGER REFERENCES product_variants(id),
+    user_id INTEGER REFERENCES users(id),
+    quantity INTEGER,
+    expires_at TIMESTAMP
+);
