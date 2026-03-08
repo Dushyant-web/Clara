@@ -104,9 +104,8 @@ def generate_invoice(order_id: int, db: Session = Depends(get_db)):
         pdf.line(50, y+10, 550, y+10)
 
     pdf.line(50, y-10, 550, y-10)
-
-    gst = float(subtotal) * 0.18
-    gst = round(gst, 2)
+    subtotal = float(subtotal)
+    gst = round(subtotal * 0.18, 2)
     grand_total = order.total_amount
     promo_discount = round((subtotal + gst) - grand_total, 2)
 
