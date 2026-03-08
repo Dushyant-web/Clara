@@ -20,6 +20,8 @@ class Product(Base):
 
     brand = Column(String)
 
+    image = Column(String)   # <-- add this line
+
     category_id = Column(Integer, ForeignKey("categories.id"))
 
     status = Column(String, default="active")
