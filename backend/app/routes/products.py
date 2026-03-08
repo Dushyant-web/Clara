@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from app.database.db import get_db
@@ -46,3 +46,31 @@ def get_products(
 def get_product(product_id: int, db: Session = Depends(get_db)):
     product = db.query(Product).filter(Product.id == product_id).first()
     return product
+
+@router.get("/products/{product_id}/related")
+def get_related_products(product_id: int, db: Session = Depends(get_db)):
+
+    product = db.query(Product).filter(Product.id == product_id).first()
+
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    related_products = (
+        db.query(Product)
+        .filter(Product.category_id == product.category_id)
+        .filter(Product.id != product_id)
+        .limit(4)
+        .all()
+    )
+
+    result = []
+
+    for p in related_products:
+        result.append({
+            "id": p.id,
+            "name": p.name,
+            "price": p.price,
+            "image": p.image
+        })
+
+    return result

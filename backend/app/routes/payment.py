@@ -6,6 +6,7 @@ import os
 from app.database.db import get_db
 from app.models.payment import Payment
 from app.models.order import Order
+from app.models.product import Product
 
 from fastapi import Header
 
@@ -138,30 +139,3 @@ async def razorpay_webhook(request: Request, db: Session = Depends(get_db)):
 
     return {"message": "payment recorded"}
 
-@router.get("/products/{product_id}/related")
-def get_related_products(product_id: int, db: Session = Depends(get_db)):
-
-    product = db.query(Product).filter(Product.id == product_id).first()
-
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
-
-    related_products = (
-        db.query(Product)
-        .filter(Product.category_id == product.category_id)
-        .filter(Product.id != product_id)
-        .limit(4)
-        .all()
-    )
-
-    result = []
-
-    for p in related_products:
-        result.append({
-            "id": p.id,
-            "name": p.name,
-            "price": p.price,
-            "image": p.image
-        })
-
-    return result
