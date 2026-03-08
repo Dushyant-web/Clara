@@ -5,6 +5,9 @@ from app.models.product import Product
 from app.models.product_variant import ProductVariant
 from app.models.promo_code import PromoCode
 from datetime import datetime
+from app.models.product_image import ProductImage
+from app.models.collection import CollectionImage
+from app.models.lookbook import LookbookImage
 
 
 
@@ -141,3 +144,55 @@ def delete_promo(promo_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "promo deleted"}
+
+
+@router.post("/admin/product-image")
+def add_product_image(product_id: int, image_url: str, db: Session = Depends(get_db)):
+
+    new_image = ProductImage(
+        product_id=product_id,
+        image_url=image_url
+    )
+
+    db.add(new_image)
+    db.commit()
+    db.refresh(new_image)
+
+    return {
+        "message": "Product image added",
+        "image": new_image.image_url
+    }
+
+@router.post("/admin/collection-image")
+def add_collection_image(collection_id: int, image_url: str, db: Session = Depends(get_db)):
+
+    new_image = CollectionImage(
+        collection_id=collection_id,
+        image_url=image_url
+    )
+
+    db.add(new_image)
+    db.commit()
+    db.refresh(new_image)
+
+    return {
+        "message": "Collection image added",
+        "image": new_image.image_url
+    }
+
+@router.post("/admin/lookbook-image")
+def add_lookbook_image(lookbook_id: int, image_url: str, db: Session = Depends(get_db)):
+
+    new_image = LookbookImage(
+        lookbook_id=lookbook_id,
+        image_url=image_url
+    )
+
+    db.add(new_image)
+    db.commit()
+    db.refresh(new_image)
+
+    return {
+        "message": "Lookbook image added",
+        "image": new_image.image_url
+    }

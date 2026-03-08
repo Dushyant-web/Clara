@@ -5,6 +5,8 @@ from app.database.db import get_db
 from app.models.product import Product
 from app.models.categories import Category
 
+from app.models.product_image import ProductImage
+
 router = APIRouter()
 
 
@@ -74,3 +76,32 @@ def get_related_products(product_id: int, db: Session = Depends(get_db)):
         })
 
     return result
+
+
+@router.get("/products/{product_id}/images")
+def get_product_images(product_id: int, db: Session = Depends(get_db)):
+
+    images = (
+        db.query(ProductImage)
+        .filter(ProductImage.product_id == product_id)
+        .order_by(ProductImage.id)
+        .all()
+    )
+
+    if not images:
+        return {
+            "main_image": None,
+            "hover_image": None,
+            "gallery": []
+        }
+
+    main_image = images[0].image_url if len(images) >= 1 else None
+    hover_image = images[1].image_url if len(images) >= 2 else None
+
+    gallery = [img.image_url for img in images[2:]]
+
+    return {
+        "main_image": main_image,
+        "hover_image": hover_image,
+        "gallery": gallery
+    }

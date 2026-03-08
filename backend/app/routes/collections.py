@@ -5,6 +5,10 @@ from app.database.db import get_db
 from app.models.collection import Collection
 from app.models.product import Product
 
+from app.models.collection import CollectionImage
+
+
+
 router = APIRouter()
 
 # Create collection (admin)
@@ -42,3 +46,12 @@ def get_collection_products(slug: str, db: Session = Depends(get_db)):
     products = db.query(Product).filter(Product.collection_id == collection.id).all()
 
     return products
+
+@router.get("/collections/{collection_id}/images")
+def get_collection_images(collection_id: int, db: Session = Depends(get_db)):
+
+    images = db.query(CollectionImage).filter(
+        CollectionImage.collection_id == collection_id
+    ).all()
+
+    return images

@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.database.db import get_db
 from app.models.lookbook import Lookbook
+from app.models.lookbook import LookbookImage
 
 router = APIRouter()
 
@@ -47,3 +48,12 @@ def get_lookbook(id: int, db: Session = Depends(get_db)):
         return {"error": "Lookbook not found"}
 
     return lookbook
+
+@router.get("/lookbooks/{lookbook_id}/images")
+def get_lookbook_images(lookbook_id: int, db: Session = Depends(get_db)):
+
+    images = db.query(LookbookImage).filter(
+        LookbookImage.lookbook_id == lookbook_id
+    ).all()
+
+    return images

@@ -7,3 +7,4 @@ class ProductImage(Base):
     id = Column(Integer, primary_key=True)
     product_id = Column(Integer, ForeignKey("products.id"))
     image_url = Column(String)
+    position = Column(Integer)
