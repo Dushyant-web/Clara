@@ -1,0 +1,49 @@
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.database.db import get_db
+from app.models.lookbook import Lookbook
+
+router = APIRouter()
+
+# create lookbook (admin)
+@router.post("/admin/lookbook")
+def create_lookbook(
+    title: str,
+    description: str = "",
+    image: str = "",
+    season: str = "",
+    db: Session = Depends(get_db)
+):
+
+    lookbook = Lookbook(
+        title=title,
+        description=description,
+        image=image,
+        season=season
+    )
+
+    db.add(lookbook)
+    db.commit()
+    db.refresh(lookbook)
+
+    return lookbook
+
+
+# get all lookbooks
+@router.get("/lookbooks")
+def get_lookbooks(db: Session = Depends(get_db)):
+
+    return db.query(Lookbook).all()
+
+
+# get single lookbook
+@router.get("/lookbooks/{id}")
+def get_lookbook(id: int, db: Session = Depends(get_db)):
+
+    lookbook = db.query(Lookbook).filter(Lookbook.id == id).first()
+
+    if not lookbook:
+        return {"error": "Lookbook not found"}
+
+    return lookbook
