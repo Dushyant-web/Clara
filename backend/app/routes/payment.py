@@ -43,10 +43,6 @@ def create_payment(order_id: int, provider: str, db: Session = Depends(get_db)):
         amount=order.total_amount
     )
 
-    db.add(payment)
-    db.commit()
-    db.refresh(payment)
-
     razorpay_order = None
 
     if provider in ["upi", "card"]:
@@ -55,6 +51,15 @@ def create_payment(order_id: int, provider: str, db: Session = Depends(get_db)):
             "currency": "INR",
             "payment_capture": 1
         })
+
+    db.add(payment)
+
+    # store razorpay order id if created
+    if razorpay_order:
+        payment.razorpay_order_id = razorpay_order["id"]
+
+    db.commit()
+    db.refresh(payment)
 
     return {
         "payment_id": payment.id,
@@ -119,8 +124,12 @@ async def razorpay_webhook(request: Request, db: Session = Depends(get_db)):
     payment_entity = data.get("payload", {}).get("payment", {}).get("entity", {})
 
     razorpay_payment_id = payment_entity.get("id")
+    razorpay_order_id = payment_entity.get("order_id")
 
-    payment = db.query(Payment).filter(Payment.payment_id == razorpay_payment_id).first()
+    payment = db.query(Payment).filter(
+        (Payment.payment_id == razorpay_payment_id) |
+        (Payment.razorpay_order_id == razorpay_order_id)
+    ).first()
 
     if not payment:
         return {"message": "payment not tracked"}
@@ -129,6 +138,7 @@ async def razorpay_webhook(request: Request, db: Session = Depends(get_db)):
         return {"message": "already processed"}
 
     payment.status = "paid"
+    payment.payment_id = razorpay_payment_id
 
     order = db.query(Order).filter(Order.id == payment.order_id).first()
 
@@ -138,4 +148,3 @@ async def razorpay_webhook(request: Request, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "payment recorded"}
-

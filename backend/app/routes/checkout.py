@@ -55,6 +55,7 @@ def checkout(user_id: int, idempotency_key: str | None = None, db: Session = Dep
         )
 
         db.add(order)
+        db.flush()  # ensures order gets an ID before creating order_items
         db.refresh(order)
 
         order_items = []
