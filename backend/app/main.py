@@ -12,8 +12,7 @@ from app.routes import address
 from app.routes import reservation
 from app.routes import admin
 from app.routes import promo
-
-
+from app.routes.invoice import router as invoice_router
 
 
 app = FastAPI(title="CLARA API")
@@ -42,6 +41,7 @@ app.include_router(address.router)
 app.include_router(reservation.router)
 app.include_router(admin.router)
 app.include_router(promo.router)
+app.include_router(invoice_router)
 
 @app.get("/")
 def root():
