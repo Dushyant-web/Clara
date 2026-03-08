@@ -32,7 +32,7 @@ def generate_invoice(order_id: int, db: Session = Depends(get_db)):
     y = 700
 
     for item in items:
-        pdf.drawString(100, y, f"Product ID: {item.product_id}  Qty: {item.quantity}")
+        pdf.drawString(100, y, f"Variant ID: {item.variant_id}  Qty: {item.quantity}")
         y -= 20
 
     pdf.save()
