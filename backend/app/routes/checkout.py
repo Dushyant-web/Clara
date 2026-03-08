@@ -85,10 +85,11 @@ def checkout(user_id: int, idempotency_key: str | None = None, db: Session = Dep
     if not user or not hasattr(user, "email"):
         raise HTTPException(status_code=400, detail="User email not available")
 
-    send_email(
-        to_email=user.email,
-        subject="Order Confirmation - CLARA",
-        body=f"""
+    try:
+        send_email(
+            to_email=user.email,
+            subject="Order Confirmation - CLARA",
+            body=f"""
 Thank you for your order.
 
 Order ID: {order.id}
@@ -99,8 +100,10 @@ https://clara.com/track/{order.id}
 
 Invoice attached.
 """,
-        attachment=invoice_path
-    )
+            attachment=invoice_path
+        )
+    except Exception as e:
+        print("Email sending failed:", e)
 
     return {
         "message": "order created",
