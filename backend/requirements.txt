@@ -1,3 +1,4 @@
+aiosmtplib==5.1.0
 annotated-doc==0.0.4
 annotated-types==0.7.0
 anyio==4.12.1
@@ -28,6 +29,7 @@ httpx==0.28.1
 hyperframe==6.1.0
 idna==3.11
 msgpack==1.1.2
+pillow==12.1.1
 proto-plus==1.27.1
 protobuf==6.33.5
 psycopg2-binary==2.9.11
@@ -42,6 +44,7 @@ python-dotenv==1.2.2
 python-jose==3.5.0
 python-multipart==0.0.22
 razorpay==2.0.0
+reportlab==4.4.10
 requests==2.32.5
 rsa==4.9.1
 six==1.17.0
