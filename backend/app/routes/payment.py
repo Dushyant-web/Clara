@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 import razorpay
 import os
+import requests
+from app.models.user import User
 
 from app.database.db import get_db
 from app.models.payment import Payment
@@ -90,6 +92,39 @@ def confirm_payment(payment_id: int, transaction_id: str, db: Session = Depends(
         order.status = "confirmed"
 
     db.commit()
+
+    # send confirmation email via Resend
+    try:
+        user = db.query(User).filter(User.id == order.user_id).first() if order else None
+
+        if user and user.email:
+            resend_key = os.getenv("RESEND_API_KEY")
+            from_email = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev")
+
+            if resend_key:
+                requests.post(
+                    "https://api.resend.com/emails",
+                    headers={
+                        "Authorization": f"Bearer {resend_key}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "from": f"CLARA <{from_email}>",
+                        "to": [user.email],
+                        "subject": "Order Confirmed - CLARA",
+                        "text": f"""
+Your payment has been successfully received.
+
+Order ID: {order.id}
+Amount Paid: ₹{payment.amount}
+
+Thank you for shopping with CLARA.
+"""
+                    },
+                    timeout=5
+                )
+    except Exception as e:
+        print("Email send failed:", e)
 
     return {
         "message": "payment confirmed"
