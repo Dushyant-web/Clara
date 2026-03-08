@@ -23,7 +23,7 @@ def signup(data: dict, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="User already exists")
 
     user = User(
-        phone_number=phone,
+        phone=phone,
         name=name,
         email=email
     )
@@ -47,7 +47,7 @@ def login(data: dict, db: Session = Depends(get_db)):
 
     phone = verify_firebase_token(token)
 
-    user = db.query(User).filter(User.phone_number == phone).first()
+    user = db.query(User).filter(User.phone == phone).first()
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
