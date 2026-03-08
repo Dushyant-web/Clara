@@ -17,7 +17,7 @@ def signup(data: dict, db: Session = Depends(get_db)):
 
     phone = verify_firebase_token(token)
 
-    existing_user = db.query(User).filter(User.phone_number == phone).first()
+    existing_user = db.query(User).filter(User.phone == phone).first()
 
     if existing_user:
         raise HTTPException(status_code=400, detail="User already exists")
