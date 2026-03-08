@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, ShoppingBag, Heart, User, Menu, X, Bell } from 'lucide-react'
-import { Link, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import { useCartStore } from '../hooks/useCartStore'
 import { useNotifications } from '../contexts/NotificationContext'
 import NotificationCenter from './NotificationCenter'
@@ -14,6 +15,7 @@ const Navbar = () => {
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
     const [isSearchOpen, setIsSearchOpen] = useState(false)
     const location = useLocation()
+    const { user } = useAuth()
     const { cart } = useCartStore()
     const { notifications } = useNotifications()
 
@@ -111,10 +113,10 @@ const Navbar = () => {
                             />
                         </div>
 
-                        <Link to="/login" className="hidden md:flex items-center justify-center p-2 hover:text-grayAccent transition-colors">
+                        <Link to={user ? "/account" : "/login"} className="hidden md:flex items-center justify-center p-2 hover:text-grayAccent transition-colors">
                             <User size={20} strokeWidth={1.5} />
                         </Link>
-                        <Link to="/account" className="hidden md:flex items-center justify-center p-2 hover:text-grayAccent transition-colors">
+                        <Link to="/wishlist" className="hidden md:flex items-center justify-center p-2 hover:text-grayAccent transition-colors">
                             <Heart size={20} strokeWidth={1.5} />
                         </Link>
                         <Link to="/cart" className="relative flex items-center justify-center p-2 hover:text-grayAccent transition-colors">
@@ -164,8 +166,8 @@ const Navbar = () => {
                                 </Link>
                             ))}
                             <div className="h-px bg-secondary/10 my-4" />
-                            <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="text-sm uppercase tracking-widest flex items-center gap-2 text-secondary">
-                                <User size={18} /> Account
+                            <Link to={user ? "/account" : "/login"} onClick={() => setIsMobileMenuOpen(false)} className="text-sm uppercase tracking-widest flex items-center gap-2 text-secondary">
+                                <User size={18} /> {user ? "Account" : "Sign In"}
                             </Link>
                             <Link to="/wishlist" onClick={() => setIsMobileMenuOpen(false)} className="text-sm uppercase tracking-widest flex items-center gap-2 text-secondary">
                                 <Heart size={18} /> Wishlist

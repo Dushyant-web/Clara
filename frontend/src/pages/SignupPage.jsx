@@ -87,7 +87,7 @@ const SignupPage = () => {
                 'success'
             )
 
-            navigate('/shop')
+            navigate('/account')
 
         } catch (error) {
             console.error(error)
