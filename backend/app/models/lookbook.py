@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy import Column, Integer, String, Text,ForeignKey
 from app.database.db import Base
 
 class Lookbook(Base):
