@@ -10,6 +10,8 @@ from app.routes import checkout
 from app.routes import payment
 from app.routes import address
 from app.routes import reservation
+from app.routes import admin
+app.include_router(admin.router)
 
 
 
