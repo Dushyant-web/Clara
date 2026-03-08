@@ -77,8 +77,6 @@ const CheckoutPage = () => {
                                             <label className="text-[10px] tracking-widest text-gray-500 mb-2 block font-bold uppercase">Address Auto-fill (AI Powered)</label>
                                             <input type="text" placeholder="Start typing your address..." className="w-full bg-transparent border-b border-white/20 py-4 text-xs font-bold focus:outline-none focus:border-white transition-all" />
                                         </div>
-                                        <input type="text" placeholder="First Name" className="bg-transparent border-b border-white/20 py-4 text-xs font-bold focus:outline-none focus:border-white transition-all" />
-                                        <input type="text" placeholder="Last Name" className="bg-transparent border-b border-white/20 py-4 text-xs font-bold focus:outline-none focus:border-white transition-all" />
                                         <input type="email" placeholder="Email Address" className="bg-transparent border-b border-white/20 py-4 text-xs font-bold focus:outline-none focus:border-white transition-all" />
                                         <div className="relative border-b border-white/20 focus-within:border-white transition-all">
                                             <span className="absolute left-0 bottom-4 text-xs font-bold">+91</span>

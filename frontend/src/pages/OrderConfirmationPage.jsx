@@ -25,11 +25,11 @@ const OrderConfirmationPage = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-16">
-                        <div className="p-8 border border-secondary/10 bg-secondary/5 text-left group hover:border-secondary/30 transition-all cursor-pointer">
+                        <Link to="/order-tracking/ORD-2026-X992V" className="p-8 border border-secondary/10 bg-secondary/5 text-left group hover:border-secondary/30 transition-all block">
                             <Truck className="text-secondary mb-4 opacity-50" size={20} />
                             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary mb-2">Track Shipping</h3>
                             <p className="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed">Follow your order's journey in real-time.</p>
-                        </div>
+                        </Link>
                         <div className="p-8 border border-secondary/10 bg-secondary/5 text-left group hover:border-secondary/30 transition-all cursor-pointer">
                             <ShoppingBag className="text-secondary mb-4 opacity-50" size={20} />
                             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary mb-2">Support Hero</h3>
