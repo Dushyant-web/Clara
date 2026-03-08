@@ -10,6 +10,9 @@ class ProductVariant(Base):
 
     product_id = Column(Integer, ForeignKey("products.id"))
 
+    size = Column(String)
+    color = Column(String)
+
     sku = Column(String)
 
     price = Column(Integer)

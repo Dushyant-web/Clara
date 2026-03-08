@@ -84,7 +84,7 @@ def get_product_images(product_id: int, db: Session = Depends(get_db)):
     images = (
         db.query(ProductImage)
         .filter(ProductImage.product_id == product_id)
-        .order_by(ProductImage.id)
+        .order_by(ProductImage.position)
         .all()
     )
 
