@@ -3,6 +3,9 @@ from sqlalchemy.orm import Session
 from app.database.db import get_db
 from app.models.product import Product
 from app.models.product_variant import ProductVariant
+from app.models.promo_code import PromoCode
+from datetime import datetime
+
 
 
 router = APIRouter(prefix="/admin")
@@ -85,3 +88,56 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "product deleted"}
+
+@router.post("/promo")
+def create_promo(
+    code: str,
+    discount_type: str,
+    discount_value: float,
+    min_order_amount: float = 0,
+    max_discount: float = None,
+    usage_limit: int = None,
+    db: Session = Depends(get_db)
+):
+
+    promo = PromoCode(
+        code=code,
+        discount_type=discount_type,
+        discount_value=discount_value,
+        min_order_amount=min_order_amount,
+        max_discount=max_discount,
+        usage_limit=usage_limit
+    )
+
+    db.add(promo)
+    db.commit()
+    db.refresh(promo)
+
+    return promo
+
+@router.get("/promos")
+def get_promos(db: Session = Depends(get_db)):
+
+    promos = db.query(PromoCode).all()
+
+    return promos
+
+
+@router.put("/promo/{promo_id}/disable")
+def disable_promo(promo_id: int, db: Session = Depends(get_db)):
+
+    promo = db.query(PromoCode).filter(PromoCode.id == promo_id).first()
+
+    promo.active = False
+    db.commit()
+
+    return {"message": "promo disabled"}
+
+
+@router.delete("/promo/{promo_id}")
+def delete_promo(promo_id: int, db: Session = Depends(get_db)):
+
+    db.query(PromoCode).filter(PromoCode.id == promo_id).delete()
+    db.commit()
+
+    return {"message": "promo deleted"}

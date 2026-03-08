@@ -6,3 +6,4 @@ from .order import Order
 from .order_item import OrderItem
 from .payment import Payment
 from .address import Address
+from .promo_code import PromoCode

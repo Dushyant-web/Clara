@@ -1,0 +1,42 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from app.database.db import get_db
+from app.models.promo_code import PromoCode
+from datetime import datetime
+
+router = APIRouter()
+
+
+@router.post("/promo/apply")
+def apply_promo(code: str, order_amount: float, db: Session = Depends(get_db)):
+
+    promo = db.query(PromoCode).filter(PromoCode.code == code).first()
+
+    if not promo:
+        raise HTTPException(status_code=404, detail="Promo not found")
+
+    if not promo.active:
+        raise HTTPException(status_code=400, detail="Promo inactive")
+
+    if promo.expires_at and promo.expires_at < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Promo expired")
+
+    if order_amount < promo.min_order_amount:
+        raise HTTPException(status_code=400, detail="Minimum order not met")
+
+    if promo.discount_type == "percentage":
+        discount = order_amount * float(promo.discount_value) / 100
+
+        if promo.max_discount:
+            discount = min(discount, float(promo.max_discount))
+
+    else:
+        discount = float(promo.discount_value)
+
+    final_amount = order_amount - discount
+
+    return {
+        "promo": promo.code,
+        "discount": discount,
+        "final_amount": final_amount
+    }
