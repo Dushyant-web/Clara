@@ -24,7 +24,7 @@ from app.routes import upload
 app = FastAPI(title="CLARA API")
 
 origins = [
-    "http://localhost:5173",
+    "http://localhost:5174",
     "https://clara-test-v1.netlify.app",
 ]
 
