@@ -10,7 +10,7 @@ class Address(Base):
 
     user_id = Column(Integer, ForeignKey("users.id"))
 
-    full_name = Column(String)
+    name = Column(String)
     phone = Column(String)
 
     address_line = Column(String)
