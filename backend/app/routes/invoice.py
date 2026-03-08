@@ -3,6 +3,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from io import BytesIO
 from reportlab.pdfgen import canvas
+from reportlab.lib.utils import ImageReader
 
 from app.database.db import get_db
 from app.models.order import Order
@@ -30,12 +31,18 @@ def generate_invoice(order_id: int, db: Session = Depends(get_db)):
 
     pdf = canvas.Canvas(buffer)
 
-    # Header
-    pdf.setFont("Helvetica-Bold", 18)
-    pdf.drawString(50, 800, "CLARA")
+    # Header with logo
+    try:
+        logo = ImageReader("assets/clara_logo.png")
+        pdf.drawImage(logo, 50, 780, width=60, height=60, mask='auto')
+    except:
+        pass
+
+    pdf.setFont("Helvetica-Bold", 20)
+    pdf.drawString(120, 805, "CLARA")
 
     pdf.setFont("Helvetica", 12)
-    pdf.drawString(50, 780, "Fashion & Lifestyle")
+    pdf.drawString(120, 785, "Luxury Wear")
 
     pdf.line(50, 770, 550, 770)
 
@@ -47,7 +54,7 @@ def generate_invoice(order_id: int, db: Session = Depends(get_db)):
 
     pdf.setFont("Helvetica", 11)
 
-    # Customer information
+    # Billing information
     if user:
         pdf.drawString(350, 740, f"Customer: {user.name}")
         pdf.drawString(350, 720, f"Email: {user.email}")
@@ -62,6 +69,8 @@ def generate_invoice(order_id: int, db: Session = Depends(get_db)):
     pdf.drawString(360, 650, "Price")
     pdf.drawString(440, 650, "Total")
 
+    # Table grid top line
+    pdf.line(50, 660, 550, 660)
     pdf.line(50, 640, 550, 640)
 
     y = 620
@@ -92,10 +101,12 @@ def generate_invoice(order_id: int, db: Session = Depends(get_db)):
         pdf.drawString(440, y, f"₹{line_total}")
 
         y -= 20
+        pdf.line(50, y+10, 550, y+10)
 
     pdf.line(50, y-10, 550, y-10)
 
-    gst = round(subtotal * 0.18, 2)
+    gst = float(subtotal) * 0.18
+    gst = round(gst, 2)
     grand_total = order.total_amount
     promo_discount = round((subtotal + gst) - grand_total, 2)
 
@@ -111,6 +122,15 @@ def generate_invoice(order_id: int, db: Session = Depends(get_db)):
     else:
         pdf.setFont("Helvetica-Bold", 12)
         pdf.drawString(350, y-80, f"Grand Total: ₹{grand_total}")
+
+    # QR placeholder for payment reference
+    try:
+        qr = ImageReader("assets/payment_qr.png")
+        pdf.drawImage(qr, 50, 100, width=100, height=100, mask='auto')
+        pdf.setFont("Helvetica", 9)
+        pdf.drawString(50, 90, "Scan for payment reference")
+    except:
+        pass
 
     pdf.save()
 
