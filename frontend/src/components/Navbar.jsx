@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, ShoppingBag, Heart, User, Menu, X, Bell } from 'lucide-react'
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useCartStore } from '../hooks/useCartStore'
 import { useNotifications } from '../contexts/NotificationContext'
