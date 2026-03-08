@@ -64,8 +64,12 @@ def checkout(user_id: int, db: Session = Depends(get_db)):
     db.query(CartItem).filter(CartItem.user_id == user_id).delete()
     db.commit()
 
-    user = db.query(User).filter(User.id == user_id).first()
     invoice_path = generate_invoice(order, order_items)
+
+    user = db.query(User).filter(User.id == user_id).first()
+
+    if not user or not hasattr(user, "email"):
+        raise HTTPException(status_code=400, detail="User email not available")
 
     send_email(
         to_email=user.email,
