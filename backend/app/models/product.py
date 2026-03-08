@@ -23,6 +23,7 @@ class Product(Base):
     image = Column(String)   # <-- add this line
 
     category_id = Column(Integer, ForeignKey("categories.id"))
+    collection_id = Column(Integer, ForeignKey("collections.id"), nullable=True)
 
     status = Column(String, default="active")
 

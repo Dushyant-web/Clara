@@ -14,6 +14,7 @@ from app.routes import admin
 from app.routes import promo
 from app.routes.invoice import router as invoice_router
 from app.routes import invoice
+from app.routes import collections
 
 app = FastAPI(title="CLARA API")
 
@@ -43,6 +44,7 @@ app.include_router(admin.router)
 app.include_router(promo.router)
 app.include_router(invoice_router)
 app.include_router(invoice.router)
+app.include_router(collections.router)
 
 @app.get("/")
 def root():
