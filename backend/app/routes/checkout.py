@@ -83,21 +83,24 @@ def checkout(user_id: int, idempotency_key: str | None = None, db: Session = Dep
 
     user = db.query(User).filter(User.id == user_id).first()
 
-    # Send order email via Firebase email service (non-blocking)
+    # Optional email notification (disabled if no service configured)
+    # Email sending should never break checkout
     if user and getattr(user, "email", None):
         try:
-            firebase_email_url = os.getenv("FIREBASE_EMAIL_ENDPOINT")
+            email_endpoint = os.getenv("EMAIL_SERVICE_ENDPOINT")
 
-            if firebase_email_url:
-                requests.post(firebase_email_url, json={
-                    "to": user.email,
-                    "subject": "Order Confirmation - CLARA",
-                    "order_id": order.id,
-                    "total": float(order.total_amount),
-                    "invoice_path": invoice_path
-                }, timeout=5)
+            if email_endpoint:
+                requests.post(
+                    email_endpoint,
+                    json={
+                        "to": user.email,
+                        "order_id": order.id,
+                        "total": float(order.total_amount)
+                    },
+                    timeout=3
+                )
         except Exception as e:
-            print("Firebase email service failed (ignored):", e)
+            print("Email notification skipped:", e)
 
     return {
         "message": "order created",
