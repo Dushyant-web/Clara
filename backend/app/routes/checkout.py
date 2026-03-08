@@ -7,7 +7,6 @@ from app.models.product_variant import ProductVariant
 from app.models.order import Order
 from app.models.order_item import OrderItem
 from app.models.user import User
-from app.services.invoice_service import generate_invoice
 
 router = APIRouter()
 
@@ -77,7 +76,6 @@ def checkout(user_id: int, idempotency_key: str | None = None, db: Session = Dep
 
         db.query(CartItem).filter(CartItem.user_id == user_id).delete()
 
-    invoice_path = generate_invoice(order, order_items)
 
     return {
         "message": "order created",
