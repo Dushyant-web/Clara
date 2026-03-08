@@ -8,7 +8,8 @@ from app.models.order import Order
 from app.models.order_item import OrderItem
 from app.models.user import User
 from app.services.invoice_service import generate_invoice
-from app.services.email_service import send_email
+import os
+import requests
 
 router = APIRouter()
 
@@ -82,28 +83,21 @@ def checkout(user_id: int, idempotency_key: str | None = None, db: Session = Dep
 
     user = db.query(User).filter(User.id == user_id).first()
 
-    if not user or not hasattr(user, "email"):
-        raise HTTPException(status_code=400, detail="User email not available")
+    # Send order email via Firebase email service (non-blocking)
+    if user and getattr(user, "email", None):
+        try:
+            firebase_email_url = os.getenv("FIREBASE_EMAIL_ENDPOINT")
 
-    try:
-        send_email(
-            to_email=user.email,
-            subject="Order Confirmation - CLARA",
-            body=f"""
-Thank you for your order.
-
-Order ID: {order.id}
-Total: ₹{order.total_amount}
-
-Track your order here:
-https://clara.com/track/{order.id}
-
-Invoice attached.
-""",
-            attachment=invoice_path
-        )
-    except Exception as e:
-        print("Email sending failed:", e)
+            if firebase_email_url:
+                requests.post(firebase_email_url, json={
+                    "to": user.email,
+                    "subject": "Order Confirmation - CLARA",
+                    "order_id": order.id,
+                    "total": float(order.total_amount),
+                    "invoice_path": invoice_path
+                }, timeout=5)
+        except Exception as e:
+            print("Firebase email service failed (ignored):", e)
 
     return {
         "message": "order created",
