@@ -6,7 +6,6 @@ import os
 from app.database.db import get_db
 from app.models.payment import Payment
 from app.models.order import Order
-from app.models.product import Product
 
 from fastapi import Header
 
@@ -14,6 +13,9 @@ razorpay_client = razorpay.Client(auth=(
     os.getenv("RAZORPAY_KEY_ID"),
     os.getenv("RAZORPAY_KEY_SECRET")
 ))
+
+if not os.getenv("RAZORPAY_KEY_ID") or not os.getenv("RAZORPAY_KEY_SECRET"):
+    raise Exception("Razorpay keys not set in environment variables")
 
 router = APIRouter()
 

@@ -8,8 +8,6 @@ from app.models.order import Order
 from app.models.order_item import OrderItem
 from app.models.user import User
 from app.services.invoice_service import generate_invoice
-import os
-import requests
 
 router = APIRouter()
 
@@ -80,27 +78,6 @@ def checkout(user_id: int, idempotency_key: str | None = None, db: Session = Dep
         db.query(CartItem).filter(CartItem.user_id == user_id).delete()
 
     invoice_path = generate_invoice(order, order_items)
-
-    user = db.query(User).filter(User.id == user_id).first()
-
-    # Optional email notification (disabled if no service configured)
-    # Email sending should never break checkout
-    if user and getattr(user, "email", None):
-        try:
-            email_endpoint = os.getenv("EMAIL_SERVICE_ENDPOINT")
-
-            if email_endpoint:
-                requests.post(
-                    email_endpoint,
-                    json={
-                        "to": user.email,
-                        "order_id": order.id,
-                        "total": float(order.total_amount)
-                    },
-                    timeout=3
-                )
-        except Exception as e:
-            print("Email notification skipped:", e)
 
     return {
         "message": "order created",
