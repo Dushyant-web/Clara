@@ -16,9 +16,10 @@ def create_product(
 ):
 
     product = Product(
-        title=title,
+        name=title,
         description=description,
-        category_id=category_id
+        category_id=category_id,
+        price=0
     )
 
     db.add(product)
