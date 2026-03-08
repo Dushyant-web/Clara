@@ -8,6 +8,7 @@ from app.routes import cart
 from app.routes import orders
 from app.routes import checkout
 from app.routes import payment
+from app.routes import address
 
 
 
@@ -33,6 +34,7 @@ app.include_router(cart.router)
 app.include_router(checkout.router)
 app.include_router(orders.router)
 app.include_router(payment.router)
+app.include_router(address.router)
 
 @app.get("/")
 def root():
