@@ -22,7 +22,7 @@ def create_address(
 
     address = Address(
         user_id=user_id,
-        full_name=full_name,
+        name=full_name,
         phone=phone,
         address_line=address_line,
         city=city,
