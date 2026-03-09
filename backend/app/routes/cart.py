@@ -43,6 +43,7 @@ def add_to_cart(data: dict, db: Session = Depends(get_db)):
     return {"message": "cart updated", "item_id": item.id}
 
 from app.models.product import Product
+from app.models.product_image import ProductImage
 
 @router.get("/cart/{user_id}")
 def get_cart(user_id: int, db: Session = Depends(get_db)):
@@ -62,6 +63,13 @@ def get_cart(user_id: int, db: Session = Depends(get_db)):
         if not product:
             continue
 
+        # Standardize image fallback
+        display_image = product.image
+        if not display_image:
+            first_img = db.query(ProductImage).filter(ProductImage.product_id == product.id).order_by(ProductImage.position).first()
+            if first_img:
+                display_image = first_img.image_url
+
         price = variant.price
         item_total = price * item.quantity
         subtotal += item_total
@@ -71,7 +79,7 @@ def get_cart(user_id: int, db: Session = Depends(get_db)):
             "product_id": product.id,
             "variant_id": item.variant_id,
             "name": product.name,
-            "image": product.image,
+            "image": display_image,
             "size": variant.size,
             "color": variant.color,
             "quantity": item.quantity,

@@ -18,6 +18,7 @@ def create_product(
     title: str,
     description: str,
     category_id: int,
+    image: str = None,
     db: Session = Depends(get_db)
 ):
 
@@ -25,6 +26,7 @@ def create_product(
         name=title,
         description=description,
         category_id=category_id,
+        image=image,
         price=0
     )
 
