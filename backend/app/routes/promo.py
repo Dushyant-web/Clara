@@ -31,6 +31,11 @@ def apply_promo(request: PromoApplyRequest, db: Session = Depends(get_db)):
     if promo.expires_at and promo.expires_at < datetime.utcnow():
         raise HTTPException(status_code=400, detail="Promo expired")
 
+    # Prevent infinite reuse of promo codes
+    if promo.usage_limit is not None:
+        if promo.usage_limit <= 0:
+            raise HTTPException(status_code=400, detail="Promo usage limit reached")
+
     if order_amount < promo.min_order_amount:
         raise HTTPException(status_code=400, detail="Minimum order not met")
 
@@ -48,6 +53,9 @@ def apply_promo(request: PromoApplyRequest, db: Session = Depends(get_db)):
 
     # Update order total so payment uses the discounted amount
     order.total_amount = final_amount
+    # Decrease promo usage count after successful application
+    if promo.usage_limit is not None:
+        promo.usage_limit -= 1
     db.commit()
 
     return {

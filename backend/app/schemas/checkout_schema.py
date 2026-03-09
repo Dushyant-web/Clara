@@ -3,7 +3,7 @@ from typing import Optional
 
 class PromoApplyRequest(BaseModel):
     code: str
-    order_amount: float
+    order_id: float
 
 class PaymentCreateRequest(BaseModel):
     order_id: int
