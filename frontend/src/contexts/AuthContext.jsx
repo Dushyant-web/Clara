@@ -5,73 +5,31 @@ const AuthContext = createContext()
 export const useAuth = () => useContext(AuthContext)
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null) // Mock user data
+    const [user, setUser] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
     const [sessionToken, setSessionToken] = useState(null)
 
     useEffect(() => {
         // Check for existing session in localStorage
-        const savedToken = localStorage.getItem('calra_session_token')
+        const savedToken = localStorage.getItem('token')
         if (savedToken) {
             setSessionToken(savedToken)
-            // Mock user fetching
-            setTimeout(() => {
-                setUser({ name: 'Dushyant S.', email: 'dushyant@example.com', role: 'member' })
-                setIsLoading(false)
-            }, 500)
+            // In a real app, you'd fetch the user profile here
+            // For now, we'll just stop loading
+            setIsLoading(false)
         } else {
             setIsLoading(false)
         }
     }, [])
 
-    const loginWithOTP = async (phoneNumber) => {
-        // Simulate API call for OTP
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                console.log(`OTP sent to ${phoneNumber}`)
-                resolve(true)
-            }, 1000)
-        })
-    }
-
-    const verifyOTPAndLogin = async (otp, needs2FA = false) => {
-        // Simulate verification
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                if (needs2FA) {
-                    resolve({ status: 'needs_2fa' })
-                } else {
-                    const token = 'jwt_token_sample'
-                    localStorage.setItem('calra_session_token', token)
-                    setSessionToken(token)
-                    setUser({ name: 'Dushyant S.', email: 'dushyant@example.com', role: 'member' })
-                    resolve({ status: 'success' })
-                }
-            }, 1000)
-        })
-    }
-
-    const verify2FAAndLogin = async (code) => {
-        // Simulate 2FA verification
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                const token = 'jwt_token_sample_2fa'
-                localStorage.setItem('calra_session_token', token)
-                setSessionToken(token)
-                setUser({ name: 'Dushyant S.', email: 'dushyant@example.com', role: 'member' })
-                resolve({ status: 'success' })
-            }, 1000)
-        })
-    }
-
     const logout = () => {
-        localStorage.removeItem('calra_session_token')
+        localStorage.removeItem('token')
         setSessionToken(null)
         setUser(null)
     }
 
     return (
-        <AuthContext.Provider value={{ user, isLoading, loginWithOTP, verifyOTPAndLogin, verify2FAAndLogin, logout }}>
+        <AuthContext.Provider value={{ user, isLoading, logout, setUser, setSessionToken }}>
             {children}
         </AuthContext.Provider>
     )

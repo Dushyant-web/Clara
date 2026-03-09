@@ -66,7 +66,7 @@ const ProductCard = ({ product }) => {
                         <h2 className="text-sm font-medium tracking-tight group-hover:text-grayAccent transition-colors uppercase">{product.name}</h2>
                     </Link>
                 </div>
-                <p className="text-sm font-serif">${product.price}</p>
+                <p className="text-sm font-serif">₹{product.price}</p>
             </div>
         </motion.div>
     )

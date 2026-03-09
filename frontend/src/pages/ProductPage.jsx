@@ -61,7 +61,7 @@ const ProductPage = () => {
                             <span className="text-xs uppercase tracking-[0.4em] text-gray-500 mb-4 block">{product.category}</span>
                             <h1 className="text-4xl md:text-5xl font-serif tracking-tighter mb-4 capitalize">{product.name}</h1>
                             <div className="flex items-center gap-4 mb-6">
-                                <p className="text-2xl font-serif">${product.price}</p>
+                                <p className="text-2xl font-serif">₹{product.price}</p>
                                 <div className="h-4 w-px bg-white/20" />
                                 <div className="flex items-center gap-1">
                                     {[...Array(5)].map((_, i) => <Star key={i} size={14} fill={i < 4 ? "white" : "none"} className={i < 4 ? "text-white" : "text-gray-600"} />)}
@@ -124,7 +124,7 @@ const ProductPage = () => {
                                 <Truck size={20} className="text-gray-400" />
                                 <div>
                                     <h4 className="text-[10px] uppercase tracking-widest font-bold mb-1">Shipping & Delivery</h4>
-                                    <p className="text-[10px] text-gray-500 leading-relaxed uppercase tracking-widest">Free global shipping on orders above $500. Expected delivery: 3-5 business days.</p>
+                                    <p className="text-[10px] text-gray-500 leading-relaxed uppercase tracking-widest">Free global shipping on orders above ₹500. Expected delivery: 3-5 business days.</p>
                                 </div>
                             </div>
                             <div className="flex gap-4 items-start">

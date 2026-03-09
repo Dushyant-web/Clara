@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useEffect, useState } from 'react'
 import { User, Package, Heart, MapPin, Settings, LogOut, ChevronRight, Clock } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useCartStore } from '../hooks/useCartStore'
@@ -6,10 +7,37 @@ import { useCartStore } from '../hooks/useCartStore'
 const AccountDashboard = () => {
     const { wishlist } = useCartStore()
 
-    const recentOrders = [
-        { id: 'ORD-12345', date: 'Oct 24, 2026', total: 745.00, status: 'Shipped' },
-        { id: 'ORD-12340', date: 'Sep 12, 2026', total: 185.00, status: 'Delivered' },
-    ]
+    const [user, setUser] = useState(null)
+    const [recentOrders, setRecentOrders] = useState([])
+
+    useEffect(() => {
+        const loadAccountData = async () => {
+            try {
+                const token = localStorage.getItem('token')
+                if (!token) return
+
+                const userRes = await fetch('https://clara-xpfh.onrender.com/auth/me', {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                })
+
+                const userData = await userRes.json()
+                setUser(userData)
+
+                if (userData?.id) {
+                    const ordersRes = await fetch(`https://clara-xpfh.onrender.com/orders/${userData.id}`)
+                    const ordersData = await ordersRes.json()
+
+                    setRecentOrders(ordersData || [])
+                }
+            } catch (err) {
+                console.error('Failed to load account data', err)
+            }
+        }
+
+        loadAccountData()
+    }, [])
 
     const menuItems = [
         { name: 'Order History', icon: Package, count: 12 },
@@ -27,8 +55,8 @@ const AccountDashboard = () => {
                             DS
                         </div>
                         <div>
-                            <h1 className="text-4xl font-serif tracking-tighter uppercase">Dushyant S.</h1>
-                            <p className="text-[10px] uppercase tracking-widest text-gray-500">Premium Member since 2024</p>
+                            <h1 className="text-4xl font-serif tracking-tighter uppercase">{user?.name || 'Guest'}</h1>
+                            <p className="text-[10px] uppercase tracking-widest text-gray-500">Member since {new Date().getFullYear()}</p>
                         </div>
                     </div>
                     <button className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-gray-500 hover:text-white transition-colors">
@@ -64,31 +92,17 @@ const AccountDashboard = () => {
                                 <button className="text-[10px] uppercase tracking-widest font-bold border-b border-white">View All</button>
                             </div>
                             <div className="space-y-4">
-                                {recentOrders.map((order) => (
-                                    <div key={order.id} className="bg-neutral-900 p-6 flex flex-col md:flex-row justify-between items-center gap-6 border border-white/5">
-                                        <div className="flex items-center gap-6">
-                                            <div className="w-12 h-12 bg-white/5 flex items-center justify-center">
-                                                <Package size={20} className="text-gray-500" />
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-bold uppercase tracking-widest">{order.id}</p>
-                                                <div className="flex gap-4 mt-1 text-[10px] text-gray-500 uppercase tracking-widest">
-                                                    <span className="flex items-center gap-1"><Clock size={12} /> {order.date}</span>
-                                                    <span className="text-white">${order.total}</span>
-                                                </div>
-                                            </div>
+                                {recentOrders.length > 0 ? (
+                                    recentOrders.map((order) => (
+                                        <div key={order.id} className="bg-neutral-900 p-6 flex flex-col md:flex-row justify-between items-center gap-6 border border-white/5">
+                                            {/* Order content */}
                                         </div>
-                                        <div className="flex items-center gap-8">
-                                            <span className={`text-[10px] uppercase tracking-widest font-bold px-3 py-1 border ${order.status === 'Shipped' ? 'border-blue-500/20 text-blue-400' : 'border-green-500/20 text-green-400'
-                                                }`}>
-                                                {order.status}
-                                            </span>
-                                            <Link to={`/order-tracking/${order.id}`} className="p-2 hover:bg-white/5 transition-colors">
-                                                <ChevronRight size={18} />
-                                            </Link>
-                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="bg-neutral-900/30 p-12 border border-white/5 text-center">
+                                        <p className="text-[10px] uppercase tracking-[0.2em] text-gray-600">No orders found</p>
                                     </div>
-                                ))}
+                                )}
                             </div>
                         </section>
 

@@ -13,6 +13,9 @@ import AccountDashboard from './pages/AccountDashboard'
 import AdminAnalytics from './admin/AdminAnalytics'
 import AdminProducts from './admin/AdminProducts'
 import OrderConfirmationPage from './pages/OrderConfirmationPage'
+import CollectionsPage from './pages/CollectionsPage'
+import LookbookPage from './pages/LookbookPage'
+import AboutPage from './pages/AboutPage'
 
 function App() {
     return (
@@ -21,6 +24,9 @@ function App() {
                 <Routes>
                     <Route path="/" element={<HomePage />} />
                     <Route path="/shop" element={<ShopPage />} />
+                    <Route path="/collections" element={<CollectionsPage />} />
+                    <Route path="/lookbook" element={<LookbookPage />} />
+                    <Route path="/about" element={<AboutPage />} />
                     <Route path="/product/:id" element={<ProductPage />} />
                     <Route path="/cart" element={<CartPage />} />
                     <Route path="/checkout" element={<CheckoutPage />} />

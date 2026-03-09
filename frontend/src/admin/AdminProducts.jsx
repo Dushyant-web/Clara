@@ -65,7 +65,7 @@ const AdminProducts = () => {
                                 <td className="py-6">
                                     <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400">{p.category}</span>
                                 </td>
-                                <td className="py-6 text-xs font-serif">${p.price}</td>
+                                <td className="py-6 text-xs font-serif">₹{p.price}</td>
                                 <td className="py-6">
                                     <div className="flex items-center gap-2">
                                         <div className="w-2 h-2 rounded-full bg-green-500" />

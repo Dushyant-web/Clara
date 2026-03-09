@@ -10,21 +10,21 @@ import {
 } from 'recharts'
 
 const data = [
-    { name: 'Mon', revenue: 4000, orders: 24 },
-    { name: 'Tue', revenue: 3000, orders: 18 },
-    { name: 'Wed', revenue: 2000, orders: 12 },
-    { name: 'Thu', revenue: 2780, orders: 20 },
-    { name: 'Fri', revenue: 1890, orders: 15 },
-    { name: 'Sat', revenue: 2390, orders: 25 },
-    { name: 'Sun', revenue: 3490, orders: 30 },
+    { name: 'Mon', revenue: 0, orders: 0 },
+    { name: 'Tue', revenue: 0, orders: 0 },
+    { name: 'Wed', revenue: 0, orders: 0 },
+    { name: 'Thu', revenue: 0, orders: 0 },
+    { name: 'Fri', revenue: 0, orders: 0 },
+    { name: 'Sat', revenue: 0, orders: 0 },
+    { name: 'Sun', revenue: 0, orders: 0 },
 ]
 
 const AdminDashboard = () => {
     const stats = [
-        { label: 'Total Revenue', value: '$124,590', change: '+12.5%', icon: DollarSign, positive: true },
-        { label: 'Total Orders', value: '1,240', change: '+5.2%', icon: ShoppingBag, positive: true },
-        { label: 'Total Customers', value: '8,420', change: '-2.1%', icon: Users, positive: false },
-        { label: 'Conversion Rate', value: '3.24%', change: '+0.8%', icon: TrendingUp, positive: true },
+        { label: 'Total Revenue', value: '₹0', change: '0%', icon: DollarSign, positive: true },
+        { label: 'Total Orders', value: '0', change: '0%', icon: ShoppingBag, positive: true },
+        { label: 'Total Customers', value: '0', change: '0%', icon: Users, positive: true },
+        { label: 'Conversion Rate', value: '0%', change: '0%', icon: TrendingUp, positive: true },
     ]
 
     return (
@@ -91,23 +91,9 @@ const AdminDashboard = () => {
                         <div className="bg-neutral-900 p-10 border border-white/5">
                             <h3 className="text-[10px] uppercase tracking-[0.3em] font-bold mb-8 text-gray-400">Inventory Status</h3>
                             <div className="space-y-6">
-                                {[
-                                    { name: 'Oversized Hoodie', stock: 12, status: 'low' },
-                                    { name: 'Cargo Pants', stock: 0, status: 'out' },
-                                    { name: 'Graphics Tee', stock: 124, status: 'ok' },
-                                ].map((item, i) => (
-                                    <div key={i} className="flex justify-between items-center">
-                                        <div>
-                                            <p className="text-xs font-bold uppercase tracking-widest">{item.name}</p>
-                                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">{item.stock} in stock</p>
-                                        </div>
-                                        <span className={`text-[8px] uppercase tracking-widest font-bold px-2 py-1 ${item.status === 'out' ? 'bg-red-500/10 text-red-500' :
-                                                item.status === 'low' ? 'bg-orange-500/10 text-orange-500' : 'bg-green-500/10 text-green-500'
-                                            }`}>
-                                            {item.status === 'out' ? 'Out of Stock' : item.status === 'low' ? 'Low Stock' : 'Available'}
-                                        </span>
-                                    </div>
-                                ))}
+                                <div className="text-center py-8">
+                                    <p className="text-[10px] uppercase tracking-widest text-gray-600">Inventory Sync Pending</p>
+                                </div>
                             </div>
                         </div>
 
@@ -116,7 +102,7 @@ const AdminDashboard = () => {
                                 <AlertCircle size={24} className="text-gray-500" />
                             </div>
                             <h4 className="text-[10px] uppercase tracking-[0.3em] font-bold mb-4">Pending Returns</h4>
-                            <p className="text-4xl font-serif mb-6">24</p>
+                            <p className="text-4xl font-serif mb-6">0</p>
                             <button className="text-[10px] uppercase tracking-widest font-bold border-b border-white hover:text-grayAccent transition-colors">Action Required</button>
                         </div>
                     </div>
@@ -126,21 +112,9 @@ const AdminDashboard = () => {
                 <div className="lg:col-span-4 bg-neutral-900 border border-white/5 p-10">
                     <h3 className="text-[10px] uppercase tracking-[0.3em] font-bold mb-12 text-gray-400">Live Orders</h3>
                     <div className="space-y-8">
-                        {[1, 2, 3, 4, 5].map((_, i) => (
-                            <div key={i} className="flex gap-6 items-start group">
-                                <div className="w-10 h-10 bg-white/5 flex items-center justify-center shrink-0">
-                                    <Package size={18} className="text-gray-500 group-hover:text-white transition-colors" />
-                                </div>
-                                <div className="flex-grow">
-                                    <div className="flex justify-between mb-1">
-                                        <p className="text-xs font-bold uppercase tracking-widest">ORD-882{i}</p>
-                                        <span className="text-[10px] font-serif">$245.00</span>
-                                    </div>
-                                    <p className="text-[10px] text-gray-500 uppercase tracking-widest">2 min ago • Processing</p>
-                                </div>
-                                <ChevronRight size={14} className="text-gray-600 mt-1" />
-                            </div>
-                        ))}
+                        <div className="text-center py-12">
+                            <p className="text-[10px] uppercase tracking-widest text-gray-600">No active orders</p>
+                        </div>
                     </div>
                     <button className="w-full mt-12 py-4 border border-white/10 text-[10px] font-bold uppercase tracking-widest hover:border-white transition-all">View All Orders</button>
                 </div>

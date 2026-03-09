@@ -58,7 +58,7 @@ const CartPage = () => {
                                                     <h3 className="text-xl font-medium tracking-tight uppercase">{item.name}</h3>
                                                     <p className="text-xs uppercase tracking-widest text-gray-400 mt-2">Size: <span className="text-white font-bold">{item.size}</span></p>
                                                 </div>
-                                                <p className="text-lg font-serif">${item.price}</p>
+                                                <p className="text-lg font-serif">₹{item.price}</p>
                                             </div>
 
                                             <div className="flex justify-between items-end mt-8">
@@ -108,14 +108,14 @@ const CartPage = () => {
                             <div className="space-y-4 mb-8 pb-8 border-b border-black/5 dark:border-white/5">
                                 <div className="flex justify-between text-[10px] uppercase tracking-[0.2em] text-black dark:text-white">
                                     <span className="opacity-50">Subtotal</span>
-                                    <span className="font-bold">${subtotal.toFixed(2)}</span>
+                                    <span className="font-bold">₹{subtotal.toFixed(2)}</span>
                                 </div>
                                 <div className="flex justify-between text-[10px] uppercase tracking-[0.2em] text-black dark:text-white">
                                     <span className="opacity-50">Shipping</span>
-                                    <span className="font-bold">{shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}</span>
+                                    <span className="font-bold">{shipping === 0 ? 'FREE' : `₹${shipping.toFixed(2)}`}</span>
                                 </div>
                                 {shipping > 0 && (
-                                    <p className="text-[9px] text-gray-400 uppercase tracking-widest leading-relaxed">Spend ${(500 - subtotal).toFixed(2)} more for free delivery.</p>
+                                    <p className="text-[9px] text-gray-400 uppercase tracking-widest leading-relaxed">Spend ₹{(500 - subtotal).toFixed(2)} more for free delivery.</p>
                                 )}
                             </div>
 
@@ -133,7 +133,7 @@ const CartPage = () => {
 
                             <div className="flex justify-between text-2xl font-serif mb-10 text-black dark:text-white">
                                 <span className="uppercase tracking-tighter">Total</span>
-                                <span className="font-bold">${total.toFixed(2)}</span>
+                                <span className="font-bold">₹{total.toFixed(2)}</span>
                             </div>
 
                             <Link

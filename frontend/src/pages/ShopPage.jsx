@@ -3,24 +3,43 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Filter, X, ChevronDown, Search } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
-import { featuredProducts } from '../utils/mockData'
 
 const ShopPage = () => {
     const [searchParams, setSearchParams] = useSearchParams()
     const [isFilterOpen, setIsFilterOpen] = useState(false)
-    const [selectedCategory, setSelectedCategory] = useState('All')
+    const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'All')
     const [selectedPriceRange, setSelectedPriceRange] = useState('All')
     const [selectedSize, setSelectedSize] = useState('All')
     const [sortBy, setSortBy] = useState('Newest')
     const [isSortOpen, setIsSortOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
+    const [products, setProducts] = useState([])
 
     useEffect(() => {
         const query = searchParams.get('search')
+        const category = searchParams.get('category')
+
         if (query !== null) {
             setSearchQuery(query)
         }
+        if (category !== null) {
+            setSelectedCategory(category)
+        }
     }, [searchParams])
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const res = await fetch('https://clara-xpfh.onrender.com/products')
+                const data = await res.json()
+                setProducts(data.products || [])
+            } catch (err) {
+                console.error('Failed to load products', err)
+            }
+        }
+
+        fetchProducts()
+    }, [])
 
     const handleSearchChange = (e) => {
         const value = e.target.value
@@ -38,7 +57,7 @@ const ShopPage = () => {
     const sortOptions = ['Newest', 'Price: Low to High', 'Price: High to Low', 'Popular']
 
     const filteredProducts = useMemo(() => {
-        let result = [...featuredProducts]
+        let result = [...products]
 
         if (selectedCategory !== 'All') {
             result = result.filter(p => p.category === selectedCategory)
@@ -46,9 +65,9 @@ const ShopPage = () => {
 
         if (selectedPriceRange !== 'All') {
             result = result.filter(p => {
-                if (selectedPriceRange === 'Under $100') return p.price < 100
-                if (selectedPriceRange === '$100 - $300') return p.price >= 100 && p.price <= 300
-                if (selectedPriceRange === 'Above $300') return p.price > 300
+                if (selectedPriceRange === 'Under ₹100') return p.price < 100
+                if (selectedPriceRange === '₹100 - ₹300') return p.price >= 100 && p.price <= 300
+                if (selectedPriceRange === 'Above ₹300') return p.price > 300
                 return true
             })
         }
@@ -68,7 +87,7 @@ const ShopPage = () => {
         if (sortBy === 'Price: High to Low') result.sort((a, b) => b.price - a.price)
 
         return result
-    }, [selectedCategory, selectedPriceRange, selectedSize, sortBy, searchQuery])
+    }, [selectedCategory, selectedPriceRange, selectedSize, sortBy, searchQuery, products])
 
     return (
         <div className="pt-32 pb-24 min-h-screen bg-primary">
@@ -198,7 +217,7 @@ const ShopPage = () => {
                                 <div>
                                     <h3 className="text-[10px] uppercase tracking-[0.3em] font-bold mb-6 text-gray-500">Price Range</h3>
                                     <div className="flex flex-col gap-4">
-                                        {['All', 'Under $100', '$100 - $300', 'Above $300'].map(range => (
+                                        {['All', 'Under ₹100', '₹100 - ₹300', 'Above ₹300'].map(range => (
                                             <button
                                                 key={range}
                                                 onClick={() => setSelectedPriceRange(range)}

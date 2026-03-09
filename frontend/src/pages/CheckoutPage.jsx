@@ -100,7 +100,7 @@ const CheckoutPage = () => {
                                                     <p className="text-[10px] text-gray-500 mt-1">3-5 Business Days</p>
                                                 </div>
                                             </div>
-                                            <span className="text-xs font-bold font-sans">$25.00</span>
+                                            <span className="text-xs font-bold font-sans">₹25.00</span>
                                             <input type="radio" name="delivery" defaultChecked className="hidden" />
                                         </label>
                                         <label className="bg-neutral-900 border border-white/10 p-6 flex justify-between items-center cursor-pointer hover:border-white transition-all opacity-50">
@@ -188,23 +188,23 @@ const CheckoutPage = () => {
                                 {cart.map(item => (
                                     <div key={`${item.id}-${item.size}`} className="flex justify-between text-[10px] tracking-widest transition-all">
                                         <span className="text-gray-400 font-sans">{item.name} x {item.quantity}</span>
-                                        <span className="font-sans">${(item.price * item.quantity).toFixed(2)}</span>
+                                        <span className="font-sans">₹{(item.price * item.quantity).toFixed(2)}</span>
                                     </div>
                                 ))}
                             </div>
                             <div className="space-y-4 pt-8 border-t border-white/10 mb-8">
                                 <div className="flex justify-between text-[10px] tracking-widest text-gray-400 font-sans transition-all">
                                     <span>Subtotal</span>
-                                    <span>${subtotal.toFixed(2)}</span>
+                                    <span>₹{subtotal.toFixed(2)}</span>
                                 </div>
                                 <div className="flex justify-between text-[10px] tracking-widest text-gray-400 font-sans transition-all">
                                     <span>Shipping</span>
-                                    <span>{subtotal > 500 ? 'FREE' : '$25.00'}</span>
+                                    <span>{subtotal > 500 ? 'FREE' : '₹25.00'}</span>
                                 </div>
                             </div>
                             <div className="flex justify-between text-lg font-sans transition-all">
                                 <span className="tracking-widest">Total</span>
-                                <span className="font-bold">${total.toFixed(2)}</span>
+                                <span className="font-bold">₹{total.toFixed(2)}</span>
                             </div>
                         </div>
                     </div>

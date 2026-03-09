@@ -1,12 +1,45 @@
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { ArrowRight, ChevronDown } from 'lucide-react'
-import { useRef } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
-import { featuredProducts } from '../utils/mockData'
 
 const HomePage = () => {
     const containerRef = useRef(null)
+    const [products, setProducts] = useState([])
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const res = await fetch('https://clara-xpfh.onrender.com/products')
+                const data = await res.json()
+
+                const baseProducts = data.products.slice(0, 8)
+
+                const productsWithImages = await Promise.all(
+                    baseProducts.map(async (product) => {
+                        try {
+                            const imgRes = await fetch(`https://clara-xpfh.onrender.com/products/${product.id}/images`)
+                            const images = await imgRes.json()
+
+                            return {
+                                ...product,
+                                image: images?.[0]?.image_url || null
+                            }
+                        } catch (e) {
+                            return product
+                        }
+                    })
+                )
+
+                setProducts(productsWithImages)
+            } catch (err) {
+                console.error('Failed to load products', err)
+            }
+        }
+
+        fetchProducts()
+    }, [])
     const { scrollYProgress } = useScroll({
         target: containerRef,
         offset: ["start start", "end start"]
@@ -128,7 +161,7 @@ const HomePage = () => {
                     </div>
 
                     <div className="grid grid-cols-3 lg:grid-cols-4 gap-2 md:gap-8 gap-y-12 md:gap-y-16">
-                        {featuredProducts.map((product) => (
+                        {products.map((product) => (
                             <ProductCard key={product.id} product={product} />
                         ))}
                     </div>

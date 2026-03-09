@@ -86,9 +86,17 @@ const LoginPage = () => {
 
             const data = await response.json()
 
-            // Store JWT from backend
+            // Persist authentication in localStorage
             if (data.token) {
                 localStorage.setItem("token", data.token)
+
+                // also persist user object if backend sends it
+                if (data.user) {
+                    localStorage.setItem("user", JSON.stringify(data.user))
+                }
+
+                // mark session as authenticated for frontend guards
+                localStorage.setItem("isAuthenticated", "true")
             }
 
             addNotification(
