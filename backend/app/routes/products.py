@@ -4,9 +4,9 @@ from sqlalchemy import and_
 from app.database.db import get_db
 from app.models.product import Product
 from app.models.categories import Category
+from app.models.product_image import ProductImage
 
 from app.models.product_variant import ProductVariant
-from app.models.product_image import ProductImage
 
 router = APIRouter()
 
@@ -31,21 +31,19 @@ def get_products(
     products = []
 
     for product, category in results:
-        main_image = (
-            db.query(ProductImage.image_url)
-            .filter(ProductImage.product_id == product.id)
-            .order_by(ProductImage.position)
-            .first()
-        )
-
-        image_url = main_image[0] if main_image else None
+        # Standardize image fallback
+        display_image = product.image
+        if not display_image:
+            first_img = db.query(ProductImage).filter(ProductImage.product_id == product.id).order_by(ProductImage.position).first()
+            if first_img:
+                display_image = first_img.image_url
 
         products.append({
             "id": product.id,
             "name": product.name,
             "price": product.price,
             "category": category,
-            "image": image_url
+            "image": display_image
         })
 
     return {
@@ -63,12 +61,19 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
     
     variants = db.query(ProductVariant).filter(ProductVariant.product_id == product_id).all()
     
+    # Standardize image fallback
+    display_image = product.image
+    if not display_image:
+        first_img = db.query(ProductImage).filter(ProductImage.product_id == product.id).order_by(ProductImage.position).first()
+        if first_img:
+            display_image = first_img.image_url
+
     product_data = {
         "id": product.id,
         "name": product.name,
         "description": product.description,
         "price": product.price,
-        "image": product.image,
+        "image": display_image,
         "category_id": product.category_id,
         "variants": [
             {
@@ -102,20 +107,11 @@ def get_related_products(product_id: int, db: Session = Depends(get_db)):
     result = []
 
     for p in related_products:
-        main_image = (
-            db.query(ProductImage.image_url)
-            .filter(ProductImage.product_id == p.id)
-            .order_by(ProductImage.position)
-            .first()
-        )
-
-        image_url = main_image[0] if main_image else None
-
         result.append({
             "id": p.id,
             "name": p.name,
             "price": p.price,
-            "image": image_url
+            "image": p.image
         })
 
     return result
