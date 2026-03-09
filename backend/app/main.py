@@ -22,12 +22,15 @@ from app.routes import reviews
 from app.routes import upload
 from app.routes import wishlist
 
-app = FastAPI(title="CLARA API")
+app = FastAPI(title="NAME API")
 
 origins = [
-    "http://localhost:5174",
+    "http://localhost:5173",
     "http://localhost:5174",
     "http://localhost:5175",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
+    "http://127.0.0.1:5175",
     "https://clara-test-v1.netlify.app",
 ]
 
