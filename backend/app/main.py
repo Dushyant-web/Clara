@@ -61,4 +61,4 @@ app.include_router(upload.router)
 
 @app.get("/")
 def root():
-    return {"message": "CLARA backend running"}
+    return {"message": "Name backend running"}

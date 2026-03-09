@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Body
 from sqlalchemy.orm import Session
 
 from app.database.db import get_db
@@ -8,8 +8,9 @@ router = APIRouter()
 
 
 @router.post("/ai/chat")
-def ai_chat(message: str, db: Session = Depends(get_db)):
+def ai_chat(data: dict = Body(...), db: Session = Depends(get_db)):
 
+    message = data.get("message", "")
     msg = message.lower()
 
     # hoodie search
