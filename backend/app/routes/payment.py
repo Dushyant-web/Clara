@@ -6,6 +6,8 @@ import os
 from app.database.db import get_db
 from app.models.payment import Payment
 from app.models.order import Order
+from app.models.cart_item import CartItem
+from app.schemas.checkout_schema import PaymentCreateRequest, PaymentConfirmRequest
 
 from fastapi import Header
 
@@ -21,7 +23,9 @@ router = APIRouter()
 
 
 @router.post("/payment/create")
-def create_payment(order_id: int, provider: str, db: Session = Depends(get_db)):
+def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db)):
+    order_id = request.order_id
+    provider = request.provider
 
     existing = db.query(Payment).filter(Payment.order_id == order_id).first()
 
@@ -71,7 +75,9 @@ def create_payment(order_id: int, provider: str, db: Session = Depends(get_db)):
     }
 
 @router.post("/payment/confirm")
-def confirm_payment(payment_id: int, transaction_id: str, db: Session = Depends(get_db)):
+def confirm_payment(request: PaymentConfirmRequest, db: Session = Depends(get_db)):
+    payment_id = request.payment_id
+    transaction_id = request.transaction_id
 
     payment = db.query(Payment).filter(Payment.id == payment_id).first()
 
@@ -88,6 +94,8 @@ def confirm_payment(payment_id: int, transaction_id: str, db: Session = Depends(
 
     if order:
         order.status = "confirmed"
+        # Clear cart upon successful payment
+        db.query(CartItem).filter(CartItem.user_id == order.user_id).delete()
 
     db.commit()
 
@@ -146,6 +154,8 @@ async def razorpay_webhook(request: Request, db: Session = Depends(get_db)):
 
     if order:
         order.status = "confirmed"
+        # Clear cart upon successful payment
+        db.query(CartItem).filter(CartItem.user_id == order.user_id).delete()
 
     db.commit()
 

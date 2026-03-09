@@ -2,13 +2,16 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database.db import get_db
 from app.models.promo_code import PromoCode
+from app.schemas.checkout_schema import PromoApplyRequest
 from datetime import datetime
 
 router = APIRouter()
 
 
 @router.post("/promo/apply")
-def apply_promo(code: str, order_amount: float, db: Session = Depends(get_db)):
+def apply_promo(request: PromoApplyRequest, db: Session = Depends(get_db)):
+    code = request.code
+    order_amount = request.order_amount
 
     promo = db.query(PromoCode).filter(PromoCode.code == code).first()
 
