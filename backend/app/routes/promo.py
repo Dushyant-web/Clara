@@ -1,76 +1,103 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+
 from app.database.db import get_db
-from app.models.promo_code import PromoCode
-from app.schemas.checkout_schema import PromoApplyRequest
-from datetime import datetime
+from app.models.cart_item import CartItem
+from app.models.product_variant import ProductVariant
+from app.models.order import Order
+from app.models.order_item import OrderItem
+from app.models.user import User
 
 router = APIRouter()
 
 
-@router.post("/promo/apply")
-def apply_promo(request: PromoApplyRequest, db: Session = Depends(get_db)):
-    code = request.code
-    # If order_id is provided, use order total. Otherwise, calculate from user's cart.
-    if request.order_id:
-        from app.models.order import Order
-        order = db.query(Order).filter(Order.id == request.order_id).first()
-        if not order:
-            raise HTTPException(status_code=404, detail="Order not found")
-        order_amount = float(order.total_amount)
-    else:
-        from app.models.cart_item import CartItem
-        from app.models.product_variant import ProductVariant
-        cart_items = db.query(CartItem).filter(CartItem.user_id == request.user_id).all()
+@router.post("/checkout")
+def checkout(user_id: int, promo_code: str | None = None, idempotency_key: str | None = None, db: Session = Depends(get_db)):
+
+    # --- Idempotency check ---
+    if idempotency_key:
+        existing_order = db.query(Order).filter(
+            Order.user_id == user_id,
+            Order.status == "pending"
+        ).order_by(Order.created_at.desc()).first()
+
+        if existing_order:
+            # If promo_code is provided, update the existing order's amount
+            if promo_code:
+                try:
+                    from app.routes.promo import apply_promo
+                    from app.schemas.checkout_schema import PromoApplyRequest
+                    # apply_promo will update existing_order.total_amount because we pass order_id
+                    apply_promo(
+                        PromoApplyRequest(code=promo_code, user_id=user_id, order_id=existing_order.id),
+                        db
+                    )
+                except Exception:
+                    pass
+            
+            return {
+                "message": "order already created",
+                "order_id": existing_order.id,
+                "total": float(existing_order.total_amount)
+            }
+
+    # Start single transaction for entire checkout
+    with db.begin():
+
+        cart_items = db.query(CartItem).filter(CartItem.user_id == user_id).all()
+
         if not cart_items:
             raise HTTPException(status_code=400, detail="Cart is empty")
-        
-        order_amount = 0
+
+        total = 0
+
         for item in cart_items:
-            variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
-            if variant:
-                order_amount += float(variant.price) * item.quantity
 
-    promo = db.query(PromoCode).filter(PromoCode.code == code).first()
+            variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).with_for_update().first()
 
-    if not promo:
-        raise HTTPException(status_code=404, detail="Promo not found")
+            if variant.stock < item.quantity:
+                raise HTTPException(status_code=400, detail="Product out of stock")
 
-    if not promo.active:
-        raise HTTPException(status_code=400, detail="Promo inactive")
+            total += variant.price * item.quantity
 
-    if promo.expires_at and promo.expires_at < datetime.utcnow():
-        raise HTTPException(status_code=400, detail="Promo expired")
+        order_amount = total
+        if promo_code:
+            try:
+                from app.routes.promo import apply_promo
+                from app.schemas.checkout_schema import PromoApplyRequest
+                
+                # Validation only (order not created yet)
+                promo_result = apply_promo(
+                    PromoApplyRequest(code=promo_code, user_id=user_id),
+                    db
+                )
+                order_amount = promo_result["final_amount"]
+            except Exception:
+                pass
 
-    # Prevent infinite reuse of promo codes
-    if promo.usage_limit is not None:
-        if promo.usage_limit <= 0:
-            raise HTTPException(status_code=400, detail="Promo usage limit reached")
+        order = Order(
+            user_id=user_id,
+            total_amount=order_amount
+        )
 
-    if order_amount < promo.min_order_amount:
-        raise HTTPException(status_code=400, detail="Minimum order not met")
+        db.add(order)
+        db.flush()  
+        db.refresh(order)
 
-    if promo.discount_type == "percentage":
-        discount = order_amount * float(promo.discount_value) / 100
+        for item in cart_items:
+            variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).with_for_update().first()
+            variant.stock -= item.quantity
 
-        if promo.max_discount:
-            discount = min(discount, float(promo.max_discount))
-
-    else:
-        discount = float(promo.discount_value)
-
-    # Ensure the final payable amount never goes below ₹1
-    final_amount = max(order_amount - discount, 1)
-
-    # Only update DB if an actual order exists (final checkout step)
-    if request.order_id:
-        order.total_amount = final_amount
-        if promo.usage_limit is not None:
-            promo.usage_limit -= 1
-        db.commit()
+            order_item = OrderItem(
+                order_id=order.id,
+                variant_id=item.variant_id,
+                quantity=item.quantity,
+                price=variant.price
+            )
+            db.add(order_item)
 
     return {
-        "promo": promo.code,
-        "discount": discount,
-        "final_amount": final_amount
+        "message": "order created",
+        "order_id": order.id,
+        "total": float(order.total_amount)
     }
