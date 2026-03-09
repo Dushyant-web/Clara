@@ -15,18 +15,30 @@ router = APIRouter()
 def checkout(user_id: int, promo_code: str | None = None, idempotency_key: str | None = None, db: Session = Depends(get_db)):
 
     # --- Idempotency check ---
-    # ... (rest of idempotency logic)
     if idempotency_key:
         existing_order = db.query(Order).filter(
             Order.user_id == user_id,
             Order.status == "pending"
-        ).first()
+        ).order_by(Order.created_at.desc()).first()
 
         if existing_order:
+            # If promo_code is provided, update the existing order's amount
+            if promo_code:
+                try:
+                    from app.routes.promo import apply_promo
+                    from app.schemas.checkout_schema import PromoApplyRequest
+                    # apply_promo will update existing_order.total_amount because we pass order_id
+                    apply_promo(
+                        PromoApplyRequest(code=promo_code, user_id=user_id, order_id=existing_order.id),
+                        db
+                    )
+                except Exception:
+                    pass
+            
             return {
                 "message": "order already created",
                 "order_id": existing_order.id,
-                "total": existing_order.total_amount
+                "total": float(existing_order.total_amount)
             }
 
     # Start single transaction for entire checkout
@@ -46,24 +58,21 @@ def checkout(user_id: int, promo_code: str | None = None, idempotency_key: str |
             if variant.stock < item.quantity:
                 raise HTTPException(status_code=400, detail="Product out of stock")
 
-            order_amount = total
-        discount = 0
+            total += variant.price * item.quantity
+
+        order_amount = total
         if promo_code:
-            from app.models.promo_code import PromoCode
-            from app.routes.promo import apply_promo
-            from app.schemas.checkout_schema import PromoApplyRequest
-            
             try:
-                # Reuse apply_promo logic for consistency
+                from app.routes.promo import apply_promo
+                from app.schemas.checkout_schema import PromoApplyRequest
+                
+                # Validation only (order not created yet)
                 promo_result = apply_promo(
                     PromoApplyRequest(code=promo_code, user_id=user_id),
                     db
                 )
-                discount = promo_result["discount"]
                 order_amount = promo_result["final_amount"]
-            except HTTPException:
-                # If promo is invalid at checkout time, we just proceed with full price
-                # or we could raise an error. For now, let's just log it or ignore.
+            except Exception:
                 pass
 
         order = Order(
@@ -72,15 +81,11 @@ def checkout(user_id: int, promo_code: str | None = None, idempotency_key: str |
         )
 
         db.add(order)
-        db.flush()  # ensures order gets an ID before creating order_items
+        db.flush()  
         db.refresh(order)
 
-        order_items = []
-
         for item in cart_items:
-
             variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).with_for_update().first()
-
             variant.stock -= item.quantity
 
             order_item = OrderItem(
@@ -89,16 +94,10 @@ def checkout(user_id: int, promo_code: str | None = None, idempotency_key: str |
                 quantity=item.quantity,
                 price=variant.price
             )
-
             db.add(order_item)
-            order_items.append(order_item)
-
-        # Note: Cart is no longer cleared here. 
-        # It will be cleared in /payment/confirm to ensure no data loss on payment cancel.
-
 
     return {
         "message": "order created",
         "order_id": order.id,
-        "total": total
+        "total": float(order.total_amount)
     }
