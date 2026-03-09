@@ -74,7 +74,8 @@ def checkout(user_id: int, idempotency_key: str | None = None, db: Session = Dep
             db.add(order_item)
             order_items.append(order_item)
 
-        db.query(CartItem).filter(CartItem.user_id == user_id).delete()
+        # Note: Cart is no longer cleared here. 
+        # It will be cleared in /payment/confirm to ensure no data loss on payment cancel.
 
 
     return {
