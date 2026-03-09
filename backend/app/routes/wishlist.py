@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.database import get_db
+from app.database.db import get_db
 from app.models.wishlist import Wishlist
+from app.models.product import Product
+from app.models.categories import Category
 from datetime import datetime
 
 router = APIRouter(prefix="/wishlist", tags=["Wishlist"])
@@ -31,14 +33,29 @@ def add_to_wishlist(user_id: int, product_id: int, db: Session = Depends(get_db)
 
     return {"message": "Product added to wishlist", "wishlist_id": item.id}
 
-
 # Get wishlist for user
 @router.get("/{user_id}")
 def get_wishlist(user_id: int, db: Session = Depends(get_db)):
 
-    items = db.query(Wishlist).filter(Wishlist.user_id == user_id).all()
+    results = (
+        db.query(Product, Category.name.label("category"))
+        .join(Wishlist, Wishlist.product_id == Product.id)
+        .outerjoin(Category, Product.category_id == Category.id)
+        .filter(Wishlist.user_id == user_id)
+        .all()
+    )
 
-    return items
+    wishlist_items = []
+    for product, category in results:
+        wishlist_items.append({
+            "id": product.id,
+            "name": product.name,
+            "price": product.price,
+            "category": category,
+            "image": product.image # Assuming this contains the main image URL
+        })
+
+    return wishlist_items
 
 
 # Remove from wishlist
