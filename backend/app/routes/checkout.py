@@ -12,9 +12,10 @@ router = APIRouter()
 
 
 @router.post("/checkout")
-def checkout(user_id: int, idempotency_key: str | None = None, db: Session = Depends(get_db)):
+def checkout(user_id: int, promo_code: str | None = None, idempotency_key: str | None = None, db: Session = Depends(get_db)):
 
-    # --- Idempotency check (prevents duplicate orders if user clicks pay twice) ---
+    # --- Idempotency check ---
+    # ... (rest of idempotency logic)
     if idempotency_key:
         existing_order = db.query(Order).filter(
             Order.user_id == user_id,
@@ -45,11 +46,29 @@ def checkout(user_id: int, idempotency_key: str | None = None, db: Session = Dep
             if variant.stock < item.quantity:
                 raise HTTPException(status_code=400, detail="Product out of stock")
 
-            total += variant.price * item.quantity
+            order_amount = total
+        discount = 0
+        if promo_code:
+            from app.models.promo_code import PromoCode
+            from app.routes.promo import apply_promo
+            from app.schemas.checkout_schema import PromoApplyRequest
+            
+            try:
+                # Reuse apply_promo logic for consistency
+                promo_result = apply_promo(
+                    PromoApplyRequest(code=promo_code, user_id=user_id),
+                    db
+                )
+                discount = promo_result["discount"]
+                order_amount = promo_result["final_amount"]
+            except HTTPException:
+                # If promo is invalid at checkout time, we just proceed with full price
+                # or we could raise an error. For now, let's just log it or ignore.
+                pass
 
         order = Order(
             user_id=user_id,
-            total_amount=total
+            total_amount=order_amount
         )
 
         db.add(order)

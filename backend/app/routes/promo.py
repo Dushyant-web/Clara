@@ -11,14 +11,25 @@ router = APIRouter()
 @router.post("/promo/apply")
 def apply_promo(request: PromoApplyRequest, db: Session = Depends(get_db)):
     code = request.code
-    # Fetch the order directly from DB instead of trusting frontend price
-    from app.models.order import Order
-    order = db.query(Order).filter(Order.id == request.order_id).first()
-
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
-
-    order_amount = float(order.total_amount)
+    # If order_id is provided, use order total. Otherwise, calculate from user's cart.
+    if request.order_id:
+        from app.models.order import Order
+        order = db.query(Order).filter(Order.id == request.order_id).first()
+        if not order:
+            raise HTTPException(status_code=404, detail="Order not found")
+        order_amount = float(order.total_amount)
+    else:
+        from app.models.cart_item import CartItem
+        from app.models.product_variant import ProductVariant
+        cart_items = db.query(CartItem).filter(CartItem.user_id == request.user_id).all()
+        if not cart_items:
+            raise HTTPException(status_code=400, detail="Cart is empty")
+        
+        order_amount = 0
+        for item in cart_items:
+            variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
+            if variant:
+                order_amount += float(variant.price) * item.quantity
 
     promo = db.query(PromoCode).filter(PromoCode.code == code).first()
 
@@ -51,12 +62,12 @@ def apply_promo(request: PromoApplyRequest, db: Session = Depends(get_db)):
     # Ensure the final payable amount never goes below ₹1
     final_amount = max(order_amount - discount, 1)
 
-    # Update order total so payment uses the discounted amount
-    order.total_amount = final_amount
-    # Decrease promo usage count after successful application
-    if promo.usage_limit is not None:
-        promo.usage_limit -= 1
-    db.commit()
+    # Only update DB if an actual order exists (final checkout step)
+    if request.order_id:
+        order.total_amount = final_amount
+        if promo.usage_limit is not None:
+            promo.usage_limit -= 1
+        db.commit()
 
     return {
         "promo": promo.code,

@@ -3,7 +3,8 @@ from typing import Optional
 
 class PromoApplyRequest(BaseModel):
     code: str
-    order_id: int
+    user_id: int
+    order_id: Optional[int] = None
 
 class PaymentCreateRequest(BaseModel):
     order_id: int
