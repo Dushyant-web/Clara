@@ -32,14 +32,17 @@ def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db))
     if existing:
         # If it's an existing record but missing razorpay_order_id, regenerate it
         if not existing.razorpay_order_id and provider in ["upi", "card"]:
-            razorpay_order = razorpay_client.order.create({
-                "amount": int(existing.amount * 100),
-                "currency": "INR",
-                "payment_capture": 1
-            })
-            existing.razorpay_order_id = razorpay_order["id"]
-            db.commit()
-            db.refresh(existing)
+            try:
+                razorpay_order = razorpay_client.order.create({
+                    "amount": int(existing.amount * 100),
+                    "currency": "INR",
+                    "payment_capture": 1
+                })
+                existing.razorpay_order_id = razorpay_order["id"]
+                db.commit()
+                db.refresh(existing)
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Existing Payment Razorpay Recovery Failed: {str(e)}")
             
         return {
             "payment_id": existing.id,
@@ -64,11 +67,14 @@ def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db))
     razorpay_order = None
 
     if provider in ["upi", "card"]:
-        razorpay_order = razorpay_client.order.create({
-            "amount": int(order.total_amount * 100),
-            "currency": "INR",
-            "payment_capture": 1
-        })
+        try:
+            razorpay_order = razorpay_client.order.create({
+                "amount": int(order.total_amount * 100),
+                "currency": "INR",
+                "payment_capture": 1
+            })
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Razorpay Error: {str(e)}")
 
     db.add(payment)
 
