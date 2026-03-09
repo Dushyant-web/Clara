@@ -49,7 +49,7 @@ def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db))
             "payment_id": existing.id,
             "provider": existing.provider,
             "amount": existing.amount,
-            "razorpay_order_id": existing.razorpay_order_id,
+            "razorpay_order_id": getattr(existing, "razorpay_order_id", None),
             "message": "payment already created"
         }
 
