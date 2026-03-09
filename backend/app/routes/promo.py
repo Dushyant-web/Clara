@@ -11,7 +11,14 @@ router = APIRouter()
 @router.post("/promo/apply")
 def apply_promo(request: PromoApplyRequest, db: Session = Depends(get_db)):
     code = request.code
-    order_amount = request.order_amount
+    # Fetch the order directly from DB instead of trusting frontend price
+    from app.models.order import Order
+    order = db.query(Order).filter(Order.id == request.order_id).first()
+
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    order_amount = float(order.total_amount)
 
     promo = db.query(PromoCode).filter(PromoCode.code == code).first()
 
@@ -36,7 +43,12 @@ def apply_promo(request: PromoApplyRequest, db: Session = Depends(get_db)):
     else:
         discount = float(promo.discount_value)
 
-    final_amount = order_amount - discount
+    # Ensure the final payable amount never goes below ₹1
+    final_amount = max(order_amount - discount, 1)
+
+    # Update order total so payment uses the discounted amount
+    order.total_amount = final_amount
+    db.commit()
 
     return {
         "promo": promo.code,
