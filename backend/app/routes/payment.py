@@ -31,14 +31,15 @@ def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db))
 
     if existing:
         # If it's an existing record but missing razorpay_order_id, regenerate it
-        if not existing.razorpay_order_id and provider in ["upi", "card"]:
+        if not getattr(existing, "razorpay_order_id", None) and provider in ["upi", "card"]:
             try:
                 razorpay_order = razorpay_client.order.create({
                     "amount": int(existing.amount * 100),
                     "currency": "INR",
                     "payment_capture": 1
                 })
-                existing.razorpay_order_id = razorpay_order["id"]
+                if hasattr(existing, "razorpay_order_id"):
+                    existing.razorpay_order_id = razorpay_order["id"]
                 db.commit()
                 db.refresh(existing)
             except Exception as e:
@@ -79,7 +80,7 @@ def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db))
     db.add(payment)
 
     # store razorpay order id if created
-    if razorpay_order:
+    if razorpay_order and hasattr(payment, "razorpay_order_id"):
         payment.razorpay_order_id = razorpay_order["id"]
 
     db.commit()
