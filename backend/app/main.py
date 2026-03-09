@@ -26,6 +26,7 @@ app = FastAPI(title="CLARA API")
 origins = [
     "http://localhost:5174",
     "http://localhost:5174",
+    "http://localhost:5175",
     "https://clara-test-v1.netlify.app",
 ]
 
