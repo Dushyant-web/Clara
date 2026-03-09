@@ -20,3 +20,5 @@ class Payment(Base):
     amount = Column(Numeric)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    razorpay_order_id = Column(String, nullable=True)
