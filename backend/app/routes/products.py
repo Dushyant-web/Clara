@@ -31,12 +31,21 @@ def get_products(
     products = []
 
     for product, category in results:
+        main_image = (
+            db.query(ProductImage.image_url)
+            .filter(ProductImage.product_id == product.id)
+            .order_by(ProductImage.position)
+            .first()
+        )
+
+        image_url = main_image[0] if main_image else None
+
         products.append({
             "id": product.id,
             "name": product.name,
             "price": product.price,
             "category": category,
-            "image": product.image
+            "image": image_url
         })
 
     return {
@@ -93,11 +102,20 @@ def get_related_products(product_id: int, db: Session = Depends(get_db)):
     result = []
 
     for p in related_products:
+        main_image = (
+            db.query(ProductImage.image_url)
+            .filter(ProductImage.product_id == p.id)
+            .order_by(ProductImage.position)
+            .first()
+        )
+
+        image_url = main_image[0] if main_image else None
+
         result.append({
             "id": p.id,
             "name": p.name,
             "price": p.price,
-            "image": p.image
+            "image": image_url
         })
 
     return result
