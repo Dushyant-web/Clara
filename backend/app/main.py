@@ -20,6 +20,7 @@ from app.routes import newsletter
 from app.routes import ai
 from app.routes import reviews
 from app.routes import upload
+from app.routes import wishlist
 
 app = FastAPI(title="CLARA API")
 
@@ -57,6 +58,7 @@ app.include_router(newsletter.router)
 app.include_router(ai.router)
 app.include_router(reviews.router)
 app.include_router(upload.router)
+app.include_router(wishlist.router)
 
 
 @app.get("/")
