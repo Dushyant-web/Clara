@@ -38,8 +38,11 @@ def add_to_cart(data: dict, db: Session = Depends(get_db)):
         db.add(item)
 
     db.commit()
+    db.refresh(item)
 
-    return {"message": "cart updated"}
+    return {"message": "cart updated", "item_id": item.id}
+
+from app.models.product import Product
 
 @router.get("/cart/{user_id}")
 def get_cart(user_id: int, db: Session = Depends(get_db)):
@@ -50,30 +53,38 @@ def get_cart(user_id: int, db: Session = Depends(get_db)):
     subtotal = 0
 
     for item in items:
+        # Get variant and product info
         variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
-
         if not variant:
+            continue
+            
+        product = db.query(Product).filter(Product.id == variant.product_id).first()
+        if not product:
             continue
 
         price = variant.price
         item_total = price * item.quantity
-
         subtotal += item_total
 
         cart_items.append({
             "item_id": item.id,
+            "product_id": product.id,
             "variant_id": item.variant_id,
+            "name": product.name,
+            "image": product.image,
+            "size": variant.size,
+            "color": variant.color,
             "quantity": item.quantity,
-            "price": price,
-            "item_total": item_total
+            "price": float(price),
+            "item_total": float(item_total)
         })
 
-    cart_total = subtotal  # shipping/tax can be added later
+    cart_total = subtotal
 
     return {
         "items": cart_items,
-        "cart_subtotal": subtotal,
-        "cart_total": cart_total
+        "cart_subtotal": float(subtotal),
+        "cart_total": float(cart_total)
     }
 
 @router.delete("/cart/remove/{item_id}")

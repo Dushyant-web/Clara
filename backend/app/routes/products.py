@@ -5,7 +5,7 @@ from app.database.db import get_db
 from app.models.product import Product
 from app.models.categories import Category
 
-from app.models.product_image import ProductImage
+from app.models.product_variant import ProductVariant
 
 router = APIRouter()
 
@@ -34,7 +34,8 @@ def get_products(
             "id": product.id,
             "name": product.name,
             "price": product.price,
-            "category": category
+            "category": category,
+            "image": product.image
         })
 
     return {
@@ -47,7 +48,30 @@ def get_products(
 @router.get("/products/{product_id}")
 def get_product(product_id: int, db: Session = Depends(get_db)):
     product = db.query(Product).filter(Product.id == product_id).first()
-    return product
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    variants = db.query(ProductVariant).filter(ProductVariant.product_id == product_id).all()
+    
+    product_data = {
+        "id": product.id,
+        "name": product.name,
+        "description": product.description,
+        "price": product.price,
+        "image": product.image,
+        "category_id": product.category_id,
+        "variants": [
+            {
+                "id": v.id,
+                "size": v.size,
+                "color": v.color,
+                "price": v.price,
+                "stock": v.stock,
+                "sku": v.sku
+            } for v in variants
+        ]
+    }
+    return product_data
 
 @router.get("/products/{product_id}/related")
 def get_related_products(product_id: int, db: Session = Depends(get_db)):
