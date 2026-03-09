@@ -61,19 +61,12 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
     
     variants = db.query(ProductVariant).filter(ProductVariant.product_id == product_id).all()
     
-    # Standardize image fallback
-    display_image = product.image
-    if not display_image:
-        first_img = db.query(ProductImage).filter(ProductImage.product_id == product.id).order_by(ProductImage.position).first()
-        if first_img:
-            display_image = first_img.image_url
-
     product_data = {
         "id": product.id,
         "name": product.name,
         "description": product.description,
         "price": product.price,
-        "image": display_image,
+        "image": product.image,
         "category_id": product.category_id,
         "variants": [
             {
