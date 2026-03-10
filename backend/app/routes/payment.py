@@ -96,7 +96,7 @@ def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db))
     if provider in ["upi", "card"]:
         try:
             razorpay_order = razorpay_client.order.create({
-                "amount": int(order.total_amount * 100),
+                "amount": int(round(float(order.total_amount) * 100)),
                 "currency": "INR",
                 "payment_capture": 1
             })
