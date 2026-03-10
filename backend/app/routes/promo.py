@@ -18,6 +18,9 @@ def apply_promo(request: PromoApplyRequest, db: Session = Depends(get_db)):
         if not order:
             raise HTTPException(status_code=404, detail="Order not found")
         order_amount = float(order.total_amount)
+        # Prevent applying multiple promo codes to the same order
+        if hasattr(order, "promo_code") and order.promo_code:
+            raise HTTPException(status_code=400, detail="Promo code already applied to this order")
     else:
         from app.models.cart_item import CartItem
         from app.models.product_variant import ProductVariant
@@ -65,6 +68,7 @@ def apply_promo(request: PromoApplyRequest, db: Session = Depends(get_db)):
     # Only update DB if an actual order exists (final checkout step)
     if request.order_id:
         order.total_amount = final_amount
+        order.promo_code = promo.code
         if promo.usage_limit is not None:
             promo.usage_limit -= 1
         db.commit()

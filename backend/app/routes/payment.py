@@ -7,6 +7,9 @@ from app.database.db import get_db
 from app.models.payment import Payment
 from app.models.order import Order
 from app.models.cart_item import CartItem
+from app.models.order_item import OrderItem
+from app.models.product_variant import ProductVariant
+from app.models.inventory_reservation import InventoryReservation
 from app.schemas.checkout_schema import PaymentCreateRequest, PaymentConfirmRequest
 
 from fastapi import Header
@@ -30,6 +33,10 @@ def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db))
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         return {"error": "Order not found"}
+
+    # Prevent creating payment for an already paid/confirmed order
+    if getattr(order, "status", None) in ["paid", "confirmed"]:
+        raise HTTPException(status_code=400, detail="Order already paid or confirmed")
 
     existing = db.query(Payment).filter(Payment.order_id == order_id).first()
 
@@ -123,6 +130,17 @@ def confirm_payment(request: PaymentConfirmRequest, db: Session = Depends(get_db
 
     if order:
         order.status = "confirmed"
+
+        # Reduce stock for purchased variants
+        items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
+        for item in items:
+            variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
+            if variant:
+                variant.stock -= item.quantity
+
+        # Remove inventory reservations for this user/order
+        db.query(InventoryReservation).filter(InventoryReservation.user_id == order.user_id).delete()
+
         # Clear cart upon successful payment
         db.query(CartItem).filter(CartItem.user_id == order.user_id).delete()
 
@@ -183,6 +201,17 @@ async def razorpay_webhook(request: Request, db: Session = Depends(get_db)):
 
     if order:
         order.status = "confirmed"
+
+        # Reduce stock for purchased variants
+        items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
+        for item in items:
+            variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
+            if variant:
+                variant.stock -= item.quantity
+
+        # Remove inventory reservations for this user/order
+        db.query(InventoryReservation).filter(InventoryReservation.user_id == order.user_id).delete()
+
         # Clear cart upon successful payment
         db.query(CartItem).filter(CartItem.user_id == order.user_id).delete()
 

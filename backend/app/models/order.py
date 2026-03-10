@@ -11,7 +11,14 @@ class Order(Base):
 
     user_id = Column(Integer, ForeignKey("users.id"))
 
-    status = Column(String, default="pending")
+    # Order lifecycle status
+    # pending → order created, payment not completed
+    # paid → payment confirmed
+    # processing → order being prepared/packed
+    # shipped → courier picked up
+    # delivered → order delivered to customer
+    # cancelled → order cancelled/refunded
+    status = Column(String, default="pending", index=True)
 
     total_amount = Column(Integer)
 
