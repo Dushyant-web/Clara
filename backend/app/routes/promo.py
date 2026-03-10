@@ -5,10 +5,10 @@ from app.models.promo_code import PromoCode
 from app.schemas.checkout_schema import PromoApplyRequest
 from datetime import datetime
 
-router = APIRouter(prefix="/promo")
+router = APIRouter()
 
 
-@router.post("/apply")
+@router.post("/promo/apply")
 def apply_promo(request: PromoApplyRequest, db: Session = Depends(get_db)):
     code = request.code
     # If order_id is provided, use order total. Otherwise, calculate from user's cart.
