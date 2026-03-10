@@ -25,6 +25,12 @@ if not os.getenv("RAZORPAY_KEY_ID") or not os.getenv("RAZORPAY_KEY_SECRET"):
 router = APIRouter()
 
 
+@router.get("/payment/config")
+def get_payment_config():
+    return {
+        "key": os.getenv("RAZORPAY_KEY_ID")
+    }
+
 @router.post("/payment/create")
 def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db)):
     order_id = request.order_id
