@@ -14,12 +14,15 @@ from app.schemas.checkout_schema import PaymentCreateRequest, PaymentConfirmRequ
 
 from fastapi import Header
 
+razorpay_key_id = (os.getenv("RAZORPAY_KEY_ID") or "").strip()
+razorpay_key_secret = (os.getenv("RAZORPAY_KEY_SECRET") or "").strip()
+
 razorpay_client = razorpay.Client(auth=(
-    os.getenv("RAZORPAY_KEY_ID"),
-    os.getenv("RAZORPAY_KEY_SECRET")
+    razorpay_key_id,
+    razorpay_key_secret
 ))
 
-if not os.getenv("RAZORPAY_KEY_ID") or not os.getenv("RAZORPAY_KEY_SECRET"):
+if not razorpay_key_id or not razorpay_key_secret:
     raise Exception("Razorpay keys not set in environment variables")
 
 router = APIRouter()
@@ -28,7 +31,7 @@ router = APIRouter()
 @router.get("/payment/config")
 def get_payment_config():
     return {
-        "key": os.getenv("RAZORPAY_KEY_ID")
+        "key": razorpay_key_id
     }
 
 @router.post("/payment/create")
