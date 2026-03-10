@@ -27,30 +27,40 @@ def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db))
     order_id = request.order_id
     provider = request.provider
 
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        return {"error": "Order not found"}
+
     existing = db.query(Payment).filter(Payment.order_id == order_id).first()
 
     if existing:
-        # If it's an existing record but missing razorpay_order_id, regenerate it
-        if not getattr(existing, "razorpay_order_id", None) and provider in ["upi", "card"]:
+        # If order amount changed (e.g. promo applied later), regenerate Razorpay order
+        amount_changed = float(existing.amount) != float(order.total_amount)
+        
+        if amount_changed or (not getattr(existing, "razorpay_order_id", None) and provider in ["upi", "card"]):
             try:
-                razorpay_order = razorpay_client.order.create({
-                    "amount": int(existing.amount * 100),
-                    "currency": "INR",
-                    "payment_capture": 1
-                })
-                if hasattr(existing, "razorpay_order_id"):
+                # Update payment amount to match current order total
+                existing.amount = order.total_amount
+                
+                if provider in ["upi", "card"]:
+                    razorpay_order = razorpay_client.order.create({
+                        "amount": int(float(order.total_amount) * 100),
+                        "currency": "INR",
+                        "payment_capture": 1
+                    })
                     existing.razorpay_order_id = razorpay_order["id"]
+                
                 db.commit()
                 db.refresh(existing)
             except Exception as e:
-                raise HTTPException(status_code=400, detail=f"Existing Payment Razorpay Recovery Failed: {str(e)}")
+                raise HTTPException(status_code=400, detail=f"Payment Amount Sync Failed: {str(e)}")
             
         return {
             "payment_id": existing.id,
             "provider": existing.provider,
-            "amount": existing.amount,
+            "amount": float(existing.amount),
             "razorpay_order_id": getattr(existing, "razorpay_order_id", None),
-            "message": "payment already created"
+            "message": "payment updated" if amount_changed else "payment already created"
         }
 
     order = db.query(Order).filter(Order.id == order_id).first()
