@@ -1,5 +1,6 @@
-import { Link } from 'react-router-dom'
-import { Instagram, Twitter, Facebook, ArrowRight } from 'lucide-react'
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Instagram, Twitter, Facebook, ArrowRight } from 'lucide-react';
 
 const Footer = () => {
     return (
@@ -9,7 +10,7 @@ const Footer = () => {
                     {/* Brand Info */}
                     <div className="lg:col-span-1">
                         <Link to="/" className="text-2xl font-serif font-bold tracking-tighter mb-6 block brand-blue">
-                            CLARA.
+                            NAME.
                         </Link>
                         <p className="text-gray-400 text-sm leading-relaxed max-w-xs mb-8">
                             Luxury minimal crafted for the bold. Minimalist designs, high-end quality, and cinematic aesthetics.
@@ -49,15 +50,42 @@ const Footer = () => {
                     <div>
                         <h4 className="text-xs uppercase tracking-[0.3em] font-semibold mb-8">Newsletter</h4>
                         <p className="text-gray-400 text-sm mb-6">Join the elite list for early collections and exclusive access.</p>
-                        <form className="relative group">
+                        <form
+                            className="relative group"
+                            onSubmit={async (e) => {
+                                e.preventDefault();
+                                const email = e.target.email.value;
+                                if (!email) return;
+
+                                const btn = e.target.querySelector('button');
+                                const originalIcon = btn.innerHTML;
+                                btn.disabled = true;
+                                btn.innerHTML = '<span class="animate-pulse">...</span>';
+
+                                try {
+                                    const { newsletterService } = await import('../services/newsletterService');
+                                    await newsletterService.subscribe(email);
+                                    e.target.reset();
+                                    alert('WELCOME TO THE ELITE LIST.');
+                                } catch (err) {
+                                    console.error('Newsletter failed', err);
+                                    alert('CONNECTION ERROR. PLEASE TRY AGAIN.');
+                                } finally {
+                                    btn.disabled = false;
+                                    btn.innerHTML = originalIcon;
+                                }
+                            }}
+                        >
                             <input
                                 type="email"
+                                name="email"
                                 placeholder="YOUR EMAIL"
                                 className="w-full bg-transparent border-b border-secondary/20 py-3 text-sm focus:outline-none focus:border-secondary transition-all uppercase tracking-widest text-secondary"
+                                required
                             />
                             <button
                                 type="submit"
-                                className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                                className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors disabled:opacity-30"
                             >
                                 <ArrowRight size={18} />
                             </button>
@@ -67,7 +95,7 @@ const Footer = () => {
 
                 <div className="flex flex-col md:flex-row justify-between items-center gap-6 pt-12 border-t border-white/5">
                     <p className="text-[10px] uppercase tracking-widest text-gray-500">
-                        © 2026 CLARA LUXURY MINIMAL. ALL RIGHTS RESERVED.
+                        © 2026 NAME LUXURY MINIMAL. ALL RIGHTS RESERVED.
                     </p>
                     <div className="flex items-center gap-6">
                         <span className="text-[10px] uppercase tracking-widest text-gray-500 font-medium">Payment Methods</span>
@@ -80,7 +108,7 @@ const Footer = () => {
                 </div>
             </div>
         </footer>
-    )
-}
+    );
+};
 
-export default Footer
+export default Footer;

@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, User, Mail, Phone } from 'lucide-react'
+import { ArrowRight, User, Mail, Phone, ChevronRight } from 'lucide-react'
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth"
 import { auth } from "../firebase"
 import { useNotifications } from '../contexts/NotificationContext'
+import { useAuth } from '../contexts/AuthContext'
 
 const SignupPage = () => {
     const [step, setStep] = useState('info') // 'info' or 'otp'
@@ -14,17 +15,19 @@ const SignupPage = () => {
         phone: ''
     })
     const { showAlert, addNotification } = useNotifications()
+    const { signup } = useAuth()
     const [otp, setOtp] = useState(['', '', '', '', '', ''])
     const [confirmationResult, setConfirmationResult] = useState(null)
+    const [loading, setLoading] = useState(false)
     const navigate = useNavigate()
 
     const handleInfoSubmit = async (e) => {
         e.preventDefault()
-
         if (!formData.name || !formData.email || !formData.phone) {
             return showAlert('Please fill in all fields', 'error')
         }
 
+        setLoading(true)
         try {
             if (!window.recaptchaVerifier) {
                 window.recaptchaVerifier = new RecaptchaVerifier(
@@ -36,72 +39,47 @@ const SignupPage = () => {
             }
 
             const appVerifier = window.recaptchaVerifier
-
             const fullPhone = "+91" + formData.phone
-
             const result = await signInWithPhoneNumber(auth, fullPhone, appVerifier)
 
             setConfirmationResult(result)
-
             showAlert('OTP sent to ' + formData.phone, 'success')
-
             setStep('otp')
-
         } catch (error) {
             console.error(error)
             showAlert('Failed to send OTP', 'error')
+        } finally {
+            setLoading(false)
         }
     }
 
     const handleOtpComplete = async () => {
-
+        setLoading(true)
         try {
-
             const code = otp.join("")
-
             const result = await confirmationResult.confirm(code)
-
             const idToken = await result.user.getIdToken()
 
-            const response = await fetch("https://clara-xpfh.onrender.com/auth/signup", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    id_token: idToken,
-                    name: formData.name,
-                    email: formData.email
-                })
-            })
-
-            const data = await response.json()
-
-            if (data.access_token) {
-                localStorage.setItem("token", data.access_token)
-            }
+            // Use AuthContext signup which calls backend and handles state
+            await signup(idToken, formData.name, formData.email)
 
             addNotification(
                 'Account Created',
-                'Welcome to CLARA. Your account is ready.',
+                'Welcome to NAME. Your account is ready.',
                 'success'
             )
-
             navigate('/account')
-
         } catch (error) {
             console.error(error)
             showAlert('Invalid OTP', 'error')
+        } finally {
+            setLoading(false)
         }
     }
 
     return (
-        <div className="min-h-screen bg-primary flex items-center justify-center p-6">
+        <div className="min-h-screen bg-primary flex items-center justify-center p-6 transition-colors duration-500">
             <div className="w-full max-w-md">
-                <div className="text-center mb-16">
-                    <div className="h-px w-12 bg-secondary/20 mx-auto" />
-                </div>
-
                 <AnimatePresence mode="wait">
                     {step === 'info' && (
                         <motion.div
@@ -112,8 +90,8 @@ const SignupPage = () => {
                             className="space-y-10"
                         >
                             <div className="space-y-4 text-center">
-                                <h2 className="text-2xl font-serif tracking-tighter uppercase">Join CLARA</h2>
-                                <p className="text-[10px] text-gray-500 uppercase tracking-widest">Create an account for exclusive access.</p>
+                                <h2 className="text-4xl font-serif tracking-tighter uppercase text-secondary">Join NAME</h2>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Create an account for exclusive access.</p>
                             </div>
 
                             <form onSubmit={handleInfoSubmit} className="space-y-8">
@@ -125,7 +103,7 @@ const SignupPage = () => {
                                             placeholder="Full Name"
                                             value={formData.name}
                                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                            className="w-full bg-transparent pl-8 pb-4 text-xs font-bold tracking-widest focus:outline-none text-secondary placeholder:text-neutral-800"
+                                            className="w-full bg-transparent pl-8 pb-4 text-xs font-bold tracking-widest focus:outline-none text-secondary"
                                         />
                                     </div>
                                     <div className="relative border-b border-secondary/20 focus-within:border-secondary transition-all group">
@@ -135,7 +113,7 @@ const SignupPage = () => {
                                             placeholder="Email Address"
                                             value={formData.email}
                                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                            className="w-full bg-transparent pl-8 pb-4 text-xs font-bold tracking-widest focus:outline-none text-secondary placeholder:text-neutral-800"
+                                            className="w-full bg-transparent pl-8 pb-4 text-xs font-bold tracking-widest focus:outline-none text-secondary"
                                         />
                                     </div>
                                     <div className="relative border-b border-secondary/20 focus-within:border-secondary transition-all group">
@@ -145,20 +123,21 @@ const SignupPage = () => {
                                             placeholder="Phone Number"
                                             value={formData.phone}
                                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                            className="w-full bg-transparent pl-8 pb-4 text-xs font-bold tracking-widest focus:outline-none text-secondary placeholder:text-neutral-800"
+                                            className="w-full bg-transparent pl-8 pb-4 text-xs font-bold tracking-widest focus:outline-none text-secondary"
                                         />
                                     </div>
                                 </div>
                                 <button
                                     type="submit"
-                                    className="w-full brand-blue-bg text-white py-5 text-xs font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-white hover:text-primary border border-transparent hover:border-secondary transition-all duration-300"
+                                    disabled={loading}
+                                    className="w-full bg-secondary text-primary py-5 text-xs font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-gray-200 transition-all disabled:opacity-50"
                                 >
-                                    Continue <ArrowRight size={16} />
+                                    {loading ? 'PROCESSING...' : 'Continue'} <ArrowRight size={16} />
                                 </button>
                             </form>
 
                             <div className="text-center">
-                                <p className="text-[10px] text-gray-500 uppercase tracking-widest">
+                                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">
                                     Already have an account? <Link to="/login" className="text-secondary font-bold underline underline-offset-4">Sign In</Link>
                                 </p>
                             </div>
@@ -174,7 +153,7 @@ const SignupPage = () => {
                             className="space-y-12"
                         >
                             <div className="space-y-4 text-center">
-                                <h2 className="text-2xl font-serif tracking-tighter uppercase">Verification</h2>
+                                <h2 className="text-2xl font-serif tracking-tighter uppercase text-secondary">Verification</h2>
                                 <p className="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed">We've sent a 6-digit code to <br /><span className="text-secondary font-bold">{formData.phone}</span></p>
                             </div>
 
@@ -189,8 +168,11 @@ const SignupPage = () => {
                                             const newOtp = [...otp]
                                             newOtp[idx] = e.target.value
                                             setOtp(newOtp)
+                                            if (e.target.value && idx < 5) {
+                                                e.target.nextSibling?.focus()
+                                            }
                                         }}
-                                        className="aspect-square bg-secondary/5 border border-secondary/10 text-center text-xl font-serif focus:outline-none focus:border-secondary transition-all text-secondary"
+                                        className="aspect-square bg-secondary/5 border border-secondary/10 text-center text-xl font-serif text-secondary focus:outline-none focus:border-secondary transition-all"
                                     />
                                 ))}
                             </div>
@@ -198,9 +180,10 @@ const SignupPage = () => {
                             <div className="space-y-6">
                                 <button
                                     onClick={handleOtpComplete}
-                                    className="w-full brand-blue-bg text-white py-5 text-xs font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-white hover:text-primary border border-transparent hover:border-secondary transition-all duration-300"
+                                    disabled={loading}
+                                    className="w-full bg-secondary text-primary py-5 text-xs font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-gray-200 transition-all disabled:opacity-50"
                                 >
-                                    Complete Signup <ArrowRight size={16} />
+                                    {loading ? 'VERIFYING...' : 'Complete Signup'} <ArrowRight size={16} />
                                 </button>
                                 <button
                                     onClick={() => setStep('info')}

@@ -1,25 +1,24 @@
-import { motion, AnimatePresence } from 'framer-motion'
-import { Search, X, ArrowRight, TrendingUp } from 'lucide-react'
-import { useState, useEffect } from 'react'
-
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, X, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const SearchOverlay = ({ isOpen, onClose }) => {
-    const [query, setQuery] = useState('')
-    const navigate = useNavigate()
+    const [query, setQuery] = useState('');
+    const navigate = useNavigate();
 
     const handleSearch = (e) => {
-        if (e) e.preventDefault()
+        if (e) e.preventDefault();
         if (query.trim()) {
-            navigate(`/shop?search=${encodeURIComponent(query.trim())}`)
-            onClose()
+            navigate(`/shop?search=${encodeURIComponent(query.trim())}`);
+            onClose();
         }
-    }
+    };
 
     const handleTagClick = (tag) => {
-        navigate(`/shop?search=${encodeURIComponent(tag)}`)
-        onClose()
-    }
+        navigate(`/shop?search=${encodeURIComponent(tag)}`);
+        onClose();
+    };
 
     const trendingSearches = [
         'Oversized Hoodies',
@@ -27,15 +26,15 @@ const SearchOverlay = ({ isOpen, onClose }) => {
         'Lunar Drop 2026',
         'Signature Cargos',
         'Minimalist Tees'
-    ]
+    ];
 
     useEffect(() => {
         if (isOpen) {
-            document.body.style.overflow = 'hidden'
+            document.body.style.overflow = 'hidden';
         } else {
-            document.body.style.overflow = 'unset'
+            document.body.style.overflow = 'unset';
         }
-    }, [isOpen])
+    }, [isOpen]);
 
     return (
         <AnimatePresence>
@@ -66,7 +65,7 @@ const SearchOverlay = ({ isOpen, onClose }) => {
                                 <input
                                     autoFocus
                                     type="text"
-                                    placeholder="Search Clara..."
+                                    placeholder="Search NAME..."
                                     value={query}
                                     onChange={(e) => setQuery(e.target.value)}
                                     className="w-full bg-transparent border-b-2 border-secondary py-6 pl-14 text-2xl md:text-5xl font-serif tracking-tight focus:outline-none transition-all placeholder:text-secondary/20 text-secondary"
@@ -79,6 +78,7 @@ const SearchOverlay = ({ isOpen, onClose }) => {
                                 </button>
                             </motion.form>
 
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                                 <motion.div
                                     initial={{ y: 20, opacity: 0 }}
@@ -86,7 +86,7 @@ const SearchOverlay = ({ isOpen, onClose }) => {
                                     transition={{ delay: 0.2 }}
                                 >
                                     <h4 className="text-[10px] uppercase tracking-[0.4em] text-secondary/40 mb-8 font-bold flex items-center gap-3">
-                                        <TrendingUp size={14} /> Trending Now
+                                        Trending Now
                                     </h4>
                                     <div className="flex flex-wrap gap-3">
                                         {trendingSearches.map((tag) => (
@@ -125,7 +125,7 @@ const SearchOverlay = ({ isOpen, onClose }) => {
                 </motion.div>
             )}
         </AnimatePresence>
-    )
-}
+    );
+};
 
-export default SearchOverlay
+export default SearchOverlay;

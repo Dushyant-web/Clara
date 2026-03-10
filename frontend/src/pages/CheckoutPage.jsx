@@ -1,17 +1,58 @@
-import { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
-import { ChevronRight, Check, MapPin, Truck, CreditCard, ShoppingBag, ArrowLeft } from 'lucide-react'
-import { useCartStore } from '../hooks/useCartStore'
+import { ChevronRight, Check, MapPin, Truck, CreditCard, ShoppingBag, ArrowLeft, Loader2 } from 'lucide-react'
+import { useCart } from '../contexts/CartContext'
+import { useAuth } from '../contexts/AuthContext'
+import { orderService } from '../services/orderService'
 
 const CheckoutPage = () => {
     const [step, setStep] = useState(1)
-    const [paymentMethod, setPaymentMethod] = useState('card') // 'card' or 'upi'
-    const { cart, clearCart } = useCartStore()
+    const [paymentMethod, setPaymentMethod] = useState('upi') // Default to 'upi' (Razorpay)
+    const [isProcessing, setIsProcessing] = useState(false)
+    const [shippingData, setShippingData] = useState({
+        fullname: '',
+        email: '',
+        phone: '',
+        address: '',
+        city: '',
+        state: '',
+        pincode: '',
+    })
+    const [promoCode, setPromoCode] = useState('')
+    const [discount, setDiscount] = useState(0)
+    const [applyingPromo, setApplyingPromo] = useState(false)
+
+    const { cartItems, cartTotal, clearCart } = useCart()
+    const { user } = useAuth()
     const navigate = useNavigate()
 
-    const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0)
-    const total = subtotal > 500 ? subtotal : subtotal + 25
+    useEffect(() => {
+        if (cartItems.length === 0 && !isProcessing) {
+            navigate('/cart')
+        }
+    }, [cartItems, navigate, isProcessing])
+
+    const subtotal = cartTotal
+    const total = (subtotal > 500 ? subtotal : subtotal + 25) - discount
+
+    const handleApplyPromo = async () => {
+        if (!promoCode.trim() || !user) return
+        setApplyingPromo(true)
+        try {
+            const result = await orderService.applyPromo(promoCode, user.id)
+            if (result.discount) {
+                setDiscount(result.discount)
+                alert(`Promo applied! You saved ₹${result.discount}`)
+            }
+        } catch (error) {
+            console.error('Promo error:', error)
+            const msg = error.response?.data?.detail || 'Failed to apply promo code.';
+            alert(msg)
+        } finally {
+            setApplyingPromo(false)
+        }
+    }
 
     const steps = [
         { id: 1, name: 'Shipping', icon: MapPin },
@@ -19,38 +60,145 @@ const CheckoutPage = () => {
         { id: 3, name: 'Payment', icon: CreditCard },
     ]
 
-    const nextStep = () => {
+    const validateShipping = () => {
+        const { fullname, email, phone, address, city, state, pincode } = shippingData
+        return fullname && email && phone && address && city && state && pincode
+    }
+
+    const loadRazorpay = () => {
+        return new Promise((resolve) => {
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.onload = () => resolve(true);
+            script.onerror = () => resolve(false);
+            document.body.appendChild(script);
+        });
+    };
+
+    const nextStep = async () => {
+        if (step === 1 && !validateShipping()) {
+            alert('Please fill in all shipping details.')
+            return
+        }
+
         if (step < 3) setStep(step + 1)
         else {
-            // Finalize order
-            clearCart()
-            navigate('/order-confirmation')
+            if (!user) {
+                alert('Please login to complete your order.')
+                return
+            }
+
+            setIsProcessing(true)
+            try {
+                // 0. Ensure Razorpay script is loaded
+                if (!window.Razorpay) {
+                    const res = await loadRazorpay();
+                    if (!res) {
+                        throw new Error('Razorpay SDK failed to load. Are you online?');
+                    }
+                }
+
+                // 1. Create Checkout / Order with unique idempotency key
+                const idempotencyKey = (typeof crypto.randomUUID === 'function')
+                    ? crypto.randomUUID()
+                    : Math.random().toString(36).substring(2) + Date.now().toString(36);
+
+                const checkoutResponse = await orderService.createCheckout(user.id, idempotencyKey, discount > 0 ? promoCode : null)
+
+                if (!checkoutResponse || !checkoutResponse.order_id) {
+                    throw new Error(checkoutResponse?.message || 'Failed to create order on server');
+                }
+                // 2. Initiate Payment
+                const paymentResponse = await orderService.initiatePayment(
+                    checkoutResponse.order_id,
+                    paymentMethod
+                )
+
+                // If the payment is free (amount 0) it will be returned as "paid"
+                if (paymentResponse.status === 'paid' || paymentResponse.amount === 0) {
+                    clearCart()
+                    navigate(`/order-confirmation?order_id=${checkoutResponse.order_id}`)
+                    return
+                }
+
+                if (!paymentResponse || !paymentResponse.razorpay_order_id) {
+                    throw new Error(paymentResponse?.error || 'Failed to initiate payment gateway');
+                }
+
+                if (paymentResponse.razorpay_order_id) {
+                    const config = await orderService.getPaymentConfig();
+                    const rzpKey = config.key || import.meta.env.VITE_RAZORPAY_KEY_ID;
+
+                    console.log("PAYMENT AUTO-SYNC:", {
+                        key: rzpKey ? `${rzpKey.slice(0, 8)}...` : "MISSING",
+                        amount: paymentResponse.amount,
+                        order: paymentResponse.razorpay_order_id
+                    });
+
+                    const options = {
+                        key: rzpKey,
+                        amount: Math.round(paymentResponse.amount * 100),
+                        currency: "INR",
+                        name: "NAME.",
+                        description: "Order #" + checkoutResponse.order_id,
+                        order_id: paymentResponse.razorpay_order_id,
+                        handler: async (response) => {
+                            await orderService.confirmPayment(
+                                paymentResponse.payment_id,
+                                response.razorpay_payment_id
+                            )
+                            clearCart()
+                            navigate(`/order-confirmation?order_id=${checkoutResponse.order_id}`)
+                        },
+                        notes: {
+                            order_id: checkoutResponse.order_id,
+                            customer_email: shippingData.email
+                        },
+                        prefill: {
+                            name: shippingData.fullname || "Customer",
+                            email: shippingData.email || "customer@email.com",
+                            contact: (shippingData.phone || "").replace(/\D/g, "").slice(-10)
+                        },
+                        theme: {
+                            color: "#000000"
+                        }
+                    };
+                    const rzp = new window.Razorpay(options);
+                    rzp.open();
+                }
+            } catch (error) {
+                console.error('Checkout error:', error)
+                const errorMessage = error.response?.data?.error || error.response?.data?.detail || error.message || 'Order creation failed. Please try again.';
+                alert(errorMessage)
+            } finally {
+                setIsProcessing(false)
+            }
         }
     }
 
     return (
-        <div className="pt-32 pb-24 bg-primary min-h-screen text-secondary">
+        <div className="pt-32 pb-24 bg-primary min-h-screen text-secondary transition-colors duration-500 relative">
             <div className="container mx-auto px-6">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
                     {/* Main Flow */}
                     <div className="lg:col-span-8">
                         <div className="flex justify-between items-center mb-12">
-                            <h1 className="text-4xl font-serif tracking-tighter text-secondary">Checkout</h1>
-                            <Link to="/cart" className="text-[10px] uppercase tracking-widest text-gray-500 hover:text-white flex items-center gap-2">
+                            <h1 className="text-4xl font-serif tracking-tighter text-secondary uppercase">Checkout</h1>
+                            <Link to="/cart" className="text-[10px] uppercase tracking-widest text-gray-500 hover:text-secondary flex items-center gap-2 font-bold">
                                 <ArrowLeft size={14} /> Back to Bag
                             </Link>
                         </div>
 
                         {/* Step Progress */}
                         <div className="flex justify-between mb-16 relative">
-                            <div className="absolute top-1/2 left-0 w-full h-px bg-white/10 -z-10" />
+                            <div className="absolute top-1/2 left-0 w-full h-px bg-secondary/10 -z-10" />
                             {steps.map((s) => (
                                 <div key={s.id} className="flex flex-col items-center gap-4 bg-primary px-4">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all duration-500 ${step >= s.id ? 'bg-white text-primary border-white' : 'bg-primary border-white/20'
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all duration-500 ${step >= s.id ? 'bg-secondary text-primary border-secondary' : 'bg-primary border-secondary/20'
                                         }`}>
                                         {step > s.id ? <Check size={18} /> : <s.icon size={18} />}
                                     </div>
-                                    <span className={`text-[10px] tracking-widest font-bold ${step >= s.id ? 'text-white' : 'text-gray-500'}`}>
+                                    <span className={`text-[10px] tracking-widest font-bold ${step >= s.id ? 'text-secondary' : 'text-gray-500'}`}>
                                         {s.name}
                                     </span>
                                 </div>
@@ -71,139 +219,206 @@ const CheckoutPage = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="md:col-span-2">
                                             <label className="text-[10px] tracking-widest text-gray-500 mb-2 block font-bold">Shipping Country</label>
-                                            <input type="text" value="India" disabled className="w-full bg-neutral-900 border-b border-white/20 py-4 text-xs font-bold focus:outline-none cursor-not-allowed opacity-50" />
+                                            <input type="text" value="India" disabled className="w-full bg-secondary/5 border-b border-secondary/20 py-4 text-xs font-bold focus:outline-none cursor-not-allowed opacity-50 text-secondary" />
                                         </div>
                                         <div className="md:col-span-2">
-                                            <label className="text-[10px] tracking-widest text-gray-500 mb-2 block font-bold uppercase">Address Auto-fill (AI Powered)</label>
-                                            <input type="text" placeholder="Start typing your address..." className="w-full bg-transparent border-b border-white/20 py-4 text-xs font-bold focus:outline-none focus:border-white transition-all" />
+                                            <input
+                                                type="text"
+                                                placeholder="Full Name (for delivery)"
+                                                required
+                                                value={shippingData.fullname}
+                                                onChange={(e) => setShippingData({ ...shippingData, fullname: e.target.value })}
+                                                className="w-full bg-transparent border-b border-secondary/20 py-4 text-xs font-bold focus:outline-none focus:border-secondary transition-all text-secondary uppercase tracking-widest"
+                                            />
                                         </div>
-                                        <input type="email" placeholder="Email Address" className="bg-transparent border-b border-white/20 py-4 text-xs font-bold focus:outline-none focus:border-white transition-all" />
-                                        <div className="relative border-b border-white/20 focus-within:border-white transition-all">
-                                            <span className="absolute left-0 bottom-4 text-xs font-bold">+91</span>
-                                            <input type="tel" placeholder="Phone Number" className="w-full bg-transparent pl-8 py-4 text-xs font-bold focus:outline-none transition-all" />
+                                        <div className="md:col-span-2">
+                                            <label className="text-[10px] tracking-widest text-gray-500 mb-2 block font-bold uppercase">Shipping Address</label>
+                                            <input
+                                                type="text"
+                                                placeholder="Street Address, Apartment, Suite..."
+                                                required
+                                                value={shippingData.address}
+                                                onChange={(e) => setShippingData({ ...shippingData, address: e.target.value })}
+                                                className="w-full bg-transparent border-b border-secondary/20 py-4 text-xs font-bold focus:outline-none focus:border-secondary transition-all text-secondary"
+                                            />
+                                        </div>
+                                        <input
+                                            type="email"
+                                            placeholder="Email Address"
+                                            required
+                                            value={shippingData.email}
+                                            onChange={(e) => setShippingData({ ...shippingData, email: e.target.value })}
+                                            className="bg-transparent border-b border-secondary/20 py-4 text-xs font-bold focus:outline-none focus:border-secondary transition-all text-secondary"
+                                        />
+                                        <div className="relative border-b border-secondary/20 focus-within:border-secondary transition-all">
+                                            <span className="absolute left-0 bottom-4 text-xs font-bold text-gray-500">+91</span>
+                                            <input
+                                                type="tel"
+                                                placeholder="Phone Number"
+                                                required
+                                                value={shippingData.phone}
+                                                onChange={(e) => setShippingData({ ...shippingData, phone: e.target.value })}
+                                                className="w-full bg-transparent pl-8 py-4 text-xs font-bold focus:outline-none transition-all text-secondary"
+                                            />
                                         </div>
                                         <div className="grid grid-cols-2 gap-6">
-                                            <input type="text" placeholder="City" className="bg-transparent border-b border-white/20 py-4 text-xs font-bold focus:outline-none focus:border-white transition-all" />
-                                            <input type="text" placeholder="State" className="bg-transparent border-b border-white/20 py-4 text-xs font-bold focus:outline-none focus:border-white transition-all" />
+                                            <input
+                                                type="text"
+                                                placeholder="City"
+                                                required
+                                                value={shippingData.city}
+                                                onChange={(e) => setShippingData({ ...shippingData, city: e.target.value })}
+                                                className="bg-transparent border-b border-secondary/20 py-4 text-xs font-bold focus:outline-none focus:border-secondary transition-all text-secondary"
+                                            />
+                                            <input
+                                                type="text"
+                                                placeholder="State"
+                                                required
+                                                value={shippingData.state}
+                                                onChange={(e) => setShippingData({ ...shippingData, state: e.target.value })}
+                                                className="bg-transparent border-b border-secondary/20 py-4 text-xs font-bold focus:outline-none focus:border-secondary transition-all text-secondary"
+                                            />
                                         </div>
-                                        <input type="text" placeholder="Pincode" className="bg-transparent border-b border-white/20 py-4 text-xs font-bold focus:outline-none focus:border-white transition-all" />
+                                        <input
+                                            type="text"
+                                            placeholder="Pincode"
+                                            required
+                                            value={shippingData.pincode}
+                                            onChange={(e) => setShippingData({ ...shippingData, pincode: e.target.value })}
+                                            className="bg-transparent border-b border-secondary/20 py-4 text-xs font-bold focus:outline-none focus:border-secondary transition-all text-secondary"
+                                        />
                                     </div>
                                 )}
 
                                 {step === 2 && (
                                     <div className="space-y-4">
-                                        <label className="bg-neutral-900 border border-white/10 p-6 flex justify-between items-center cursor-pointer hover:border-white transition-all">
+                                        <label className="bg-secondary/5 border border-secondary/10 p-6 flex justify-between items-center cursor-pointer hover:border-secondary transition-all">
                                             <div className="flex items-center gap-6">
-                                                <Truck size={24} className="text-gray-400" />
+                                                <Truck size={24} className="text-gray-500" />
                                                 <div>
                                                     <p className="text-xs font-bold">Express Global</p>
-                                                    <p className="text-[10px] text-gray-500 mt-1">3-5 Business Days</p>
+                                                    <p className="text-[10px] text-gray-500 mt-1 font-bold">3-5 Business Days</p>
                                                 </div>
                                             </div>
-                                            <span className="text-xs font-bold font-sans">₹25.00</span>
+                                            <span className="text-xs font-bold">₹25.00</span>
                                             <input type="radio" name="delivery" defaultChecked className="hidden" />
                                         </label>
-                                        <label className="bg-neutral-900 border border-white/10 p-6 flex justify-between items-center cursor-pointer hover:border-white transition-all opacity-50">
+                                        <label className="bg-secondary/5 border border-secondary/10 p-6 flex justify-between items-center cursor-pointer hover:border-secondary transition-all opacity-50">
                                             <div className="flex items-center gap-6">
-                                                <Truck size={24} className="text-gray-400" />
+                                                <Truck size={24} className="text-gray-500" />
                                                 <div>
                                                     <p className="text-xs font-bold">Standard Economy</p>
-                                                    <p className="text-[10px] text-gray-500 mt-1">7-14 Business Days</p>
+                                                    <p className="text-[10px] text-gray-500 mt-1 font-bold">7-14 Business Days</p>
                                                 </div>
                                             </div>
-                                            <span className="text-xs font-bold font-sans">FREE</span>
+                                            <span className="text-xs font-bold">FREE</span>
                                             <input type="radio" name="delivery" className="hidden" />
                                         </label>
                                     </div>
                                 )}
 
                                 {step === 3 && (
-                                    <div className="space-y-6">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <button
-                                                onClick={() => setPaymentMethod('card')}
-                                                className={`p-6 border flex flex-col items-center gap-4 transition-all duration-300 ${paymentMethod === 'card' ? 'bg-white text-primary border-white' : 'border-white/10 hover:border-white'}`}
-                                            >
-                                                <CreditCard size={24} />
-                                                <span className="text-[10px] font-bold">Credit/Debit Card</span>
-                                            </button>
-                                            <button
-                                                onClick={() => setPaymentMethod('upi')}
-                                                className={`p-6 border flex flex-col items-center gap-4 transition-all duration-300 ${paymentMethod === 'upi' ? 'bg-white text-primary border-white' : 'border-white/10 hover:border-white'}`}
-                                            >
-                                                <ShoppingBag size={24} />
-                                                <span className="text-[10px] font-bold">Razorpay / UPI</span>
-                                            </button>
+                                    <motion.div
+                                        key="payment-step"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="py-12 space-y-12"
+                                    >
+                                        <div className="text-center">
+                                            <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em] font-bold mb-2">Checkout Method</p>
+                                            <p className="text-xs font-bold tracking-widest text-secondary">Pay securely via Razorpay</p>
                                         </div>
 
-                                        <AnimatePresence mode="wait">
-                                            {paymentMethod === 'card' ? (
-                                                <motion.div
-                                                    key="card-fields"
-                                                    initial={{ opacity: 0, y: 10 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    exit={{ opacity: 0, y: -10 }}
-                                                    className="space-y-4 pt-6"
-                                                >
-                                                    <input type="text" placeholder="Card Number" className="w-full bg-transparent border-b border-white/20 py-4 text-xs font-bold focus:outline-none focus:border-white transition-all text-secondary" />
-                                                    <div className="grid grid-cols-2 gap-8">
-                                                        <input type="text" placeholder="Expiry (MM/YY)" className="bg-transparent border-b border-white/20 py-4 text-xs font-bold focus:outline-none focus:border-white transition-all text-secondary" />
-                                                        <input type="text" placeholder="CVV" className="bg-transparent border-b border-white/20 py-4 text-xs font-bold focus:outline-none focus:border-white transition-all text-secondary" />
-                                                    </div>
-                                                </motion.div>
-                                            ) : (
-                                                <motion.div
-                                                    key="upi-message"
-                                                    initial={{ opacity: 0, y: 10 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    exit={{ opacity: 0, y: -10 }}
-                                                    className="pt-12 pb-6 text-center"
-                                                >
-                                                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
-                                                        <ShoppingBag className="text-gray-400" size={32} />
-                                                    </div>
-                                                    <p className="text-sm font-bold tracking-widest text-secondary">Pay via Razorpay Secure</p>
-                                                    <p className="text-[10px] text-gray-500 uppercase tracking-[0.2em] mt-2">UPI, Netbanking, & Wallets supported</p>
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
-                                    </div>
+                                        <div className="pt-12 pb-16 text-center space-y-6">
+                                            <div className="w-20 h-20 bg-secondary/5 rounded-full flex items-center justify-center mx-auto transition-transform hover:scale-110 duration-500">
+                                                <ShoppingBag className="text-secondary/60" size={40} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <p className="text-base font-serif italic text-secondary">Secured by Razorpay</p>
+                                                <p className="text-[10px] text-gray-400 uppercase tracking-[0.3em] font-bold">Standard Secure Checkout</p>
+                                            </div>
+                                            <div className="pt-8 border-t border-secondary/5 max-w-xs mx-auto">
+                                                <div className="flex justify-center gap-6 opacity-40 grayscale hover:grayscale-0 transition-all duration-500">
+                                                    <img src="https://img.icons8.com/color/48/visa.png" className="h-4" alt="Visa" />
+                                                    <img src="https://img.icons8.com/color/48/mastercard.png" className="h-6" alt="Mastercard" />
+                                                    <img src="https://img.icons8.com/color/48/google-pay.png" className="h-6" alt="GPay" />
+                                                    <img src="https://img.icons8.com/color/48/phonepe.png" className="h-6" alt="PhonePe" />
+                                                </div>
+                                                <p className="text-[8px] text-gray-400 mt-6 uppercase tracking-widest font-bold">All major cards & UPI supported</p>
+                                            </div>
+                                        </div>
+                                    </motion.div>
                                 )}
                             </motion.div>
                         </AnimatePresence>
 
                         <button
                             onClick={nextStep}
-                            className="w-full mt-16 bg-white text-primary py-5 text-xs font-bold flex items-center justify-center gap-3 hover:bg-gray-200 transition-colors"
+                            disabled={isProcessing}
+                            className="w-full mt-16 bg-secondary text-primary py-5 text-xs font-bold flex items-center justify-center gap-3 hover:bg-gray-200 transition-colors uppercase tracking-widest disabled:opacity-50"
                         >
-                            {step === 3 ? 'Place Order' : 'Continue to ' + steps[step].name} <ChevronRight size={16} />
+                            {isProcessing ? (
+                                <Loader2 size={16} className="animate-spin" />
+                            ) : (
+                                step === 3 ? 'Place Order' : 'Continue to ' + steps[step].name
+                            )} {!isProcessing && <ChevronRight size={16} />}
                         </button>
                     </div>
 
                     {/* Sidebar Summary */}
                     <div className="lg:col-span-4">
-                        <div className="bg-neutral-900 border border-white/5 p-8 sticky top-32">
-                            <h2 className="text-xl font-serif tracking-tighter mb-8 pb-8 border-b border-white/10">Order Summary</h2>
+                        <div className="bg-secondary/5 border border-secondary/10 p-8 sticky top-32">
+                            <h2 className="text-xl font-serif tracking-tighter mb-8 pb-8 border-b border-secondary/10 uppercase">Order Summary</h2>
                             <div className="space-y-4 mb-8">
-                                {cart.map(item => (
-                                    <div key={`${item.id}-${item.size}`} className="flex justify-between text-[10px] tracking-widest transition-all">
-                                        <span className="text-gray-400 font-sans">{item.name} x {item.quantity}</span>
-                                        <span className="font-sans">₹{(item.price * item.quantity).toFixed(2)}</span>
+                                {cartItems.map(item => (
+                                    <div key={item.uniqueKey} className="flex justify-between text-[10px] tracking-widest transition-all font-bold">
+                                        <span className="text-gray-500">{item.name} x {item.quantity}</span>
+                                        <span>₹{(item.price * item.quantity).toFixed(2)}</span>
                                     </div>
                                 ))}
                             </div>
-                            <div className="space-y-4 pt-8 border-t border-white/10 mb-8">
-                                <div className="flex justify-between text-[10px] tracking-widest text-gray-400 font-sans transition-all">
+
+                            {/* Promo Code */}
+                            {step === 1 && (
+                                <div className="mb-8 pt-8 border-t border-secondary/10">
+                                    <p className="text-[10px] font-bold opacity-30 uppercase mb-4 tracking-widest">Sartorial Privilege</p>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            placeholder="PROMO CODE"
+                                            value={promoCode}
+                                            onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                                            className="flex-grow bg-transparent border-b border-secondary/20 py-2 text-[10px] font-bold focus:outline-none focus:border-secondary transition-all text-secondary uppercase tracking-widest"
+                                        />
+                                        <button
+                                            onClick={handleApplyPromo}
+                                            disabled={applyingPromo || !promoCode}
+                                            className="px-4 py-2 border border-secondary text-[10px] font-bold uppercase tracking-widest hover:bg-secondary hover:text-primary transition-all disabled:opacity-20"
+                                        >
+                                            {applyingPromo ? '...' : 'Apply'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="space-y-4 pt-8 border-t border-secondary/10 mb-8">
+                                <div className="flex justify-between text-[10px] tracking-widest text-gray-400 transition-all font-bold">
                                     <span>Subtotal</span>
                                     <span>₹{subtotal.toFixed(2)}</span>
                                 </div>
-                                <div className="flex justify-between text-[10px] tracking-widest text-gray-400 font-sans transition-all">
+                                <div className="flex justify-between text-[10px] tracking-widest text-gray-400 transition-all font-bold">
                                     <span>Shipping</span>
                                     <span>{subtotal > 500 ? 'FREE' : '₹25.00'}</span>
                                 </div>
+                                {discount > 0 && (
+                                    <div className="flex justify-between text-[10px] tracking-widest text-green-500 transition-all font-bold">
+                                        <span>Journal Credit</span>
+                                        <span>-₹{discount.toFixed(2)}</span>
+                                    </div>
+                                )}
                             </div>
-                            <div className="flex justify-between text-lg font-sans transition-all">
-                                <span className="tracking-widest">Total</span>
+                            <div className="flex justify-between text-lg transition-all font-serif">
+                                <span className="tracking-widest uppercase">Total</span>
                                 <span className="font-bold">₹{total.toFixed(2)}</span>
                             </div>
                         </div>

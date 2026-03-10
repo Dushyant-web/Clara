@@ -3,38 +3,22 @@ import { ArrowRight, ChevronDown } from 'lucide-react'
 import { useRef, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
+import { productService } from '../services/productService'
 
 const HomePage = () => {
     const containerRef = useRef(null)
     const [products, setProducts] = useState([])
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const res = await fetch('https://clara-xpfh.onrender.com/products')
-                const data = await res.json()
-
-                const baseProducts = data.products.slice(0, 8)
-
-                const productsWithImages = await Promise.all(
-                    baseProducts.map(async (product) => {
-                        try {
-                            const imgRes = await fetch(`https://clara-xpfh.onrender.com/products/${product.id}/images`)
-                            const images = await imgRes.json()
-
-                            return {
-                                ...product,
-                                image: images?.[0]?.image_url || null
-                            }
-                        } catch (e) {
-                            return product
-                        }
-                    })
-                )
-
-                setProducts(productsWithImages)
+                const data = await productService.getProducts(1, 8)
+                setProducts(data.products || [])
             } catch (err) {
                 console.error('Failed to load products', err)
+            } finally {
+                setLoading(false)
             }
         }
 
@@ -80,7 +64,7 @@ const HomePage = () => {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 1.2, ease: [0.43, 0.13, 0.23, 0.96] }}
-                        className="text-6xl md:text-9xl font-serif mb-8 leading-none tracking-tighter"
+                        className="text-6xl md:text-9xl font-serif mb-8 leading-none tracking-tighter text-white"
                     >
                         CRAFTED FOR <br /> THE BOLD
                     </motion.h1>
@@ -100,12 +84,12 @@ const HomePage = () => {
                         transition={{ duration: 0.8, delay: 1.2 }}
                         className="flex flex-col md:flex-row items-center justify-center gap-6"
                     >
-                        <button className="px-10 py-4 brand-blue-bg text-white text-xs uppercase tracking-[0.2em] font-bold hover:bg-white hover:text-primary border border-transparent hover:border-white transition-all duration-300 flex items-center gap-2 group shadow-xl">
+                        <Link to="/shop" className="px-10 py-4 bg-secondary text-primary text-xs uppercase tracking-[0.2em] font-bold hover:bg-primary hover:text-secondary border border-transparent hover:border-secondary transition-all duration-300 flex items-center gap-2 group shadow-xl">
                             Shop Collection <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                        </button>
-                        <button className="px-10 py-4 border border-white/20 text-white text-xs uppercase tracking-[0.2em] font-bold hover:border-white transition-all duration-300">
+                        </Link>
+                        <Link to="/lookbook" className="px-10 py-4 border border-white/20 text-white text-xs uppercase tracking-[0.2em] font-bold hover:border-white transition-all duration-300">
                             Explore Lookbook
-                        </button>
+                        </Link>
                     </motion.div>
                 </div>
 
@@ -123,13 +107,13 @@ const HomePage = () => {
 
             {/* Philosophy Section */}
             <section className="py-32 bg-primary">
-                <div className="container mx-auto px-6">
+                <div className="container mx-auto px-6 text-secondary">
                     <div className="max-w-4xl mx-auto text-center">
                         <motion.span
                             initial={{ opacity: 0 }}
                             whileInView={{ opacity: 1 }}
                             viewport={{ once: true }}
-                            className="text-xs uppercase tracking-[0.4em] text-gray-500 mb-8 block"
+                            className="text-xs uppercase tracking-[0.4em] text-gray-500 mb-8 block font-bold"
                         >
                             Our Philosophy
                         </motion.span>
@@ -149,28 +133,37 @@ const HomePage = () => {
 
             {/* Featured Collection */}
             <section className="py-24 bg-primary overflow-hidden">
-                <div className="container mx-auto px-6">
+                <div className="container mx-auto px-6 text-secondary">
                     <div className="flex flex-col md:flex-row justify-between items-start mb-16 gap-6">
                         <div className="max-w-xl">
                             <span className="text-xs uppercase tracking-[0.4em] text-secondary/40 mb-4 block font-bold">Selected Works</span>
-                            <h2 className="text-4xl md:text-6xl font-serif tracking-tighter text-secondary">FEATURED <br /> COLLECTION</h2>
+                            <h2 className="text-4xl md:text-6xl font-serif tracking-tighter">FEATURED <br /> COLLECTION</h2>
                         </div>
-                        <Link to="/shop" className="text-[10px] uppercase tracking-[0.2em] font-bold flex items-center gap-2 hover:text-grayAccent transition-colors group text-secondary">
+                        <Link to="/shop" className="text-[10px] uppercase tracking-[0.2em] font-bold flex items-center gap-2 hover:text-grayAccent transition-colors group">
                             View All Products <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                         </Link>
                     </div>
 
-                    <div className="grid grid-cols-3 lg:grid-cols-4 gap-2 md:gap-8 gap-y-12 md:gap-y-16">
-                        {products.map((product) => (
-                            <ProductCard key={product.id} product={product} />
-                        ))}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-8 gap-y-12 md:gap-y-16">
+                        {loading ? (
+                            [...Array(4)].map((_, i) => (
+                                <div key={i} className="animate-pulse space-y-4">
+                                    <div className="aspect-[3/4] bg-secondary/5 border border-secondary/10"></div>
+                                    <div className="h-4 bg-secondary/5 w-1/2"></div>
+                                </div>
+                            ))
+                        ) : (
+                            products.map((product) => (
+                                <ProductCard key={product.id} product={product} />
+                            ))
+                        )}
                     </div>
                 </div>
             </section>
 
             {/* Lookbook Editorial */}
             <section className="py-24 bg-primary">
-                <div className="container mx-auto px-6">
+                <div className="container mx-auto px-6 text-secondary">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
                         <div className="lg:col-span-7">
                             <div className="relative aspect-[16/9] overflow-hidden">
@@ -187,20 +180,20 @@ const HomePage = () => {
                         </div>
                         <div className="lg:col-span-5 lg:pl-12">
                             <span className="text-xs uppercase tracking-[0.4em] text-gray-500 mb-6 block">Editorial 01</span>
-                            <h2 className="text-4xl md:text-5xl font-serif mb-8 max-w-sm leading-tight text-secondary">THE SILENCE OF STYLE</h2>
+                            <h2 className="text-4xl md:text-5xl font-serif mb-8 max-w-sm leading-tight">THE SILENCE OF STYLE</h2>
                             <p className="text-gray-400 text-sm leading-relaxed mb-10 max-w-md">
                                 Captured in the urban shadows, our latest collection explores the intersection of minimalism and modern luxury. Every piece is a statement of intent.
                             </p>
-                            <button className="px-10 py-4 border border-white text-xs uppercase tracking-[0.2em] font-bold hover:bg-white hover:text-primary transition-all duration-300">
+                            <Link to="/lookbook" className="px-10 py-4 border border-secondary text-xs uppercase tracking-[0.2em] font-bold hover:bg-secondary hover:text-primary transition-all duration-300">
                                 Explore Lookbook
-                            </button>
+                            </Link>
                         </div>
                     </div>
                 </div>
             </section>
 
             {/* Newsletter Section */}
-            <section className="py-32 bg-primary border-t border-white/5">
+            <section className="py-32 bg-primary border-t border-white/5 text-secondary">
                 <div className="container mx-auto px-6 text-center">
                     <div className="max-w-2xl mx-auto">
                         <h2 className="text-4xl md:text-6xl font-serif mb-8 tracking-tighter">STAY IN THE MINIMAL</h2>
@@ -211,9 +204,9 @@ const HomePage = () => {
                             <input
                                 type="email"
                                 placeholder="ENTER YOUR EMAIL"
-                                className="flex-grow bg-transparent border border-white/20 px-6 py-4 text-xs uppercase tracking-widest focus:outline-none focus:border-white transition-all"
+                                className="flex-grow bg-transparent border border-secondary/20 px-6 py-4 text-xs uppercase tracking-widest focus:outline-none focus:border-secondary transition-all"
                             />
-                            <button className="bg-white text-primary px-10 py-4 text-xs font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors">
+                            <button className="bg-secondary text-primary px-10 py-4 text-xs font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors">
                                 Join
                             </button>
                         </form>

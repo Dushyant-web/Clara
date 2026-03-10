@@ -1,41 +1,40 @@
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Search, ShoppingBag, Heart, User, Menu, X, Bell } from 'lucide-react'
-import { Link, useLocation } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { useCartStore } from '../hooks/useCartStore'
-import { useNotifications } from '../contexts/NotificationContext'
-import NotificationCenter from './NotificationCenter'
-import ThemeToggle from './ThemeToggle'
-import SearchOverlay from './SearchOverlay'
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, ShoppingBag, Heart, User, Menu, X, Bell } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
+import { useNotifications } from '../contexts/NotificationContext';
+import NotificationCenter from './NotificationCenter';
+import ThemeToggle from './ThemeToggle';
+import SearchOverlay from './SearchOverlay';
 
 const Navbar = () => {
-    const [isScrolled, setIsScrolled] = useState(false)
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-    const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
-    const [isSearchOpen, setIsSearchOpen] = useState(false)
-    const location = useLocation()
-    const { user } = useAuth()
-    const { cart } = useCartStore()
-    const { notifications } = useNotifications()
+    const [isScrolled, setIsScrolled] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const location = useLocation();
+    const { user } = useAuth();
+    const { cartCount, setIsCartOpen } = useCart();
+    const { notifications } = useNotifications();
 
-    const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0)
-    const unreadNotifications = notifications.filter(n => !n.read).length
+    const unreadNotifications = notifications.filter(n => !n.read).length;
 
     useEffect(() => {
         const handleScroll = () => {
-            setIsScrolled(window.scrollY > 50)
-        }
-        window.addEventListener('scroll', handleScroll)
-        return () => window.removeEventListener('scroll', handleScroll)
-    }, [])
+            setIsScrolled(window.scrollY > 50);
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     const navLinks = [
         { name: 'Shop All', path: '/shop' },
         { name: 'Collections', path: '/collections' },
         { name: 'Lookbook', path: '/lookbook' },
         { name: 'About', path: '/about' },
-    ]
+    ];
 
     return (
         <>
@@ -75,12 +74,12 @@ const Navbar = () => {
                             <div className="w-8 h-8 md:w-10 md:h-10 relative overflow-hidden rounded-full border border-secondary/10 group-hover:scale-110 transition-transform duration-500">
                                 <img
                                     src="/assets/logo/logo-icon.png"
-                                    alt="CLARA Icon"
+                                    alt="NAME Icon"
                                     className="w-full h-full object-cover"
                                 />
                             </div>
                             <span className="text-xl md:text-3xl font-serif font-bold tracking-tighter brand-blue hidden md:block">
-                                CLARA.
+                                NAME.
                             </span>
                         </Link>
                     </div>
@@ -119,14 +118,17 @@ const Navbar = () => {
                         <Link to="/wishlist" className="hidden md:flex items-center justify-center p-2 hover:text-grayAccent transition-colors">
                             <Heart size={20} strokeWidth={1.5} />
                         </Link>
-                        <Link to="/cart" className="relative flex items-center justify-center p-2 hover:text-grayAccent transition-colors">
+                        <button
+                            onClick={() => setIsCartOpen(true)}
+                            className="relative flex items-center justify-center p-2 hover:text-grayAccent transition-colors"
+                        >
                             <ShoppingBag size={20} strokeWidth={1.5} />
                             {cartCount > 0 && (
                                 <span className="absolute top-1 right-1 bg-secondary text-primary text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">
                                     {cartCount}
                                 </span>
                             )}
-                        </Link>
+                        </button>
                     </div>
                 </div>
 
@@ -145,7 +147,7 @@ const Navbar = () => {
                                 <div className="w-8 h-8 relative overflow-hidden rounded-full border border-secondary/10">
                                     <img
                                         src="/assets/logo/logo-icon.png"
-                                        alt="CLARA Icon"
+                                        alt="NAME Icon"
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
@@ -172,16 +174,16 @@ const Navbar = () => {
                             <Link to="/wishlist" onClick={() => setIsMobileMenuOpen(false)} className="text-sm uppercase tracking-widest flex items-center gap-2 text-secondary">
                                 <Heart size={18} /> Wishlist
                             </Link>
-                            <Link to="/cart" onClick={() => setIsMobileMenuOpen(false)} className="text-sm uppercase tracking-widest flex items-center gap-2 text-secondary">
+                            <button onClick={() => { setIsCartOpen(true); setIsMobileMenuOpen(false); }} className="text-sm uppercase tracking-widest flex items-center gap-2 text-secondary">
                                 <ShoppingBag size={18} /> Bag ({cartCount})
-                            </Link>
+                            </button>
                         </div>
                     </motion.div>
                 )}
             </AnimatePresence>
             <SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
         </>
-    )
-}
+    );
+};
 
-export default Navbar
+export default Navbar;

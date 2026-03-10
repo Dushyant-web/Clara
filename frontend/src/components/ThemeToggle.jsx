@@ -1,9 +1,11 @@
-import { Sun, Moon } from 'lucide-react'
-import { useTheme } from '../contexts/ThemeContext'
-import { motion } from 'framer-motion'
+import React from 'react';
+import { Sun, Moon } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
+import { motion } from 'framer-motion';
 
 const ThemeToggle = () => {
-    const { isDarkMode, toggleTheme } = useTheme()
+    const { theme, toggleTheme } = useTheme();
+    const isDarkMode = theme === 'dark';
 
     return (
         <motion.button
@@ -18,7 +20,7 @@ const ThemeToggle = () => {
                 <Moon size={20} strokeWidth={1.5} />
             )}
         </motion.button>
-    )
-}
+    );
+};
 
-export default ThemeToggle
+export default ThemeToggle;

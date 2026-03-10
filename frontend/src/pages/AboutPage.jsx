@@ -1,15 +1,16 @@
+import React from 'react'
 import { motion } from 'framer-motion'
 
 const AboutPage = () => {
     return (
-        <div className="pt-32 pb-24 bg-primary min-h-screen text-secondary">
+        <div className="pt-32 pb-24 bg-primary min-h-screen text-secondary transition-colors duration-500">
             <div className="container mx-auto px-6">
                 {/* Hero Section */}
                 <div className="max-w-4xl mb-32">
                     <motion.span
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="text-xs uppercase tracking-[0.5em] text-gray-500 mb-6 block"
+                        className="text-xs uppercase tracking-[0.5em] text-gray-500 mb-6 block font-bold"
                     >
                         Our Origin
                     </motion.span>
@@ -17,7 +18,7 @@ const AboutPage = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
-                        className="text-6xl md:text-9xl font-serif tracking-tighter leading-none mb-12"
+                        className="text-6xl md:text-9xl font-serif tracking-tighter leading-none mb-12 uppercase"
                     >
                         THE SILENCE <br /> OF STYLE.
                     </motion.h1>
@@ -31,9 +32,9 @@ const AboutPage = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.4 }}
-                        className="text-gray-400 text-lg md:text-2xl uppercase tracking-widest leading-relaxed max-w-2xl font-light"
+                        className="text-gray-500 text-lg md:text-2xl uppercase tracking-widest leading-relaxed max-w-2xl font-bold"
                     >
-                        CLARA was born from a singular vision: to strip away the noise of modern fashion and reveal the timeless beauty of pure form.
+                        NAME was born from a singular vision: to strip away the noise of modern fashion and reveal the timeless beauty of pure form.
                     </motion.p>
                 </div>
 
@@ -45,7 +46,7 @@ const AboutPage = () => {
                         viewport={{ once: true }}
                         transition={{ duration: 1 }}
                     >
-                        <div className="relative aspect-[3/4] overflow-hidden border border-white/5 bg-neutral-900">
+                        <div className="relative aspect-[3/4] overflow-hidden border border-secondary/5 bg-secondary/5">
                             <img
                                 src="https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&q=80&w=1000"
                                 alt="Atelier"
@@ -61,7 +62,7 @@ const AboutPage = () => {
                             viewport={{ once: true }}
                         >
                             <h2 className="text-4xl font-serif tracking-tight mb-6 uppercase">The Philosophy</h2>
-                            <p className="text-gray-400 leading-relaxed font-sans uppercase tracking-widest text-sm">
+                            <p className="text-gray-500 leading-relaxed font-bold uppercase tracking-widest text-sm">
                                 We believe that true luxury isn't found in excess, but in the intentionality of every stitch. Our pieces are designed to be quiet yet profound—crafted for those who understand that the most powerful statements are often the softest.
                             </p>
                         </motion.div>
@@ -73,15 +74,15 @@ const AboutPage = () => {
                             transition={{ delay: 0.2 }}
                         >
                             <h2 className="text-4xl font-serif tracking-tight mb-6 uppercase">The Craft</h2>
-                            <p className="text-gray-400 leading-relaxed font-sans uppercase tracking-widest text-sm">
-                                Every Clara garment is a product of obsessive craftsmanship. From the selection of ultra-premium raw materials to the precision of hand-finished details, we prioritize longevity over trends and quality over volume.
+                            <p className="text-gray-500 leading-relaxed font-bold uppercase tracking-widest text-sm">
+                                Every NAME garment is a product of obsessive craftsmanship. From the selection of ultra-premium raw materials to the precision of hand-finished details, we prioritize longevity over trends and quality over volume.
                             </p>
                         </motion.div>
                     </div>
                 </section>
 
                 {/* Values Grid */}
-                <section className="grid grid-cols-1 md:grid-cols-3 gap-12 border-t border-white/5 pt-24 mb-40">
+                <section className="grid grid-cols-1 md:grid-cols-3 gap-12 border-t border-secondary/5 pt-24 mb-40">
                     {[
                         { title: "Longevity", desc: "Designed to transcend seasons and outlast trends." },
                         { title: "Sourcing", desc: "Sourcing only the finest sustainable materials globally." },
@@ -96,7 +97,7 @@ const AboutPage = () => {
                         >
                             <h3 className="text-[10px] uppercase tracking-[0.4em] font-bold text-gray-500 mb-4">0{idx + 1}</h3>
                             <h4 className="text-2xl font-serif mb-4 uppercase">{value.title}</h4>
-                            <p className="text-[10px] uppercase tracking-widest text-gray-500 leading-relaxed">
+                            <p className="text-[10px] uppercase tracking-widest text-gray-500 leading-relaxed font-bold">
                                 {value.desc}
                             </p>
                         </motion.div>
@@ -110,7 +111,7 @@ const AboutPage = () => {
                         whileInView={{ opacity: 1, scale: 1 }}
                         viewport={{ once: true }}
                         transition={{ duration: 1.2 }}
-                        className="text-3xl md:text-5xl font-serif leading-tight mb-12"
+                        className="text-3xl md:text-5xl font-serif leading-tight mb-12 uppercase"
                     >
                         "IN AN ERA OF NOISE, WE CHOOSE THE BEAUTY OF THE VOID."
                     </motion.h2>

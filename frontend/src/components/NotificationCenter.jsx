@@ -1,3 +1,4 @@
+import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, ShoppingBag, Package, Star, X, Check } from 'lucide-react'
 import { useNotifications } from '../contexts/NotificationContext'
@@ -28,10 +29,10 @@ const NotificationCenter = ({ isOpen, onClose }) => {
                         className="absolute top-12 right-0 w-80 md:w-96 bg-primary border border-secondary/10 z-50 overflow-hidden shadow-2xl origin-top-right transition-colors duration-500"
                     >
                         <div className="p-6 border-b border-secondary/5 flex justify-between items-center bg-secondary/5">
-                            <h3 className="text-[10px] uppercase tracking-[0.3em] font-bold text-grayAccent">Activity Center</h3>
+                            <h3 className="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-400">Activity Center</h3>
                             <button
                                 onClick={clearAllNotifications}
-                                className="text-[8px] uppercase tracking-widest font-bold text-gray-500 hover:text-white transition-colors"
+                                className="text-[8px] uppercase tracking-widest font-bold text-gray-500 hover:text-secondary transition-colors"
                             >
                                 Clear All
                             </button>
@@ -68,7 +69,7 @@ const NotificationCenter = ({ isOpen, onClose }) => {
                                                 {!notif.read && (
                                                     <button
                                                         onClick={() => markAsRead(notif.id)}
-                                                        className="flex items-center gap-2 text-[8px] uppercase tracking-[0.2em] font-bold text-white border-b border-white pb-0.5"
+                                                        className="flex items-center gap-2 text-[8px] uppercase tracking-[0.2em] font-bold text-secondary border-b border-secondary pb-0.5"
                                                     >
                                                         <Check size={10} /> Mark as seen
                                                     </button>
@@ -81,7 +82,7 @@ const NotificationCenter = ({ isOpen, onClose }) => {
                         </div>
 
                         <div className="p-6 bg-secondary/5 text-center">
-                            <button className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 hover:text-white transition-colors">
+                            <button className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 hover:text-secondary transition-colors">
                                 View All Activity Center
                             </button>
                         </div>

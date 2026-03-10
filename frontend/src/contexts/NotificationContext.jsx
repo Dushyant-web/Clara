@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react'
+import React, { createContext, useContext, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, CheckCircle2, AlertCircle, Info, Bell } from 'lucide-react'
 
@@ -46,19 +46,19 @@ export const NotificationProvider = ({ children }) => {
                             initial={{ x: -100, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             exit={{ x: -100, opacity: 0 }}
-                            className="bg-white p-6 shadow-2xl flex items-center gap-6 border-l-4 border-black group"
+                            className="bg-primary p-6 shadow-2xl flex items-center gap-6 border-l-4 border-secondary group transition-colors duration-500"
                         >
-                            <div className="w-10 h-10 bg-black flex items-center justify-center shrink-0">
-                                {alert.type === 'success' ? <CheckCircle2 size={20} className="text-white" /> :
-                                    alert.type === 'error' ? <AlertCircle size={20} className="text-white" /> :
-                                        <Info size={20} className="text-white" />}
+                            <div className="w-10 h-10 bg-secondary flex items-center justify-center shrink-0">
+                                {alert.type === 'success' ? <CheckCircle2 size={20} className="text-primary" /> :
+                                    alert.type === 'error' ? <AlertCircle size={20} className="text-primary" /> :
+                                        <Info size={20} className="text-primary" />}
                             </div>
                             <div className="flex-grow">
-                                <p className="text-[10px] uppercase tracking-widest font-bold text-primary">{alert.message}</p>
+                                <p className="text-[10px] uppercase tracking-widest font-bold text-secondary">{alert.message}</p>
                             </div>
                             <button
                                 onClick={() => setAlerts(prev => prev.filter(a => a.id !== alert.id))}
-                                className="text-gray-300 hover:text-black transition-colors"
+                                className="text-gray-500 hover:text-secondary transition-colors"
                             >
                                 <X size={16} />
                             </button>

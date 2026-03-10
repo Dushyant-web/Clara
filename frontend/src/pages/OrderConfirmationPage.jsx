@@ -1,11 +1,15 @@
+import React from 'react'
 import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 import { CheckCircle, ShoppingBag, ArrowRight, Truck } from 'lucide-react'
 
 const OrderConfirmationPage = () => {
+    const [searchParams] = useSearchParams()
+    const orderId = searchParams.get('order_id') || 'ORD-2026-X992V'
+
     return (
-        <div className="pt-40 pb-24 min-h-screen bg-primary flex items-center justify-center">
-            <div className="container mx-auto px-6 max-w-2xl text-center">
+        <div className="pt-40 pb-24 min-h-screen bg-primary flex items-center justify-center transition-colors duration-500">
+            <div className="container mx-auto px-6 max-w-2xl text-center text-secondary">
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
@@ -15,26 +19,26 @@ const OrderConfirmationPage = () => {
                         <CheckCircle size={48} strokeWidth={1.5} />
                     </div>
 
-                    <h1 className="text-6xl md:text-8xl font-serif tracking-tighter text-secondary mb-8">THANK YOU.</h1>
+                    <h1 className="text-6xl md:text-8xl font-serif tracking-tighter text-secondary mb-8 uppercase">THANK YOU.</h1>
 
                     <div className="space-y-4 mb-16">
-                        <p className="text-xs uppercase tracking-[0.5em] text-gray-500">Order #ORD-2026-X992V</p>
-                        <p className="text-lg text-secondary opacity-80 max-w-md mx-auto leading-relaxed">
+                        <p className="text-xs uppercase tracking-[0.5em] text-gray-500 font-bold">Order #{orderId}</p>
+                        <p className="text-lg text-secondary opacity-80 max-w-md mx-auto leading-relaxed font-serif">
                             Your premium pieces are being prepared by our artisans. A confirmation email has been sent to your inbox.
                         </p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-16">
-                        <Link to="/order-tracking/ORD-2026-X992V" className="p-8 border border-secondary/10 bg-secondary/5 text-left group hover:border-secondary/30 transition-all block">
+                        <Link to={`/order-tracking/${orderId}`} className="p-8 border border-secondary/10 bg-secondary/5 text-left group hover:border-secondary/30 transition-all block">
                             <Truck className="text-secondary mb-4 opacity-50" size={20} />
                             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary mb-2">Track Shipping</h3>
-                            <p className="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed">Follow your order's journey in real-time.</p>
+                            <p className="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed font-bold">Follow your order's journey in real-time.</p>
                         </Link>
-                        <div className="p-8 border border-secondary/10 bg-secondary/5 text-left group hover:border-secondary/30 transition-all cursor-pointer">
+                        <button className="p-8 border border-secondary/10 bg-secondary/5 text-left group hover:border-secondary/30 transition-all cursor-pointer">
                             <ShoppingBag className="text-secondary mb-4 opacity-50" size={20} />
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary mb-2">Support Hero</h3>
-                            <p className="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed">Need assistance? Our concierge is here to help.</p>
-                        </div>
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary mb-2">Support Concierge</h3>
+                            <p className="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed font-bold">Need assistance? Our concierge is here to help.</p>
+                        </button>
                     </div>
 
                     <div className="flex flex-col md:flex-row gap-6 justify-center">
