@@ -14,7 +14,7 @@ router = APIRouter()
 @router.get("/products")
 def get_products(
     page: int = Query(1, ge=1),
-    limit: int = Query(10, ge=1, le=50),
+    limit: int = Query(10, ge=1, le=500),
     db: Session = Depends(get_db)
 ):
 
