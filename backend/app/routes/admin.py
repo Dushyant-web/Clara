@@ -92,13 +92,55 @@ def update_price(
 
     return {"message": "price updated"}
 
+@router.put("/product/{product_id}")
+def update_product(
+    product_id: int,
+    title: str = None,
+    description: str = None,
+    category_id: int = None,
+    image: str = None,
+    db: Session = Depends(get_db)
+):
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        return {"error": "Product not found"}
+
+    if title: product.name = title
+    if description: product.description = description
+    if category_id: product.category_id = category_id
+    if image: product.image = image
+
+    db.commit()
+    return {"message": "product updated"}
+
 @router.delete("/product/{product_id}")
 def delete_product(product_id: int, db: Session = Depends(get_db)):
-
     db.query(Product).filter(Product.id == product_id).delete()
     db.commit()
-
     return {"message": "product deleted"}
+
+@router.put("/variant-full/{variant_id}")
+def update_variant_full(
+    variant_id: int,
+    price: float = None,
+    stock: int = None,
+    sku: str = None,
+    size: str = None,
+    color: str = None,
+    db: Session = Depends(get_db)
+):
+    variant = db.query(ProductVariant).filter(ProductVariant.id == variant_id).first()
+    if not variant:
+        return {"error": "Variant not found"}
+
+    if price is not None: variant.price = price
+    if stock is not None: variant.stock = stock
+    if sku: variant.sku = sku
+    if size: variant.size = size
+    if color: variant.color = color
+
+    db.commit()
+    return {"message": "variant updated"}
 
 @router.post("/promo")
 def create_promo(
