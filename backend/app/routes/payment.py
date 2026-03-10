@@ -169,9 +169,18 @@ async def razorpay_webhook(request: Request, db: Session = Depends(get_db)):
 
     payload = await request.body()
 
-    # TODO: verify Razorpay webhook signature in production
-    # signature = request.headers.get("X-Razorpay-Signature")
-    # razorpay_client.utility.verify_webhook_signature(payload, signature, os.getenv("RAZORPAY_WEBHOOK_SECRET"))
+    signature = request.headers.get("X-Razorpay-Signature")
+    webhook_secret = os.getenv("RAZORPAY_WEBHOOK_SECRET")
+
+    if webhook_secret and signature:
+        try:
+            razorpay_client.utility.verify_webhook_signature(
+                payload,
+                signature,
+                webhook_secret
+            )
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid Razorpay webhook signature")
 
     try:
         data = await request.json()
