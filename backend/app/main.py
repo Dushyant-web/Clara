@@ -25,6 +25,29 @@ from app.routes import wishlist
 from app.database.db import engine
 from app.database.db import Base
 
+# Import all models so SQLAlchemy registers them before create_all()
+from app.models import (
+    address,
+    cart_item,
+    categories,
+    collection,
+    inventory_reservation,
+    lookbook,
+    newsletter,
+    notification,
+    order_item,
+    order,
+    payment,
+    product_image,
+    product_variant,
+    product,
+    promo_code,
+    review_media,
+    review,
+    user,
+    wishlist,
+)
+
 app = FastAPI(title="NAME API")
 
 # Ensure all database tables exist (important for production deploys)
