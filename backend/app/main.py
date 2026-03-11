@@ -29,7 +29,6 @@ from app.database.db import Base
 from app.models import (
     address,
     cart_item,
-    categories,
     collection,
     inventory_reservation,
     lookbook,
