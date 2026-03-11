@@ -22,7 +22,13 @@ from app.routes import reviews
 from app.routes import upload
 from app.routes import wishlist
 
+from app.database.db import engine
+from app.database.db import Base
+
 app = FastAPI(title="NAME API")
+
+# Ensure all database tables exist (important for production deploys)
+Base.metadata.create_all(bind=engine)
 
 origins = [
     "http://localhost:5173",
