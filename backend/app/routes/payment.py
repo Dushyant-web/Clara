@@ -66,7 +66,8 @@ def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db))
                 
                 if provider in ["upi", "card"]:
                     # Precise rounding to paise (integers)
-                    amount_paise = int(round(float(order.total_amount) * 100))
+                    amount_rupees = max(float(order.total_amount), 5)
+                    amount_paise = int(round(amount_rupees * 100))
                     
                     razorpay_order = razorpay_client.order.create({
                         "amount": amount_paise,
@@ -110,7 +111,8 @@ def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db))
     if provider in ["upi", "card"]:
         try:
             # Precise rounding to paise (integers)
-            amount_paise = int(round(float(order.total_amount) * 100))
+            amount_rupees = max(float(order.total_amount), 5)
+            amount_paise = int(round(amount_rupees * 100))
             
             razorpay_order = razorpay_client.order.create({
                 "amount": amount_paise,
@@ -126,7 +128,7 @@ def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db))
     db.add(payment)
 
     # store razorpay order id if created
-    if razorpay_order and hasattr(payment, "razorpay_order_id"):
+    if razorpay_order:
         payment.razorpay_order_id = razorpay_order["id"]
 
     db.commit()
