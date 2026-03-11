@@ -49,6 +49,13 @@ def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db))
 
     existing = db.query(Payment).filter(Payment.order_id == order_id).first()
 
+    # --- Always ensure payment amount matches the current order ---
+    # Prevent stale amounts (like old ₹1 test payments) from being reused
+    if existing and float(existing.amount) != float(order.total_amount):
+        existing.amount = float(order.total_amount)
+        db.commit()
+        db.refresh(existing)
+
     if existing:
         # If order amount changed or provider changed, ALWAYS regenerate Razorpay order
         # This also ensures we don't use a stale razorpay_order_id if keys were switched
@@ -65,8 +72,8 @@ def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db))
                 existing.provider = provider # Update provider if it changed
                 
                 if provider in ["upi", "card"]:
-                    # Precise rounding to paise (integers)
-                    amount_rupees = max(float(order.total_amount), 5)
+                    # Use exact order total (Razorpay expects paise)
+                    amount_rupees = float(order.total_amount)
                     amount_paise = int(round(amount_rupees * 100))
                     
                     razorpay_order = razorpay_client.order.create({
@@ -110,8 +117,8 @@ def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db))
 
     if provider in ["upi", "card"]:
         try:
-            # Precise rounding to paise (integers)
-            amount_rupees = max(float(order.total_amount), 5)
+            # Use exact order total (Razorpay expects paise)
+            amount_rupees = float(order.total_amount)
             amount_paise = int(round(amount_rupees * 100))
             
             razorpay_order = razorpay_client.order.create({
