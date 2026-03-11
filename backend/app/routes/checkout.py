@@ -49,68 +49,69 @@ def checkout(user_id: int, promo_code: str | None = None, idempotency_key: str |
                 "total": float(existing_order.total_amount)
             }
 
-    # Start single transaction for entire checkout
-    with db.begin():
+    # Transaction handled by FastAPI session
 
-        cart_items = db.query(CartItem).filter(CartItem.user_id == user_id).all()
+    cart_items = db.query(CartItem).filter(CartItem.user_id == user_id).all()
 
-        if not cart_items:
-            raise HTTPException(status_code=400, detail="Cart is empty")
+    if not cart_items:
+        raise HTTPException(status_code=400, detail="Cart is empty")
 
-        total = 0
+    total = 0
 
-        for item in cart_items:
+    for item in cart_items:
 
-            variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).with_for_update().first()
+        variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).with_for_update().first()
 
-            if variant.stock < item.quantity:
-                raise HTTPException(status_code=400, detail="Product out of stock")
+        if variant.stock < item.quantity:
+            raise HTTPException(status_code=400, detail="Product out of stock")
 
-            # Reserve stock for this variant (temporary hold during checkout)
-            reservation = InventoryReservation(
-                user_id=user_id,
-                variant_id=item.variant_id,
-                quantity=item.quantity
-            )
-            db.add(reservation)
-
-            total += variant.price * item.quantity
-
-        order_amount = total
-        if promo_code:
-            try:
-                from app.routes.promo import apply_promo
-                from app.schemas.checkout_schema import PromoApplyRequest
-                
-                # Validation only (order not created yet)
-                promo_result = apply_promo(
-                    PromoApplyRequest(code=promo_code, user_id=user_id),
-                    db
-                )
-                order_amount = promo_result["final_amount"]
-            except Exception:
-                pass
-
-        order = Order(
+        # Reserve stock for this variant (temporary hold during checkout)
+        reservation = InventoryReservation(
             user_id=user_id,
-            total_amount=order_amount
+            variant_id=item.variant_id,
+            quantity=item.quantity
         )
+        db.add(reservation)
 
-        db.add(order)
-        db.flush()  
-        db.refresh(order)
+        total += variant.price * item.quantity
 
-        for item in cart_items:
-            variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).with_for_update().first()
-            # variant.stock -= item.quantity  # Stock reduction will be handled after payment confirmation
-
-            order_item = OrderItem(
-                order_id=order.id,
-                variant_id=item.variant_id,
-                quantity=item.quantity,
-                price=variant.price
+    order_amount = total
+    if promo_code:
+        try:
+            from app.routes.promo import apply_promo
+            from app.schemas.checkout_schema import PromoApplyRequest
+            
+            # Validation only (order not created yet)
+            promo_result = apply_promo(
+                PromoApplyRequest(code=promo_code, user_id=user_id),
+                db
             )
-            db.add(order_item)
+            order_amount = promo_result["final_amount"]
+        except Exception:
+            pass
+
+    order = Order(
+        user_id=user_id,
+        total_amount=order_amount
+    )
+
+    db.add(order)
+    db.flush()  
+    db.refresh(order)
+
+    for item in cart_items:
+        variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).with_for_update().first()
+        # variant.stock -= item.quantity  # Stock reduction will be handled after payment confirmation
+
+        order_item = OrderItem(
+            order_id=order.id,
+            variant_id=item.variant_id,
+            quantity=item.quantity,
+            price=variant.price
+        )
+        db.add(order_item)
+
+    db.commit()
 
     return {
         "message": "order created",
