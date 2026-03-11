@@ -67,10 +67,29 @@ const CheckoutPage = () => {
 
     const loadRazorpay = () => {
         return new Promise((resolve) => {
-            const script = document.createElement('script');
-            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+
+            if (window.Razorpay) {
+                resolve(true);
+                return;
+            }
+
+            const existingScript = document.querySelector(
+                'script[src="https://checkout.razorpay.com/v1/checkout.js"]'
+            );
+
+            if (existingScript) {
+                existingScript.onload = () => resolve(true);
+                existingScript.onerror = () => resolve(false);
+                return;
+            }
+
+            const script = document.createElement("script");
+            script.src = "https://checkout.razorpay.com/v1/checkout.js";
+            script.async = true;
+
             script.onload = () => resolve(true);
             script.onerror = () => resolve(false);
+
             document.body.appendChild(script);
         });
     };
@@ -91,11 +110,9 @@ const CheckoutPage = () => {
             setIsProcessing(true)
             try {
                 // 0. Ensure Razorpay script is loaded
-                if (!window.Razorpay) {
-                    const res = await loadRazorpay();
-                    if (!res) {
-                        throw new Error('Razorpay SDK failed to load. Are you online?');
-                    }
+                const razorpayLoaded = await loadRazorpay();
+                if (!razorpayLoaded || !window.Razorpay) {
+                    throw new Error("Razorpay SDK failed to load.");
                 }
 
                 // 1. Create Checkout / Order with unique idempotency key
