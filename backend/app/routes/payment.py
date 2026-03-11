@@ -175,8 +175,11 @@ def confirm_payment(request: PaymentConfirmRequest, db: Session = Depends(get_db
             if variant:
                 variant.stock -= item.quantity
 
-        # Remove inventory reservations for this user/order
-        db.query(InventoryReservation).filter(InventoryReservation.user_id == order.user_id).delete()
+        # Remove only reservations related to this order's variants
+        variant_ids = [item.variant_id for item in items]
+        db.query(InventoryReservation).filter(
+            InventoryReservation.variant_id.in_(variant_ids)
+        ).delete(synchronize_session=False)
 
         # Clear cart upon successful payment
         db.query(CartItem).filter(CartItem.user_id == order.user_id).delete()
@@ -255,8 +258,11 @@ async def razorpay_webhook(request: Request, db: Session = Depends(get_db)):
             if variant:
                 variant.stock -= item.quantity
 
-        # Remove inventory reservations for this user/order
-        db.query(InventoryReservation).filter(InventoryReservation.user_id == order.user_id).delete()
+        # Remove only reservations related to this order's variants
+        variant_ids = [item.variant_id for item in items]
+        db.query(InventoryReservation).filter(
+            InventoryReservation.variant_id.in_(variant_ids)
+        ).delete(synchronize_session=False)
 
         # Clear cart upon successful payment
         db.query(CartItem).filter(CartItem.user_id == order.user_id).delete()

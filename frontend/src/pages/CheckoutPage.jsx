@@ -22,6 +22,7 @@ const CheckoutPage = () => {
     const [promoCode, setPromoCode] = useState('')
     const [discount, setDiscount] = useState(0)
     const [applyingPromo, setApplyingPromo] = useState(false)
+    const [serverTotal, setServerTotal] = useState(null)
 
     const { cartItems, cartTotal, clearCart } = useCart()
     const { user } = useAuth()
@@ -34,7 +35,9 @@ const CheckoutPage = () => {
     }, [cartItems, navigate, isProcessing])
 
     const subtotal = cartTotal
-    const total = (subtotal > 500 ? subtotal : subtotal + 25) - discount
+    const total = serverTotal !== null
+        ? serverTotal
+        : (subtotal > 500 ? subtotal : subtotal + 25) - discount
 
     const handleApplyPromo = async () => {
         if (!promoCode.trim() || !user) return
@@ -104,6 +107,9 @@ const CheckoutPage = () => {
                     : Math.random().toString(36).substring(2) + Date.now().toString(36);
 
                 const checkoutResponse = await orderService.createCheckout(user.id, idempotencyKey, discount > 0 ? promoCode : null)
+                if (checkoutResponse?.total !== undefined) {
+                    setServerTotal(checkoutResponse.total)
+                }
 
                 if (!checkoutResponse || !checkoutResponse.order_id) {
                     throw new Error(checkoutResponse?.message || 'Failed to create order on server');
