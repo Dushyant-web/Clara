@@ -153,12 +153,20 @@ const CheckoutPage = () => {
                         description: "Order #" + checkoutResponse.order_id,
                         order_id: paymentResponse.razorpay_order_id,
                         handler: async (response) => {
-                            await orderService.confirmPayment(
-                                paymentResponse.payment_id,
-                                response.razorpay_payment_id
-                            )
-                            clearCart()
-                            navigate(`/order-confirmation?order_id=${checkoutResponse.order_id}`)
+                            try {
+                                await orderService.confirmPayment(
+                                    paymentResponse.payment_id,
+                                    response.razorpay_payment_id
+                                )
+
+                                clearCart()
+
+                                // Force redirect to confirmation page after payment success
+                                window.location.href = `/order-confirmation?order_id=${checkoutResponse.order_id}`
+                            } catch (err) {
+                                console.error("Payment confirmation error:", err)
+                                window.location.href = `/order-confirmation?order_id=${checkoutResponse.order_id}`
+                            }
                         },
                         notes: {
                             order_id: checkoutResponse.order_id,
@@ -171,6 +179,11 @@ const CheckoutPage = () => {
                         },
                         theme: {
                             color: "#000000"
+                        },
+                        modal: {
+                            ondismiss: function () {
+                                console.warn("Razorpay popup closed by user")
+                            }
                         }
                     };
                     const rzp = new window.Razorpay(options);
