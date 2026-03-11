@@ -62,8 +62,11 @@ def apply_promo(request: PromoApplyRequest, db: Session = Depends(get_db)):
     else:
         discount = float(promo.discount_value)
 
-    # Ensure the final payable amount never goes below ₹1
-    final_amount = max(order_amount - discount, 1)
+    # Ensure the final payable amount never goes below ₹0 (₹1 minimum was causing incorrect totals like ₹3 → ₹1)
+    final_amount = round(order_amount - discount, 2)
+
+    if final_amount < 0:
+        final_amount = 0
 
     # Only update DB if an actual order exists (final checkout step)
     if request.order_id:

@@ -161,11 +161,11 @@ const CheckoutPage = () => {
 
                                 clearCart()
 
-                                // Force redirect to confirmation page after payment success
-                                window.location.href = `/order-confirmation?order_id=${checkoutResponse.order_id}`
+                                // Use React Router navigation instead of full page reload
+                                navigate(`/order-confirmation?order_id=${checkoutResponse.order_id}`)
                             } catch (err) {
                                 console.error("Payment confirmation error:", err)
-                                window.location.href = `/order-confirmation?order_id=${checkoutResponse.order_id}`
+                                navigate(`/order-confirmation?order_id=${checkoutResponse.order_id}`)
                             }
                         },
                         notes: {
