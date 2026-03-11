@@ -126,18 +126,25 @@ const CheckoutPage = () => {
                 }
 
                 if (paymentResponse.razorpay_order_id) {
-                    const config = await orderService.getPaymentConfig();
-                    const rzpKey = config.key || import.meta.env.VITE_RAZORPAY_KEY_ID;
+                    let rzpKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+                    try {
+                        const config = await orderService.getPaymentConfig();
+                        if (config?.key) rzpKey = config.key;
+                    } catch (e) {
+                        console.warn('Backend config fetch failed, using fallback.');
+                    }
 
-                    console.log("PAYMENT AUTO-SYNC:", {
-                        key: rzpKey ? `${rzpKey.slice(0, 8)}...` : "MISSING",
+                    rzpKey = (rzpKey || "").trim();
+
+                    console.log("RAZORPAY DEBUG:", {
+                        key_preview: rzpKey ? `${rzpKey.slice(0, 8)}...${rzpKey.slice(-6)}` : "MISSING",
                         amount: paymentResponse.amount,
-                        order: paymentResponse.razorpay_order_id
+                        paise: Math.round(parseFloat(paymentResponse.amount) * 100),
+                        order_id: paymentResponse.razorpay_order_id
                     });
 
                     const options = {
                         key: rzpKey,
-                        amount: Math.round(paymentResponse.amount * 100),
                         currency: "INR",
                         name: "NAME.",
                         description: "Order #" + checkoutResponse.order_id,
@@ -205,7 +212,6 @@ const CheckoutPage = () => {
                             ))}
                         </div>
 
-                        {/* Step Content */}
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={step}
@@ -213,7 +219,7 @@ const CheckoutPage = () => {
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: -20 }}
                                 transition={{ duration: 0.5 }}
-                                className="space-y-8"
+                                className="space-y-8 relative"
                             >
                                 {step === 1 && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
