@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey, String, DateTime
+from sqlalchemy import Column, Integer, ForeignKey, String, DateTime,Numeric
 from sqlalchemy.sql import func
 from app.database.db import Base
 
@@ -20,6 +20,6 @@ class Order(Base):
     # cancelled → order cancelled/refunded
     status = Column(String, default="pending", index=True)
 
-    total_amount = Column(Integer)
+    total_amount = Column(Numeric(10, 2))
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())

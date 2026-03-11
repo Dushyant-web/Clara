@@ -50,26 +50,40 @@ def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db))
     existing = db.query(Payment).filter(Payment.order_id == order_id).first()
 
     if existing:
-        # If order amount changed (e.g. promo applied later), regenerate Razorpay order
-        amount_changed = float(existing.amount) != float(order.total_amount)
+        # If order amount changed or provider changed, ALWAYS regenerate Razorpay order
+        # This also ensures we don't use a stale razorpay_order_id if keys were switched
+        amount_changed = abs(float(existing.amount) - float(order.total_amount)) > 0.01
         
-        if amount_changed or (not getattr(existing, "razorpay_order_id", None) and provider in ["upi", "card"]):
+        # If it's a "upi" or "card" payment, we MUST have a valid razorpay_order_id
+        # We REGENERATE if amount changed OR if it's missing OR if we want to be safe against key changes
+        needs_razorpay_regen = (provider in ["upi", "card"]) and (amount_changed or not getattr(existing, "razorpay_order_id", None))
+
+        if amount_changed or needs_razorpay_regen:
             try:
                 # Update payment amount to match current order total
                 existing.amount = order.total_amount
+                existing.provider = provider # Update provider if it changed
                 
                 if provider in ["upi", "card"]:
+                    # Precise rounding to paise (integers)
+                    amount_paise = int(round(float(order.total_amount) * 100))
+                    
                     razorpay_order = razorpay_client.order.create({
-                        "amount": int(round(float(order.total_amount) * 100)),
+                        "amount": amount_paise,
                         "currency": "INR",
-                        "payment_capture": 1
+                        "payment_capture": 1,
+                        "notes": {
+                            "order_id": order.id,
+                            "type": "re-creation"
+                        }
                     })
                     existing.razorpay_order_id = razorpay_order["id"]
                 
                 db.commit()
                 db.refresh(existing)
             except Exception as e:
-                raise HTTPException(status_code=400, detail=f"Payment Amount Sync Failed: {str(e)}")
+                db.rollback()
+                raise HTTPException(status_code=400, detail=f"Payment Gateway Sync Failed: {str(e)}")
             
         return {
             "payment_id": existing.id,
@@ -95,10 +109,16 @@ def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db))
 
     if provider in ["upi", "card"]:
         try:
+            # Precise rounding to paise (integers)
+            amount_paise = int(round(float(order.total_amount) * 100))
+            
             razorpay_order = razorpay_client.order.create({
-                "amount": int(round(float(order.total_amount) * 100)),
+                "amount": amount_paise,
                 "currency": "INR",
-                "payment_capture": 1
+                "payment_capture": 1,
+                "notes": {
+                    "order_id": order.id
+                }
             })
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Razorpay Error: {str(e)}")

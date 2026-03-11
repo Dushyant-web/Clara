@@ -29,11 +29,18 @@ def checkout(user_id: int, promo_code: str | None = None, idempotency_key: str |
                     from app.routes.promo import apply_promo
                     from app.schemas.checkout_schema import PromoApplyRequest
                     # apply_promo will update existing_order.total_amount because we pass order_id
-                    apply_promo(
+                    res = apply_promo(
                         PromoApplyRequest(code=promo_code, user_id=user_id, order_id=existing_order.id),
                         db
                     )
-                except Exception:
+                    # We continue to return the existing order
+                    return {
+                        "message": "order updated with promo",
+                        "order_id": existing_order.id,
+                        "total": float(res["final_amount"])
+                    }
+                except Exception as e:
+                    # If promo fails, we still return the existing order's current total
                     pass
             
             return {
