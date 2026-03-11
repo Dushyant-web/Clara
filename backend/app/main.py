@@ -31,12 +31,9 @@ from app.models import (
     cart_item,
     collection,
     inventory_reservation,
-    lookbook,
-    newsletter,
     notification,
     order_item,
     order,
-    payment,
     product_image,
     product_variant,
     product,
@@ -44,7 +41,6 @@ from app.models import (
     review_media,
     review,
     user,
-    wishlist,
 )
 
 app = FastAPI(title="NAME API")
