@@ -67,29 +67,10 @@ const CheckoutPage = () => {
 
     const loadRazorpay = () => {
         return new Promise((resolve) => {
-
-            if (window.Razorpay) {
-                resolve(true);
-                return;
-            }
-
-            const existingScript = document.querySelector(
-                'script[src="https://checkout.razorpay.com/v1/checkout.js"]'
-            );
-
-            if (existingScript) {
-                existingScript.onload = () => resolve(true);
-                existingScript.onerror = () => resolve(false);
-                return;
-            }
-
-            const script = document.createElement("script");
-            script.src = "https://checkout.razorpay.com/v1/checkout.js";
-            script.async = true;
-
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
             script.onload = () => resolve(true);
             script.onerror = () => resolve(false);
-
             document.body.appendChild(script);
         });
     };
@@ -110,9 +91,11 @@ const CheckoutPage = () => {
             setIsProcessing(true)
             try {
                 // 0. Ensure Razorpay script is loaded
-                const razorpayLoaded = await loadRazorpay();
-                if (!razorpayLoaded || !window.Razorpay) {
-                    throw new Error("Razorpay SDK failed to load.");
+                if (!window.Razorpay) {
+                    const res = await loadRazorpay();
+                    if (!res) {
+                        throw new Error('Razorpay SDK failed to load. Are you online?');
+                    }
                 }
 
                 // 1. Create Checkout / Order with unique idempotency key
@@ -155,14 +138,11 @@ const CheckoutPage = () => {
 
                     console.log("RAZORPAY DEBUG:", {
                         key_preview: rzpKey ? `${rzpKey.slice(0, 8)}...${rzpKey.slice(-6)}` : "MISSING",
-                        amount: paymentResponse.amount,
-                        paise: Math.round(parseFloat(paymentResponse.amount) * 100),
                         order_id: paymentResponse.razorpay_order_id
                     });
 
                     const options = {
                         key: rzpKey,
-                        currency: "INR",
                         name: "NAME.",
                         description: "Order #" + checkoutResponse.order_id,
                         order_id: paymentResponse.razorpay_order_id,
