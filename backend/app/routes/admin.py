@@ -294,7 +294,7 @@ def delete_promo(promo_id: int, db: Session = Depends(get_db)):
     return {"message": "promo deleted"}
 
 
-@router.post("/admin/product-image")
+@router.post("/product-image")
 def add_product_image(
     product_id: int,
     image_url: str,
