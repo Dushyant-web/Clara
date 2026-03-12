@@ -7,6 +7,9 @@ from app.models.product import Product
 
 from app.models.collection import CollectionImage
 
+from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
+
 
 
 router = APIRouter()
@@ -21,11 +24,15 @@ def create_collection(name: str, slug: str, description: str = "", db: Session =
         description=description
     )
 
-    db.add(collection)
-    db.commit()
-    db.refresh(collection)
+    try:
+        db.add(collection)
+        db.commit()
+        db.refresh(collection)
+        return collection
 
-    return collection
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Collection slug already exists")
 
 
 # Get all collections
