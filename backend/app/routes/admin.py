@@ -26,6 +26,7 @@ def create_product(
     title: str,
     description: str,
     category_id: int,
+    price: float = 0,
     image: str = None,
     db: Session = Depends(get_db)
 ):
@@ -35,7 +36,7 @@ def create_product(
         description=description,
         category_id=category_id,
         image=image,
-        price=0
+        price=price
     )
 
     db.add(product)
@@ -178,6 +179,7 @@ def update_product(
     title: str = None,
     description: str = None,
     category_id: int = None,
+    price: float = None,
     image: str = None,
     db: Session = Depends(get_db)
 ):
@@ -188,6 +190,7 @@ def update_product(
     if title: product.name = title
     if description: product.description = description
     if category_id: product.category_id = category_id
+    if price is not None: product.price = price
     if image: product.image = image
 
     db.commit()
