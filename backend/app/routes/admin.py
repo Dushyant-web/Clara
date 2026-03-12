@@ -11,6 +11,7 @@ from datetime import datetime
 from app.models.product_image import ProductImage
 from app.models.collection import CollectionImage
 from app.models.lookbook import LookbookImage
+from app.schemas.variant import VariantCreate
 
 import razorpay
 import os
@@ -45,17 +46,18 @@ def create_product(
 @router.post("/product/{product_id}/variant")
 def create_variant(
     product_id: int,
-    price: float,
-    stock: int,
-    sku: str,
+    variant: VariantCreate,
     db: Session = Depends(get_db)
 ):
 
     variant = ProductVariant(
         product_id=product_id,
-        price=price,
-        stock=stock,
-        sku=sku
+        size=variant.size,
+        color=variant.color,
+        price=variant.price,
+        stock=variant.stock,
+        image_url=variant.image_url,
+        sku=variant.sku
     )
 
     db.add(variant)
