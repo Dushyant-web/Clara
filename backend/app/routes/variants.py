@@ -4,12 +4,13 @@ from sqlalchemy.orm import Session
 from app.database.db import get_db
 from app.models.product_variant import ProductVariant
 from app.models.product import Product
+from app.schemas.variant import VariantCreate
 
 router = APIRouter(prefix="/admin")
 
 
 @router.post("/product/{product_id}/variant")
-def create_variant(product_id: int, variant: dict, db: Session = Depends(get_db)):
+def create_variant(product_id: int, variant: VariantCreate, db: Session = Depends(get_db)):
 
     product = db.query(Product).filter(Product.id == product_id).first()
 
@@ -18,12 +19,12 @@ def create_variant(product_id: int, variant: dict, db: Session = Depends(get_db)
 
     new_variant = ProductVariant(
         product_id=product_id,
-        size=variant.get("size"),
-        color=variant.get("color"),
-        price=variant.get("price"),
-        stock=variant.get("stock"),
-        image_url=variant.get("image_url"),
-        sku=variant.get("sku")
+        size=variant.size,
+        color=variant.color,
+        price=variant.price,
+        stock=variant.stock,
+        image_url=variant.image_url,
+        sku=variant.sku
     )
 
     db.add(new_variant)
