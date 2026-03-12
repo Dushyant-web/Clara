@@ -13,7 +13,7 @@ from app.models.product_image import ProductImage
 from app.models.collection import CollectionImage
 from app.models.lookbook import LookbookImage
 from app.schemas.variant import VariantCreate
-
+from fastapi import Query
 import razorpay
 import os
 
@@ -205,12 +205,12 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
 @router.put("/variant-full/{variant_id}")
 def update_variant_full(
     variant_id: int,
-    price: float = None,
-    stock: int = None,
-    sku: str = None,
-    size: str = None,
-    color: str = None,
-    image_url: str = None,
+    price: float = Query(None),
+    stock: int = Query(None),
+    sku: str = Query(None),
+    size: str = Query(None),
+    color: str = Query(None),
+    image_url: str = Query(None),
     db: Session = Depends(get_db)
 ):
     variant = db.query(ProductVariant).filter(ProductVariant.id == variant_id).first()
