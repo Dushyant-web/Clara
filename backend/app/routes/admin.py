@@ -295,11 +295,19 @@ def delete_promo(promo_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/admin/product-image")
-def add_product_image(product_id: int, image_url: str, db: Session = Depends(get_db)):
+def add_product_image(
+    product_id: int,
+    image_url: str,
+    image_type: str = Query("gallery"),  # cover | hover | gallery
+    position: int = Query(0),
+    db: Session = Depends(get_db)
+):
 
     new_image = ProductImage(
         product_id=product_id,
-        image_url=image_url
+        image_url=image_url,
+        type=image_type,
+        position=position
     )
 
     db.add(new_image)
@@ -308,8 +316,34 @@ def add_product_image(product_id: int, image_url: str, db: Session = Depends(get
 
     return {
         "message": "Product image added",
-        "image": new_image.image_url
+        "image": {
+            "id": new_image.id,
+            "url": new_image.image_url,
+            "type": image_type,
+            "position": position
+        }
     }
+
+# ----------- PRODUCT IMAGE FETCH ENDPOINT -----------
+@router.get("/product/{product_id}/images")
+def get_product_images(product_id: int, db: Session = Depends(get_db)):
+
+    images = (
+        db.query(ProductImage)
+        .filter(ProductImage.product_id == product_id)
+        .order_by(ProductImage.position.asc())
+        .all()
+    )
+
+    return [
+        {
+            "id": img.id,
+            "url": img.image_url,
+            "type": getattr(img, "type", "gallery"),
+            "position": getattr(img, "position", 0)
+        }
+        for img in images
+    ]
 
 @router.post("/admin/collection-image")
 def add_collection_image(collection_id: int, image_url: str, db: Session = Depends(get_db)):
@@ -578,3 +612,30 @@ def refund_payment(payment_id: str, amount: int = None, db: Session = Depends(ge
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+    
+@router.delete("/product-image/{image_id}")
+def delete_product_image(image_id: int, db: Session = Depends(get_db)):
+
+    image = db.query(ProductImage).filter(ProductImage.id == image_id).first()
+
+    if not image:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    db.delete(image)
+    db.commit()
+
+    return {
+        "message": "Image deleted",
+        "image_id": image_id
+    }
+@router.patch("/product-images/reorder")
+def reorder_product_images(images: list[dict], db: Session = Depends(get_db)):
+
+    for img in images:
+        image = db.query(ProductImage).filter(ProductImage.id == img["id"]).first()
+        if image:
+            image.position = img["position"]
+
+    db.commit()
+
+    return {"message": "image order updated"}
