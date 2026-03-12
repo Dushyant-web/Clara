@@ -1,10 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.database.db import get_db
 from app.models.categories import Category
 from app.models.product import Product
 
 router = APIRouter()
+
+# Pydantic schema for category creation
+class CategoryCreate(BaseModel):
+    name: str
+    slug: str
 
 @router.get("/categories")
 def get_categories(db: Session = Depends(get_db)):
@@ -25,3 +31,17 @@ def get_products_by_category(slug: str, db: Session = Depends(get_db)):
         .limit(12)
         .all()
     )
+
+@router.post("/admin/category")
+def create_category(data: CategoryCreate, db: Session = Depends(get_db)):
+    existing = db.query(Category).filter(Category.slug == data.slug).first()
+    if existing:
+        return existing   # just return existing instead of failing
+    category = Category(
+        name=data.name,
+        slug=data.slug
+    )
+    db.add(category)
+    db.commit()
+    db.refresh(category)
+    return category
