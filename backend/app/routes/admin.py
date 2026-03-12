@@ -210,19 +210,34 @@ def update_variant_full(
     sku: str = None,
     size: str = None,
     color: str = None,
+    image_url: str = None,
     db: Session = Depends(get_db)
 ):
     variant = db.query(ProductVariant).filter(ProductVariant.id == variant_id).first()
+
     if not variant:
         return {"error": "Variant not found"}
 
-    if price is not None: variant.price = price
-    if stock is not None: variant.stock = stock
-    if sku: variant.sku = sku
-    if size: variant.size = size
-    if color: variant.color = color
+    if price is not None:
+        variant.price = price
+
+    if stock is not None:
+        variant.stock = stock
+
+    if sku:
+        variant.sku = sku
+
+    if size:
+        variant.size = size
+
+    if color:
+        variant.color = color
+
+    if image_url:
+        variant.image_url = image_url
 
     db.commit()
+
     return {"message": "variant updated"}
 
 @router.post("/promo")
