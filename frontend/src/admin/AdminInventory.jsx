@@ -144,17 +144,17 @@ const AdminInventory = () => {
                     await adminService.updateVariantFull(v.id, {
                         size: v.size,
                         color: v.color,
-                        price: parseFloat(v.price),
+                        price: v.price ? parseFloat(v.price) : 0,
                         stock: parseInt(v.stock),
                         sku: v.sku
                     });
                 } else {
-                    await adminService.createVariant(productId, {
+                    await adminService.updateVariantFull(v.id, {
                         size: v.size,
                         color: v.color,
-                        price: parseFloat(v.price),
+                        price: v.price ? parseFloat(v.price) : 0,
                         stock: parseInt(v.stock),
-                        sku: v.sku || `${formData.name.toUpperCase()}-${v.size}-${v.color}`
+                        sku: v.sku
                     });
                 }
             }
@@ -184,11 +184,22 @@ const AdminInventory = () => {
         }));
     };
 
-    const removeVariant = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            variants: prev.variants.filter((_, i) => i !== index)
-        }));
+    const removeVariant = async (index) => {
+        const variant = formData.variants[index];
+
+        try {
+            if (variant?.id) {
+                await adminService.deleteVariant(variant.id);
+            }
+
+            setFormData(prev => ({
+                ...prev,
+                variants: prev.variants.filter((_, i) => i !== index)
+            }));
+        } catch (err) {
+            console.error("Variant delete failed", err);
+            alert("FAILED TO DELETE VARIANT");
+        }
     };
 
     const updateVariant = (index, field, value) => {

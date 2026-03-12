@@ -335,18 +335,28 @@ def add_lookbook_image(lookbook_id: int, image_url: str, db: Session = Depends(g
 @router.get("/reviews")
 def admin_get_reviews(rating: int = None, db: Session = Depends(get_db)):
     """
-    Get all reviews or filter by rating
-    Example:
-    /admin/reviews
-    /admin/reviews?rating=1
+    Get all reviews or filter by rating with associated user email
     """
-
-    query = db.query(Review)
+    query = db.query(Review, User.email.label("user_email")).join(User, Review.user_id == User.id)
 
     if rating is not None:
         query = query.filter(Review.rating == rating)
 
-    reviews = query.order_by(Review.created_at.desc()).all()
+    results = query.order_by(Review.created_at.desc()).all()
+
+    # Flatten the result to include user_email in the review object
+    reviews = []
+    for review, email in results:
+        review_dict = {
+            "id": review.id,
+            "product_id": review.product_id,
+            "user_id": review.user_id,
+            "rating": review.rating,
+            "comment": review.comment,
+            "created_at": review.created_at,
+            "user_email": email
+        }
+        reviews.append(review_dict)
 
     return reviews
 
@@ -409,7 +419,18 @@ def admin_user_profile(user_id: int, db: Session = Depends(get_db)):
     total_orders = len(orders)
     total_spent = sum(order.total_amount for order in orders) if orders else 0
 
-    reviews = db.query(Review).filter(Review.user_id == user_id).all()
+    reviews_results = db.query(Review).filter(Review.user_id == user_id).all()
+    reviews = []
+    for r in reviews_results:
+        reviews.append({
+            "id": r.id,
+            "product_id": r.product_id,
+            "user_id": r.user_id,
+            "rating": r.rating,
+            "comment": r.comment,
+            "created_at": r.created_at,
+            "user_email": user.email
+        })
 
     return {
         "user": {

@@ -17,7 +17,9 @@ const ProductPage = () => {
     const [reviews, setReviews] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedSize, setSelectedSize] = useState('')
+    const [selectedColor, setSelectedColor] = useState('')
     const [activeImage, setActiveImage] = useState(null)
+    const [variantImages, setVariantImages] = useState([])
     const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' })
     const [submittingReview, setSubmittingReview] = useState(false)
 
@@ -55,7 +57,7 @@ const ProductPage = () => {
 
     // Check availability for each size
     const sizeAvailability = allSizes.map(size => {
-        const variant = product?.variants?.find(v => v.size === size);
+        const variant = product?.variants?.find(v => v.size === size && (!selectedColor || v.color === selectedColor));
         return {
             size,
             isAvailable: !!variant && variant.stock > 0,
@@ -63,7 +65,31 @@ const ProductPage = () => {
         };
     });
 
-    const selectedVariant = product?.variants?.find(v => v.size === selectedSize);
+    const selectedVariant = product?.variants?.find(v =>
+        (selectedColor ? v.color === selectedColor : true) &&
+        (selectedSize ? v.size === selectedSize : true)
+    );
+
+    // Find a representative variant for the selected color (for images)
+    const colorVariant = product?.variants?.find(v =>
+        selectedColor ? v.color === selectedColor : true
+    );
+
+    useEffect(() => {
+        // Images should follow color selection, not size
+        if (colorVariant) {
+            if (colorVariant.images && colorVariant.images.length) {
+                setVariantImages(colorVariant.images)
+                setActiveImage(colorVariant.images[0])
+            } else if (colorVariant.image_url) {
+                setVariantImages([colorVariant.image_url])
+                setActiveImage(colorVariant.image_url)
+            }
+        } else if (product?.images) {
+            setVariantImages(product.images)
+            setActiveImage(product.images[0])
+        }
+    }, [colorVariant, product])
 
     if (loading) return <div className="h-screen flex items-center justify-center bg-primary"><p className="text-[10px] tracking-[0.5em] animate-pulse text-secondary">LOADING...</p></div>
     if (!product) return <div className="h-screen flex items-center justify-center bg-primary text-secondary uppercase tracking-widest">Product not found.</div>
@@ -80,7 +106,7 @@ const ProductPage = () => {
                     {/* Left: Image Gallery */}
                     <div className="lg:col-span-7 grid grid-cols-1 md:grid-cols-12 gap-4">
                         <div className="md:col-span-2 order-2 md:order-1 flex md:flex-col gap-4">
-                            {product.images.filter(Boolean).map((img, idx) => (
+                            {(variantImages.length ? variantImages : product.images).filter(Boolean).map((img, idx) => (
                                 <button
                                     key={idx}
                                     onClick={() => setActiveImage(img)}
@@ -111,14 +137,15 @@ const ProductPage = () => {
                                 </AnimatePresence>
 
                                 {/* Navigation Arrows */}
-                                {product.images.length > 1 && (
+                                {(variantImages.length ? variantImages : product.images).length > 1 && (
                                     <>
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                const idx = product.images.indexOf(activeImage);
-                                                const prevIdx = (idx - 1 + product.images.length) % product.images.length;
-                                                setActiveImage(product.images[prevIdx]);
+                                                const gallery = variantImages.length ? variantImages : product.images;
+                                                const idx = gallery.indexOf(activeImage);
+                                                const prevIdx = (idx - 1 + gallery.length) % gallery.length;
+                                                setActiveImage(gallery[prevIdx]);
                                             }}
                                             className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-primary/20 backdrop-blur-md text-secondary opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-primary/40 rounded-full"
                                         >
@@ -127,9 +154,10 @@ const ProductPage = () => {
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                const idx = product.images.indexOf(activeImage);
-                                                const nextIdx = (idx + 1) % product.images.length;
-                                                setActiveImage(product.images[nextIdx]);
+                                                const gallery = variantImages.length ? variantImages : product.images;
+                                                const idx = gallery.indexOf(activeImage);
+                                                const nextIdx = (idx + 1) % gallery.length;
+                                                setActiveImage(gallery[nextIdx]);
                                             }}
                                             className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-primary/20 backdrop-blur-md text-secondary opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-primary/40 rounded-full"
                                         >
@@ -167,6 +195,30 @@ const ProductPage = () => {
                             {product.description || 'Hand-crafted from premium weighted cotton, this piece embodies the intersection of luxury and street culture. Featuring an oversized fit and signature minimalist detailing.'}
                         </p>
 
+                        {/* Colors */}
+                        <div className="mb-10">
+                          <span className="text-[10px] uppercase tracking-widest font-bold mb-4 block">Select Color</span>
+
+                          {product?.variants && (
+                            <div className="flex gap-3 flex-wrap">
+                              {[...new Set(product.variants.map(v => v.color).filter(Boolean))].map(color => (
+                                <button
+                                  key={color}
+                                  onClick={() => {
+                                    setSelectedColor(color)
+                                    setSelectedSize('')
+                                  }}
+                                  className={`px-4 py-3 border text-[10px] uppercase tracking-widest font-bold transition-all ${selectedColor === color
+                                    ? 'bg-secondary text-primary border-secondary'
+                                    : 'border-secondary/10 hover:border-secondary text-secondary'
+                                  }`}
+                                >
+                                  {color}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                         {/* Sizes */}
                         <div className="mb-10">
                             <div className="flex justify-between items-center mb-4">
