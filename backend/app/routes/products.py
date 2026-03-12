@@ -75,7 +75,8 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
                 "color": v.color,
                 "price": v.price,
                 "stock": v.stock,
-                "sku": v.sku
+                "sku": v.sku,
+                "image_url": v.image_url
             } for v in variants
         ]
     }
