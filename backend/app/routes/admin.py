@@ -6,6 +6,7 @@ from app.models.product_variant import ProductVariant
 from app.models.promo_code import PromoCode
 from app.models.order import Order
 from app.models.user import User
+from app.models.review import Review
 from sqlalchemy import func
 from datetime import datetime
 from app.models.product_image import ProductImage
@@ -43,6 +44,7 @@ def create_product(
 
     return product
 
+
 @router.post("/product/{product_id}/variant")
 def create_variant(
     product_id: int,
@@ -66,6 +68,52 @@ def create_variant(
 
     return variant
 
+# ----------- VARIANT IMAGE MANAGEMENT -----------
+@router.post("/variant/{variant_id}/image")
+def add_variant_image(variant_id: int, image_url: str, db: Session = Depends(get_db)):
+
+    variant = db.query(ProductVariant).filter(ProductVariant.id == variant_id).first()
+
+    if not variant:
+        raise HTTPException(status_code=404, detail="Variant not found")
+
+    variant.image_url = image_url
+    db.commit()
+
+    return {
+        "message": "Variant image updated",
+        "variant_id": variant_id,
+        "image_url": image_url
+    }
+
+# ----------- VARIANT MATRIX ENDPOINT -----------
+@router.get("/product/{product_id}/variants-matrix")
+def get_variant_matrix(product_id: int, db: Session = Depends(get_db)):
+
+    variants = db.query(ProductVariant).filter(ProductVariant.product_id == product_id).all()
+
+    if not variants:
+        return {"product_id": product_id, "sizes": [], "colors": [], "matrix": {}}
+
+    sizes = sorted(list(set(v.size for v in variants)))
+    colors = sorted(list(set(v.color for v in variants)))
+
+    matrix = {}
+
+    for color in colors:
+        matrix[color] = {}
+        for size in sizes:
+            match = next((v for v in variants if v.color == color and v.size == size), None)
+            matrix[color][size] = match.stock if match else 0
+
+    return {
+        "product_id": product_id,
+        "sizes": sizes,
+        "colors": colors,
+        "matrix": matrix
+    }
+
+
 @router.put("/variant/{variant_id}/stock")
 def update_stock(
     variant_id: int,
@@ -79,6 +127,36 @@ def update_stock(
     db.commit()
 
     return {"message": "stock updated"}
+
+# ----------- BULK STOCK UPDATE (for Variant Matrix UI) -----------
+@router.patch("/variants/bulk-stock")
+def bulk_update_stock(updates: list[dict], db: Session = Depends(get_db)):
+    """
+    updates format:
+    [
+        {"variant_id": 1, "stock": 12},
+        {"variant_id": 2, "stock": 5}
+    ]
+    """
+
+    updated = []
+
+    for item in updates:
+        variant_id = item.get("variant_id")
+        stock = item.get("stock")
+
+        variant = db.query(ProductVariant).filter(ProductVariant.id == variant_id).first()
+
+        if variant:
+            variant.stock = stock
+            updated.append(variant_id)
+
+    db.commit()
+
+    return {
+        "message": "stocks updated",
+        "updated_variants": updated
+    }
 
 @router.put("/variant/{variant_id}/price")
 def update_price(
@@ -249,12 +327,121 @@ def add_lookbook_image(lookbook_id: int, image_url: str, db: Session = Depends(g
         "image": new_image.image_url
     }
 
+# ---------------- REVIEW MANAGEMENT ----------------
+
+@router.get("/reviews")
+def admin_get_reviews(rating: int = None, db: Session = Depends(get_db)):
+    """
+    Get all reviews or filter by rating
+    Example:
+    /admin/reviews
+    /admin/reviews?rating=1
+    """
+
+    query = db.query(Review)
+
+    if rating is not None:
+        query = query.filter(Review.rating == rating)
+
+    reviews = query.order_by(Review.created_at.desc()).all()
+
+    return reviews
+
+
+@router.delete("/review/{review_id}")
+def delete_review(review_id: int, db: Session = Depends(get_db)):
+
+    review = db.query(Review).filter(Review.id == review_id).first()
+
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+
+    db.delete(review)
+    db.commit()
+
+    return {
+        "message": "Review deleted",
+        "review_id": review_id
+    }
+
+
+@router.get("/reviews/stats")
+def review_stats(db: Session = Depends(get_db)):
+
+    total_reviews = db.query(func.count(Review.id)).scalar()
+
+    one_star = db.query(func.count(Review.id)).filter(Review.rating == 1).scalar()
+    two_star = db.query(func.count(Review.id)).filter(Review.rating == 2).scalar()
+    three_star = db.query(func.count(Review.id)).filter(Review.rating == 3).scalar()
+    four_star = db.query(func.count(Review.id)).filter(Review.rating == 4).scalar()
+    five_star = db.query(func.count(Review.id)).filter(Review.rating == 5).scalar()
+
+    return {
+        "total_reviews": total_reviews,
+        "ratings": {
+            "1": one_star,
+            "2": two_star,
+            "3": three_star,
+            "4": four_star,
+            "5": five_star
+        }
+    }
+
+
+# ---------------- USER INTELLIGENCE ----------------
+
+@router.get("/user/{user_id}/profile")
+def admin_user_profile(user_id: int, db: Session = Depends(get_db)):
+    """
+    Returns detailed information about a customer for admin dashboard
+    """
+
+    user = db.query(User).filter(User.id == user_id).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    orders = db.query(Order).filter(Order.user_id == user_id).all()
+
+    total_orders = len(orders)
+    total_spent = sum(order.total_amount for order in orders) if orders else 0
+
+    reviews = db.query(Review).filter(Review.user_id == user_id).all()
+
+    return {
+        "user": {
+            "id": user.id,
+            "email": user.email
+        },
+        "analytics": {
+            "total_orders": total_orders,
+            "total_spent": total_spent,
+            "reviews_written": len(reviews)
+        },
+        "orders": orders,
+        "reviews": reviews
+    }
+
 # ---------------- ADMIN ANALYTICS ----------------
 
 @router.get("/orders")
 def admin_orders(db: Session = Depends(get_db)):
     orders = db.query(Order).all()
     return orders
+
+
+@router.get("/order/{order_id}")
+def admin_order_detail(order_id: int, db: Session = Depends(get_db)):
+    """
+    Get complete details of a specific order for admin dashboard
+    """
+
+    order = db.query(Order).filter(Order.id == order_id).first()
+
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    return order
 
 
 @router.get("/users")
