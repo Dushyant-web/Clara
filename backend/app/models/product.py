@@ -20,7 +20,8 @@ class Product(Base):
 
     brand = Column(String)
 
-    image = Column(String)   # <-- add this line
+    main_image = Column(String, nullable=True)
+    hover_image = Column(String, nullable=True)
 
     category_id = Column(Integer, ForeignKey("categories.id"))
     collection_id = Column(Integer, ForeignKey("collections.id"), nullable=True)
