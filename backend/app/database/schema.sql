@@ -161,8 +161,14 @@ CREATE TABLE reviews (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id),
     product_id INTEGER REFERENCES products(id),
+    variant_id INTEGER REFERENCES product_variants(id),
     rating INTEGER CHECK (rating BETWEEN 1 AND 5),
     comment TEXT,
+
+    -- media reviews
+    images JSONB,
+    videos JSONB,
+
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
