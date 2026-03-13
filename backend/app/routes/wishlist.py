@@ -50,7 +50,8 @@ def get_wishlist(user_id: int, db: Session = Depends(get_db)):
     wishlist_items = []
     for product, category in results:
         # Standardize image fallback
-        display_image = product.image
+        display_image = product.main_image or product.hover_image
+        
         if not display_image:
             first_img = db.query(ProductImage).filter(ProductImage.product_id == product.id).order_by(ProductImage.position).first()
             if first_img:

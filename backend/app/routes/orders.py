@@ -5,15 +5,15 @@ from app.database.db import get_db
 from app.models.order import Order
 from app.models.order_item import OrderItem
 from app.models.product_variant import ProductVariant
+from app.models.product import Product
+from app.models.product_image import ProductImage
+from app.models.variant_image import VariantImage
 
 router = APIRouter()
 
 
 @router.get("/order/{order_id}")
 def get_order(order_id: int, db: Session = Depends(get_db)):
-
-    from app.models.product import Product
-    from app.models.product_image import ProductImage
 
     order = db.query(Order).filter(Order.id == order_id).first()
 
@@ -33,7 +33,6 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
         # Standardize image fallback (Prioritize Variant Image)
         display_image = variant.image_url
         if not display_image:
-            from app.models.variant_image import VariantImage
             # Try to find 'main' first
             variant_main_img = db.query(VariantImage).filter(
                 VariantImage.variant_id == variant.id,
@@ -50,7 +49,7 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
                 display_image = variant_main_img.image_url
         
         if not display_image:
-            display_image = product.image
+            display_image = product.main_image or product.hover_image
         if not display_image:
             first_img = db.query(ProductImage).filter(ProductImage.product_id == product.id).order_by(ProductImage.position).first()
             if first_img:

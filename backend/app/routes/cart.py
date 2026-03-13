@@ -3,6 +3,9 @@ from sqlalchemy.orm import Session
 from app.database.db import get_db
 from app.models.cart_item import CartItem
 from app.models.product_variant import ProductVariant
+from app.models.variant_image import VariantImage
+from app.models.product import Product
+from app.models.product_image import ProductImage
 
 router = APIRouter()
 
@@ -42,8 +45,7 @@ def add_to_cart(data: dict, db: Session = Depends(get_db)):
 
     return {"message": "cart updated", "item_id": item.id}
 
-from app.models.product import Product
-from app.models.product_image import ProductImage
+router = APIRouter()
 
 @router.get("/cart/{user_id}")
 def get_cart(user_id: int, db: Session = Depends(get_db)):
@@ -66,7 +68,6 @@ def get_cart(user_id: int, db: Session = Depends(get_db)):
         # Standardize image fallback (Prioritize Variant Image)
         display_image = variant.image_url
         if not display_image:
-            from app.models.variant_image import VariantImage
             # Try to find 'main' first
             variant_main_img = db.query(VariantImage).filter(
                 VariantImage.variant_id == variant.id,
@@ -83,7 +84,7 @@ def get_cart(user_id: int, db: Session = Depends(get_db)):
                 display_image = variant_main_img.image_url
         
         if not display_image:
-            display_image = product.image
+            display_image = product.main_image or product.hover_image
         if not display_image:
             first_img = db.query(ProductImage).filter(ProductImage.product_id == product.id).order_by(ProductImage.position).first()
             if first_img:

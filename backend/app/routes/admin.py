@@ -557,7 +557,7 @@ def admin_order_detail(order_id: int, db: Session = Depends(get_db)):
                 display_image = variant_main_img.image_url
         
         if not display_image and product:
-            display_image = product.image
+            display_image = product.main_image or product.hover_image
         
         if not display_image and product:
             first_img = db.query(ProductImage).filter(ProductImage.product_id == product.id).order_by(ProductImage.position).first()
