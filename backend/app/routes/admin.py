@@ -24,19 +24,21 @@ router = APIRouter(prefix="/admin")
 
 @router.post("/product")
 def create_product(
-    title: str,
+    name: str,
     description: str,
     category_id: int,
     price: float = 0,
-    image: str = None,
+    main_image: str = None,
+    hover_image: str = None,
     db: Session = Depends(get_db)
 ):
 
     product = Product(
-        name=title,
+        name=name,
         description=description,
         category_id=category_id,
-        image=image,
+        main_image=main_image,
+        hover_image=hover_image,
         price=price
     )
 
@@ -185,22 +187,24 @@ def update_price(
 @router.put("/product/{product_id}")
 def update_product(
     product_id: int,
-    title: str = None,
+    name: str = None,
     description: str = None,
     category_id: int = None,
     price: float = None,
-    image: str = None,
+    main_image: str = None,
+    hover_image: str = None,
     db: Session = Depends(get_db)
 ):
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
         return {"error": "Product not found"}
 
-    if title: product.name = title
+    if name: product.name = name
     if description: product.description = description
     if category_id: product.category_id = category_id
     if price is not None: product.price = price
-    if image: product.image = image
+    if main_image is not None: product.main_image = main_image
+    if hover_image is not None: product.hover_image = hover_image
 
     db.commit()
     return {"message": "product updated"}
