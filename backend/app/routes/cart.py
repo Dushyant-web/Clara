@@ -63,8 +63,9 @@ def get_cart(user_id: int, db: Session = Depends(get_db)):
         if not product:
             continue
 
-        # Standardize image fallback
-        display_image = product.image
+        # Standardize image fallback (Prioritize Variant Image)
+        display_image = variant.image_url if variant.image_url else product.image
+        
         if not display_image:
             first_img = db.query(ProductImage).filter(ProductImage.product_id == product.id).order_by(ProductImage.position).first()
             if first_img:
