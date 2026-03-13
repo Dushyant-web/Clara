@@ -639,3 +639,25 @@ def reorder_product_images(images: list[dict], db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "image order updated"}
+
+@router.post("/variant-image")
+def add_variant_image(
+    variant_id: int,
+    image_url: str,
+    type: str = "gallery",
+    position: int = 0,
+    db: Session = Depends(get_db)
+):
+
+    image = VariantImage(
+        variant_id=variant_id,
+        image_url=image_url,
+        type=type,
+        position=position
+    )
+
+    db.add(image)
+    db.commit()
+    db.refresh(image)
+
+    return image
