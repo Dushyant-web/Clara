@@ -7,6 +7,7 @@ from app.models.categories import Category
 from app.models.product_image import ProductImage
 
 from app.models.product_variant import ProductVariant
+from app.models.variant_image import VariantImage
 
 router = APIRouter()
 
@@ -60,7 +61,43 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Product not found")
     
     variants = db.query(ProductVariant).filter(ProductVariant.product_id == product_id).all()
-    
+
+    variant_data = []
+
+    for v in variants:
+        images = (
+            db.query(VariantImage)
+            .filter(VariantImage.variant_id == v.id)
+            .order_by(VariantImage.position)
+            .all()
+        )
+
+        main = None
+        hover = None
+        gallery = []
+
+        for img in images:
+            if img.type == "main":
+                main = img.image_url
+            elif img.type == "hover":
+                hover = img.image_url
+            else:
+                gallery.append(img.image_url)
+
+        variant_data.append({
+            "id": v.id,
+            "size": v.size,
+            "color": v.color,
+            "price": v.price,
+            "stock": v.stock,
+            "sku": v.sku,
+            "images": {
+                "main": main,
+                "hover": hover,
+                "gallery": gallery
+            }
+        })
+
     product_data = {
         "id": product.id,
         "name": product.name,
@@ -68,17 +105,7 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
         "price": product.price,
         "image": product.image,
         "category_id": product.category_id,
-        "variants": [
-            {
-                "id": v.id,
-                "size": v.size,
-                "color": v.color,
-                "price": v.price,
-                "stock": v.stock,
-                "sku": v.sku,
-                "image_url": v.image_url
-            } for v in variants
-        ]
+        "variants": variant_data
     }
     return product_data
 

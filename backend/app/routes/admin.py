@@ -10,6 +10,7 @@ from app.models.review import Review
 from sqlalchemy import func
 from datetime import datetime
 from app.models.product_image import ProductImage
+from app.models.variant_image import VariantImage
 from app.models.collection import CollectionImage
 from app.models.lookbook import LookbookImage
 from app.schemas.variant import VariantCreate
@@ -78,13 +79,21 @@ def add_variant_image(variant_id: int, image_url: str, db: Session = Depends(get
     if not variant:
         raise HTTPException(status_code=404, detail="Variant not found")
 
-    variant.image_url = image_url
+    new_image = VariantImage(
+        variant_id=variant_id,
+        image_url=image_url,
+        type="main",
+        position=0
+    )
+
+    db.add(new_image)
     db.commit()
+    db.refresh(new_image)
 
     return {
-        "message": "Variant image updated",
+        "message": "Variant image added",
         "variant_id": variant_id,
-        "image_url": image_url
+        "image": new_image.image_url
     }
 
 # ----------- VARIANT MATRIX ENDPOINT -----------
@@ -661,3 +670,23 @@ def add_variant_image(
     db.refresh(image)
 
     return image
+
+@router.get("/variant/{variant_id}/images")
+def get_variant_images(variant_id: int, db: Session = Depends(get_db)):
+
+    images = (
+        db.query(VariantImage)
+        .filter(VariantImage.variant_id == variant_id)
+        .order_by(VariantImage.position.asc())
+        .all()
+    )
+
+    return [
+        {
+            "id": img.id,
+            "image_url": img.image_url,
+            "type": img.type,
+            "position": img.position
+        }
+        for img in images
+    ]
