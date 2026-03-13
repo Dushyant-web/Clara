@@ -537,9 +537,29 @@ def admin_order_detail(order_id: int, db: Session = Depends(get_db)):
     for item in items:
         variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
         product = db.query(Product).filter(Product.id == (variant.product_id if variant else None)).first()
+        # Standardize image fallback (Prioritize Variant Image)
+        display_image = variant.image_url if variant else None
+        if variant and not display_image:
+            from app.models.variant_image import VariantImage
+            # Try to find 'main' first
+            variant_main_img = db.query(VariantImage).filter(
+                VariantImage.variant_id == variant.id,
+                VariantImage.type == "main"
+            ).first()
+            
+            if not variant_main_img:
+                # Fallback to absolute first image for this variant
+                variant_main_img = db.query(VariantImage).filter(
+                    VariantImage.variant_id == variant.id
+                ).order_by(VariantImage.position).first()
+                
+            if variant_main_img:
+                display_image = variant_main_img.image_url
         
-        display_image = product.image if product else None
-        if product and not display_image:
+        if not display_image and product:
+            display_image = product.image
+        
+        if not display_image and product:
             first_img = db.query(ProductImage).filter(ProductImage.product_id == product.id).order_by(ProductImage.position).first()
             if first_img:
                 display_image = first_img.image_url

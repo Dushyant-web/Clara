@@ -31,7 +31,26 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
             continue
 
         # Standardize image fallback (Prioritize Variant Image)
-        display_image = variant.image_url if variant.image_url else product.image
+        display_image = variant.image_url
+        if not display_image:
+            from app.models.variant_image import VariantImage
+            # Try to find 'main' first
+            variant_main_img = db.query(VariantImage).filter(
+                VariantImage.variant_id == variant.id,
+                VariantImage.type == "main"
+            ).first()
+            
+            if not variant_main_img:
+                # Fallback to absolute first image for this variant
+                variant_main_img = db.query(VariantImage).filter(
+                    VariantImage.variant_id == variant.id
+                ).order_by(VariantImage.position).first()
+                
+            if variant_main_img:
+                display_image = variant_main_img.image_url
+        
+        if not display_image:
+            display_image = product.image
         if not display_image:
             first_img = db.query(ProductImage).filter(ProductImage.product_id == product.id).order_by(ProductImage.position).first()
             if first_img:
