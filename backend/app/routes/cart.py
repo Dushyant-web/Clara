@@ -64,22 +64,25 @@ def get_cart(user_id: int, db: Session = Depends(get_db)):
             continue
 
         # Standardize image fallback (Prioritize Variant Image)
-        display_image = variant.image_url
-        if not display_image:
-            # Try to find 'main' first
-            variant_main_img = db.query(VariantImage).filter(
-                VariantImage.variant_id == variant.id,
-                VariantImage.type == "main"
-            ).first()
-            
-            if not variant_main_img:
-                # Fallback to absolute first image for this variant
-                variant_main_img = db.query(VariantImage).filter(
-                    VariantImage.variant_id == variant.id
-                ).order_by(VariantImage.position).first()
-                
-            if variant_main_img:
-                display_image = variant_main_img.image_url
+        # 1️⃣ Try VariantImage table MAIN image first
+        variant_main_img = db.query(VariantImage).filter(
+            VariantImage.variant_id == variant.id,
+            VariantImage.type == "main"
+        ).first()
+
+        if variant_main_img:
+            display_image = variant_main_img.image_url
+        else:
+            # 2️⃣ Fallback to first variant image if exists
+            first_variant_img = db.query(VariantImage).filter(
+                VariantImage.variant_id == variant.id
+            ).order_by(VariantImage.position).first()
+
+            if first_variant_img:
+                display_image = first_variant_img.image_url
+            else:
+                # 3️⃣ Fallback to variant.image_url column
+                display_image = variant.image_url
         
         if not display_image:
             display_image = product.main_image or product.hover_image
