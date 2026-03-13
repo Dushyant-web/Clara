@@ -103,6 +103,7 @@ def get_cart(user_id: int, db: Session = Depends(get_db)):
             "variant_id": item.variant_id,
             "name": product.name,
             "image": display_image,
+            "variant_image": display_image,
             "size": variant.size,
             "color": variant.color,
             "sku": variant.sku,

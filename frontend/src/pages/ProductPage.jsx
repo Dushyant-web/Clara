@@ -72,24 +72,24 @@ const ProductPage = () => {
 
     // Find a representative variant for the selected color (for images)
     const colorVariant = product?.variants?.find(v =>
-        selectedColor ? v.color === selectedColor : true
+        selectedColor && v.color === selectedColor
     );
 
     useEffect(() => {
-        // Images should follow color selection, not size
-        if (colorVariant) {
+        // Update gallery when color changes
+        if (selectedColor && colorVariant) {
             if (colorVariant.images && colorVariant.images.length) {
-                setVariantImages(colorVariant.images)
-                setActiveImage(colorVariant.images[0])
+                setVariantImages(colorVariant.images);
+                setActiveImage(colorVariant.images[0]);
             } else if (colorVariant.image_url) {
-                setVariantImages([colorVariant.image_url])
-                setActiveImage(colorVariant.image_url)
+                setVariantImages([colorVariant.image_url]);
+                setActiveImage(colorVariant.image_url);
             }
         } else if (product?.images) {
-            setVariantImages(product.images)
-            setActiveImage(product.images[0])
+            setVariantImages(product.images);
+            setActiveImage(product.images[0]);
         }
-    }, [colorVariant, product])
+    }, [selectedColor, product]);
 
     if (loading) return <div className="h-screen flex items-center justify-center bg-primary"><p className="text-[10px] tracking-[0.5em] animate-pulse text-secondary">LOADING...</p></div>
     if (!product) return <div className="h-screen flex items-center justify-center bg-primary text-secondary uppercase tracking-widest">Product not found.</div>

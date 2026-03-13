@@ -32,7 +32,8 @@ export const CartProvider = ({ children }) => {
             if (data && data.items) {
                 const mappedItems = data.items.map(item => ({
                     ...item,
-                    image: item.image || 'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200',
+                    variantImage: item.variant_image || item.image || null,
+                    image: item.variant_image || item.image || 'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200',
                     id: item.product_id, // Keep consistency with frontend product.id
                     itemId: item.item_id, // Backend primary key
                     variantId: item.variant_id,
@@ -88,7 +89,8 @@ export const CartProvider = ({ children }) => {
         // Ensure image fallback before persisting
         const productWithImage = {
             ...product,
-            image: product.image || 'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200'
+            variantImage: product.variantImage || product.variant_image || product.main_image || product.image || null,
+            image: product.variantImage || product.variant_image || product.main_image || product.image || 'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200'
         };
 
         const newItem = {
