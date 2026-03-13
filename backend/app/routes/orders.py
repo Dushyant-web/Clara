@@ -12,6 +12,9 @@ router = APIRouter()
 @router.get("/order/{order_id}")
 def get_order(order_id: int, db: Session = Depends(get_db)):
 
+    from app.models.product import Product
+    from app.models.product_image import ProductImage
+
     order = db.query(Order).filter(Order.id == order_id).first()
 
     if not order:
@@ -24,18 +27,37 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
     for item in items:
 
         variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
+        if not variant:
+            continue
+            
+        product = db.query(Product).filter(Product.id == variant.product_id).first()
+        if not product:
+            continue
+            
+        # Standardize image fallback
+        display_image = product.image
+        if not display_image:
+            first_img = db.query(ProductImage).filter(ProductImage.product_id == product.id).order_by(ProductImage.position).first()
+            if first_img:
+                display_image = first_img.image_url
 
         result.append({
             "variant_id": item.variant_id,
+            "product_id": product.id,
+            "name": product.name,
+            "image": display_image,
+            "size": variant.size,
+            "color": variant.color,
             "quantity": item.quantity,
-            "price": item.price,
-            "item_total": item.price * item.quantity
+            "price": float(item.price),
+            "item_total": float(item.price * item.quantity)
         })
 
     return {
         "order_id": order.id,
         "status": order.status,
-        "total": order.total_amount,
+        "total": float(order.total_amount),
+        "created_at": order.created_at,
         "items": result
     }
 

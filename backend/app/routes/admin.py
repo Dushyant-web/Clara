@@ -521,13 +521,51 @@ def admin_order_detail(order_id: int, db: Session = Depends(get_db)):
     """
     Get complete details of a specific order for admin dashboard
     """
+    from app.models.order_item import OrderItem
+    from app.models.product_variant import ProductVariant
+    from app.models.product import Product
+    from app.models.product_image import ProductImage
 
     order = db.query(Order).filter(Order.id == order_id).first()
 
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    return order
+    items = db.query(OrderItem).filter(OrderItem.order_id == order_id).all()
+    
+    items_detail = []
+    for item in items:
+        variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
+        product = db.query(Product).filter(Product.id == (variant.product_id if variant else None)).first()
+        
+        display_image = product.image if product else None
+        if product and not display_image:
+            first_img = db.query(ProductImage).filter(ProductImage.product_id == product.id).order_by(ProductImage.position).first()
+            if first_img:
+                display_image = first_img.image_url
+
+        items_detail.append({
+            "id": item.id,
+            "variant_id": item.variant_id,
+            "product_name": product.name if product else "Unknown Product",
+            "quantity": item.quantity,
+            "price": float(item.price),
+            "size": variant.size if variant else None,
+            "color": variant.color if variant else None,
+            "image": display_image
+        })
+
+    # Convert to dict to add items
+    order_data = {
+        "id": order.id,
+        "user_id": order.user_id,
+        "status": order.status,
+        "total_amount": float(order.total_amount),
+        "created_at": order.created_at,
+        "items": items_detail
+    }
+
+    return order_data
 
 
 @router.get("/users")
