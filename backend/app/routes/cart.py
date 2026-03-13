@@ -45,8 +45,6 @@ def add_to_cart(data: dict, db: Session = Depends(get_db)):
 
     return {"message": "cart updated", "item_id": item.id}
 
-router = APIRouter()
-
 @router.get("/cart/{user_id}")
 def get_cart(user_id: int, db: Session = Depends(get_db)):
 
