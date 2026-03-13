@@ -73,13 +73,13 @@ const Navbar = () => {
                         >
                             <div className="w-8 h-8 md:w-10 md:h-10 relative overflow-hidden rounded-full border border-secondary/10 group-hover:scale-110 transition-transform duration-500">
                                 <img
-                                    src="/assets/logo/logo-icon.png"
-                                    alt="NAME Icon"
+                                    src="/assets/logo/gk_logo.png"
+                                    alt="GAURK Icon"
                                     className="w-full h-full object-cover"
                                 />
                             </div>
                             <span className="text-xl md:text-3xl font-serif font-bold tracking-tighter brand-blue hidden md:block">
-                                NAME.
+                                GAURK
                             </span>
                         </Link>
                     </div>
@@ -146,8 +146,8 @@ const Navbar = () => {
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 relative overflow-hidden rounded-full border border-secondary/10">
                                     <img
-                                        src="/assets/logo/logo-icon.png"
-                                        alt="NAME Icon"
+                                        src="/assets/logo/gk_logo.png"
+                                        alt="GAURK Icon"
                                         className="w-full h-full object-cover"
                                     />
                                 </div>

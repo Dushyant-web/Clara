@@ -50,7 +50,13 @@ const CartPage = () => {
                                     >
                                         <div className="w-full md:w-32 aspect-[3/4] overflow-hidden bg-secondary/5 border border-secondary/10 shrink-0">
                                             <img
-                                                src={item.image || 'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200'}
+                                                src={
+                                                    item.variantImage ||
+                                                    item.variant_image ||
+                                                    item.image ||
+                                                    item.main_image ||
+                                                    'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200'
+                                                }
                                                 alt={item.name}
                                                 className="w-full h-full object-cover"
                                                 onError={(e) => {
@@ -66,7 +72,15 @@ const CartPage = () => {
                                                     <span className="text-[10px] uppercase tracking-widest text-gray-500 mb-2 block font-bold">{item.category}</span>
                                                     <h3 className="text-xl font-medium tracking-tight uppercase">{item.name}</h3>
                                                     {item.size && (
-                                                        <p className="text-xs uppercase tracking-widest text-gray-400 mt-2">Size: <span className="text-secondary font-bold">{item.size}</span></p>
+                                                        <p className="text-xs uppercase tracking-widest text-gray-400 mt-2">
+                                                            Size: <span className="text-secondary font-bold">{item.size}</span>
+                                                            {item.color && (
+                                                                <>
+                                                                    <span className="mx-2 opacity-30">|</span>
+                                                                    Color: <span className="text-secondary font-bold">{item.color}</span>
+                                                                </>
+                                                            )}
+                                                        </p>
                                                     )}
                                                 </div>
                                                 <p className="text-lg font-serif font-bold">₹{item.price}</p>
@@ -149,7 +163,7 @@ const CartPage = () => {
 
                             <Link
                                 to="/checkout"
-                                className="w-full bg-secondary text-primary py-5 text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-4 hover:opacity-80 transition-all group"
+                                className="w-full bg-secondary text-primary py-5 text-[10px] font-black uppercase tracking-[0.3em] flex items-center jsustify-center gap-4 hover:opacity-80 transition-all group"
                             >
                                 Checkout <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                             </Link>

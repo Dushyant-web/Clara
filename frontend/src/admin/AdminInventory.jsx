@@ -18,26 +18,35 @@ import { adminService } from '../services/adminService';
 
 const AdminInventory = () => {
     const [products, setProducts] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('info'); // info, variants, images
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState('');
 
     const [formData, setFormData] = useState({
         name: '',
         category_id: 1,
         price: '',
         description: '',
-        image: '',
+        main_image: '',
+        hover_image: '',
         variants: [],
         images: []
     });
 
     const fileInputRef = useRef(null);
+    const [variantUploadIndex, setVariantUploadIndex] = useState(null);
+    const [uploadSlot, setUploadSlot] = useState(null); // main | hover | gallery
+    const [dragImageIndex, setDragImageIndex] = useState(null);
+    const [dragColor, setDragColor] = useState(null);
 
     useEffect(() => {
         fetchProducts();
+        fetchCategories();
     }, []);
 
     const fetchProducts = async () => {
@@ -52,6 +61,15 @@ const AdminInventory = () => {
         }
     };
 
+    const fetchCategories = async () => {
+        try {
+            const data = await adminService.getCategories();
+            setCategories(data || []);
+        } catch (err) {
+            console.error('Failed to load categories', err);
+        }
+    };
+
     const handleOpenModal = async (product = null) => {
         if (product) {
             setLoading(true);
@@ -61,8 +79,17 @@ const AdminInventory = () => {
                 let productImages = [];
                 try {
                     const imgRes = await productService.getProductImages(product.id);
-                    // Standardize to the format expected by the modal (array of objects with image_url)
-                    productImages = imgRes.map(img => ({ image_url: img.image_url }));
+
+                    // Ensure we always work with an array
+                    const imgArray = Array.isArray(imgRes)
+                        ? imgRes
+                        : imgRes?.images || [];
+
+                    // Standardize format for modal
+                    productImages = imgArray.map(img => ({
+                        image_url: img.image_url
+                    }));
+
                 } catch (e) {
                     console.error("Failed to load product images", e);
                 }
@@ -73,8 +100,30 @@ const AdminInventory = () => {
                     category_id: fullProduct.category_id || 1,
                     price: fullProduct.price || '',
                     description: fullProduct.description || '',
-                    image: fullProduct.image || '',
-                    variants: fullProduct.variants || [],
+                    main_image: fullProduct.main_image || '',
+                    hover_image: fullProduct.hover_image || '',
+                    variants: (fullProduct.variants || []).map(v => {
+                        let imagesArray = [];
+
+                        // Backend may send images as { main, hover, gallery: [] }
+                        if (v.images && typeof v.images === "object" && !Array.isArray(v.images)) {
+                            if (v.images.main) imagesArray.push({ image_url: v.images.main });
+                            if (v.images.hover) imagesArray.push({ image_url: v.images.hover });
+
+                            if (Array.isArray(v.images.gallery)) {
+                                imagesArray.push(
+                                    ...v.images.gallery.map(url => ({ image_url: url }))
+                                );
+                            }
+                        } else if (Array.isArray(v.images)) {
+                            imagesArray = v.images;
+                        }
+
+                        return {
+                            ...v,
+                            images: imagesArray
+                        };
+                    }),
                     images: productImages
                 });
             } catch (err) {
@@ -89,7 +138,8 @@ const AdminInventory = () => {
                 category_id: 1,
                 price: '',
                 description: '',
-                image: '',
+                main_image: '',
+                hover_image: '',
                 variants: [{ size: '', color: '', price: '', stock: '', sku: '' }],
                 images: []
             });
@@ -103,17 +153,69 @@ const AdminInventory = () => {
         if (!file) return;
 
         setIsSubmitting(true);
+
         try {
             const { url } = await adminService.uploadImage(file);
+
+            // Product images (main / hover)
             if (activeTab === 'info') {
-                setFormData(prev => ({ ...prev, image: url }));
-            } else {
-                setFormData(prev => ({ ...prev, images: [...prev.images, { image_url: url, isNew: true }] }));
+                if (uploadSlot === "product_main") {
+                    setFormData(prev => ({ ...prev, main_image: url }));
+                } else if (uploadSlot === "product_hover") {
+                    setFormData(prev => ({ ...prev, hover_image: url }));
+                } else {
+                    // fallback
+                    setFormData(prev => ({ ...prev, main_image: url }));
+                }
             }
+
+            // Product gallery images: now upload directly to the variant
+            else if (activeTab === 'images' && variantUploadIndex !== null) {
+                setFormData(prev => {
+                    const updated = [...prev.variants];
+                    const existingImages = updated[variantUploadIndex].images || [];
+
+                    let newImages = [...existingImages];
+
+                    if (uploadSlot === "main") {
+                        newImages[0] = { image_url: url };
+                    } else if (uploadSlot === "hover") {
+                        newImages[1] = { image_url: url };
+                    } else {
+                        newImages.push({ image_url: url });
+                    }
+
+                    updated[variantUploadIndex].images = newImages;
+
+                    return { ...prev, variants: updated };
+                });
+            }
+
+            // Variant specific images
+            else if (activeTab === 'variants' && variantUploadIndex !== null) {
+                setFormData(prev => {
+                    const updated = [...prev.variants];
+
+                    const existingImages = updated[variantUploadIndex].images || [];
+
+                    updated[variantUploadIndex].images = [
+                        ...existingImages,
+                        { image_url: url }
+                    ];
+
+                    // also set primary variant image for backend
+                    updated[variantUploadIndex].image_url = url;
+
+                    return { ...prev, variants: updated };
+                });
+            }
+
         } catch (err) {
             alert('UPLOAD FAILED.');
         } finally {
             setIsSubmitting(false);
+            setVariantUploadIndex(null);
+            setUploadSlot(null);
         }
     };
 
@@ -125,10 +227,12 @@ const AdminInventory = () => {
 
             // 1. Save main product info
             const productPayload = {
-                title: formData.name,
+                name: formData.name,
                 description: formData.description,
                 category_id: parseInt(formData.category_id),
-                image: formData.image
+                main_image: formData.main_image,
+                hover_image: formData.hover_image,
+                price: formData.price ? parseInt(formData.price) : 0
             };
 
             if (editingProduct) {
@@ -140,29 +244,62 @@ const AdminInventory = () => {
 
             // 2. Save variants
             for (const v of formData.variants) {
+                const variantPayload = {
+                    size: v.size,
+                    color: v.color,
+                    price: v.price
+                        ? parseInt(v.price)
+                        : (formData.price ? parseInt(formData.price) : 0),
+                    stock: v.stock ? parseInt(v.stock) : 0,
+                    image_url: v.image_url || formData.main_image,
+                    sku:
+                        v.sku ||
+                        `${formData.name}-${v.color || "GEN"}-${v.size || "STD"}`
+                            .toUpperCase()
+                            .replace(/\s+/g, '-')
+                };
+
                 if (v.id) {
-                    await adminService.updateVariantFull(v.id, {
-                        size: v.size,
-                        color: v.color,
-                        price: v.price ? parseFloat(v.price) : 0,
-                        stock: parseInt(v.stock),
-                        sku: v.sku
-                    });
-                } else {
-                    await adminService.updateVariantFull(v.id, {
-                        size: v.size,
-                        color: v.color,
-                        price: v.price ? parseFloat(v.price) : 0,
-                        stock: parseInt(v.stock),
-                        sku: v.sku
-                    });
+                    await adminService.updateVariantFull(v.id, variantPayload);
+                } else if (v.size && v.color) {
+                    const newVariant = await adminService.createVariant(productId, variantPayload);
+                    v.id = newVariant.id;
                 }
             }
 
-            // 3. Save new images
-            for (const img of formData.images) {
-                if (img.isNew) {
-                    await adminService.addProductImage(productId, img.image_url);
+            // 3. Save variant images (new architecture: images belong to variants)
+            for (const v of formData.variants) {
+                if (!v.id) continue;
+
+                // remove existing images first to avoid duplication
+                try {
+                    await adminService.deleteVariantImages(v.id);
+                } catch (e) {
+                    console.warn("No previous images to delete");
+                }
+
+                // clean images list: remove duplicates, invalid entries, and limit count
+                const images = [...new Map(
+                    (v.images || [])
+                        .filter(img => img && img.image_url)
+                        .map(img => [img.image_url, img])
+                ).values()].slice(0, 10);
+
+                for (let i = 0; i < images.length; i++) {
+                    const img = images[i];
+                    if (!img?.image_url) continue;
+
+                    let imageType = "gallery";
+
+                    if (i === 0) imageType = "main";
+                    else if (i === 1) imageType = "hover";
+
+                    await adminService.addVariantImage({
+                        variant_id: v.id,
+                        image_url: img.image_url,
+                        type: imageType,
+                        position: i
+                    });
                 }
             }
 
@@ -180,10 +317,12 @@ const AdminInventory = () => {
     const addVariant = () => {
         setFormData(prev => ({
             ...prev,
-            variants: [...prev.variants, { size: '', color: '', price: '', stock: '', sku: '' }]
+            variants: [
+                ...prev.variants,
+                { size: '', color: '', price: '', stock: '', sku: '', images: [] }
+            ]
         }));
     };
-
     const removeVariant = async (index) => {
         const variant = formData.variants[index];
 
@@ -229,8 +368,9 @@ const AdminInventory = () => {
                     <thead>
                         <tr className="border-b border-white/5">
                             <th className="p-6 text-[10px] uppercase tracking-[0.3em] font-black text-gray-500">Piece</th>
-                            <th className="p-6 text-[10px] uppercase tracking-[0.3em] font-black text-gray-500">Collection</th>
-                            <th className="p-6 text-[10px] uppercase tracking-[0.3em] font-black text-gray-500">Base Price</th>
+                            <th className="p-6 text-[10px] uppercase tracking-[0.3em] font-black text-gray-500">Category</th>
+                            <th className="p-6 text-[10px] uppercase tracking-[0.3em] font-black text-gray-500 text-center">Variants</th>
+                            <th className="p-6 text-[10px] uppercase tracking-[0.3em] font-black text-gray-500 text-center">Status</th>
                             <th className="p-6 text-[10px] uppercase tracking-[0.3em] font-black text-gray-500 text-right">Actions</th>
                         </tr>
                     </thead>
@@ -248,7 +388,7 @@ const AdminInventory = () => {
                                         <div className="flex items-center gap-4">
                                             <div className="w-12 h-16 bg-neutral-900 overflow-hidden border border-white/5">
                                                 <img
-                                                    src={p.image || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=200'}
+                                                    src={p.main_image || p.hover_image || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=200'}
                                                     className="w-full h-full object-cover"
                                                     alt={p.name}
                                                 />
@@ -259,10 +399,45 @@ const AdminInventory = () => {
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="p-6"><span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">{p.category || 'GENERAL'}</span></td>
-                                    <td className="p-6 text-xs font-bold text-white">₹{p.price}</td>
+                                    <td className="p-6">
+                                        <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">
+                                            {p.category?.name || categories.find(c => c.id === p.category_id)?.name || 'GENERAL'}
+                                        </span>
+                                    </td>
+                                    <td className="p-6 text-center">
+                                        <span className="text-[10px] font-bold text-gray-400">
+                                            {p.variants?.length || 0}
+                                        </span>
+                                    </td>
+                                    <td className="p-6 text-center">
+                                        {(() => {
+                                            const active = p.is_active !== false; // treat undefined/null as active
+
+                                            return (
+                                                <button
+                                                    onClick={async () => {
+                                                        try {
+                                                            await adminService.updateProduct(p.id, { is_active: !active });
+                                                            fetchProducts();
+                                                        } catch (e) {
+                                                            console.error("Status toggle failed", e);
+                                                        }
+                                                    }}
+                                                    className={`relative w-12 h-6 rounded-full transition-colors ${
+                                                        active ? "bg-emerald-500" : "bg-red-500/40"
+                                                    }`}
+                                                >
+                                                    <span
+                                                        className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+                                                            active ? "translate-x-6" : ""
+                                                        }`}
+                                                    />
+                                                </button>
+                                            );
+                                        })()}
+                                    </td>
                                     <td className="p-6 text-right">
-                                        <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="flex justify-end gap-3">
                                             <button onClick={() => handleOpenModal(p)} className="p-2 border border-white/5 hover:border-white transition-all"><Edit2 size={14} /></button>
                                             <button onClick={() => adminService.deleteProduct(p.id).then(fetchProducts)} className="p-2 border border-white/5 hover:border-red-500 text-red-500/70 hover:text-red-500 transition-all"><Trash2 size={14} /></button>
                                         </div>
@@ -323,7 +498,7 @@ const AdminInventory = () => {
                                 <form id="inventory-form" onSubmit={handleSubmit} className="space-y-12">
                                     {activeTab === 'info' && (
                                         <div className="space-y-8 animate-in fade-in duration-500">
-                                            <div className="grid grid-cols-2 gap-8">
+                                            <div className="grid grid-cols-3 gap-8">
                                                 <div className="space-y-2">
                                                     <label className="text-[8px] uppercase tracking-widest font-black text-gray-500">Designation</label>
                                                     <input
@@ -335,35 +510,119 @@ const AdminInventory = () => {
                                                         required
                                                     />
                                                 </div>
+
                                                 <div className="space-y-2">
-                                                    <label className="text-[8px] uppercase tracking-widest font-black text-gray-500">Category ID</label>
+                                                    <label className="text-[8px] uppercase tracking-widest font-black text-gray-500">
+                                                        Base Price (INR)
+                                                    </label>
+
                                                     <input
                                                         type="number"
-                                                        value={formData.category_id}
-                                                        onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                                                        value={formData.price}
+                                                        onChange={(e) =>
+                                                            setFormData({ ...formData, price: e.target.value })
+                                                        }
                                                         className="w-full bg-white/5 border border-white/10 p-4 text-xs font-bold focus:outline-none focus:border-white transition-all"
-                                                        required
+                                                        placeholder="1999"
                                                     />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[8px] uppercase tracking-widest font-black text-gray-500">Category Selection</label>
+                                                    <select
+                                                        value={formData.category_id}
+                                                        onChange={(e) => {
+                                                            if (e.target.value === 'NEW') {
+                                                                setIsCategoryModalOpen(true);
+                                                            } else {
+                                                                setFormData({ ...formData, category_id: e.target.value });
+                                                            }
+                                                        }}
+                                                        className="w-full bg-black border border-white/10 p-4 text-xs font-bold focus:outline-none focus:border-white transition-all appearance-none uppercase tracking-widest text-white"
+                                                        required
+                                                    >
+                                                        <option value="">SELECT CATEGORY</option>
+                                                        {categories.map(cat => (
+                                                            <option key={cat.id} value={cat.id}>{cat.name?.toUpperCase()}</option>
+                                                        ))}
+                                                        <option value="NEW" className="text-emerald-500">+ ADD NEW CATEGORY</option>
+                                                    </select>
                                                 </div>
                                             </div>
 
                                             <div className="space-y-2">
                                                 <label className="text-[8px] uppercase tracking-widest font-black text-gray-500">Primary Visual (URL or Upload)</label>
-                                                <div className="flex gap-4">
-                                                    <input
-                                                        type="text"
-                                                        value={formData.image}
-                                                        onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                                                        className="flex-1 bg-white/5 border border-white/10 p-4 text-xs font-bold focus:outline-none focus:border-white transition-all font-mono"
-                                                        placeholder="https://..."
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => fileInputRef.current.click()}
-                                                        className="px-6 bg-white/5 border border-white/10 hover:bg-white hover:text-black transition-all"
-                                                    >
-                                                        <Upload size={16} />
-                                                    </button>
+                                                <div className="grid grid-cols-2 gap-6">
+
+                                                    {/* MAIN PRODUCT IMAGE */}
+                                                    <div className="space-y-2">
+                                                        <p className="text-[8px] uppercase tracking-widest text-gray-500">Main Image</p>
+
+                                                        <div
+                                                            onClick={() => {
+                                                                setUploadSlot("product_main");
+                                                                fileInputRef.current.click();
+                                                            }}
+                                                            className="aspect-square border border-white/10 bg-neutral-900 flex items-center justify-center cursor-pointer relative group"
+                                                        >
+                                                            {formData.main_image ? (
+                                                                <>
+                                                                    <img src={formData.main_image} className="w-full h-full object-cover" />
+
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setFormData(prev => ({ ...prev, main_image: '' }));
+                                                                            if (editingProduct?.id) {
+                                                                                adminService.updateProduct(editingProduct.id, { main_image: null });
+                                                                            }
+                                                                        }}
+                                                                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition"
+                                                                    >
+                                                                        <Trash2 size={14} />
+                                                                    </button>
+                                                                </>
+                                                            ) : (
+                                                                <span className="text-[8px] text-gray-500 uppercase">Upload</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* HOVER PRODUCT IMAGE */}
+                                                    <div className="space-y-2">
+                                                        <p className="text-[8px] uppercase tracking-widest text-gray-500">Hover Image</p>
+
+                                                        <div
+                                                            onClick={() => {
+                                                                setUploadSlot("product_hover");
+                                                                fileInputRef.current.click();
+                                                            }}
+                                                            className="aspect-square border border-white/10 bg-neutral-900 flex items-center justify-center cursor-pointer relative group"
+                                                        >
+                                                            {formData.hover_image ? (
+                                                                <>
+                                                                    <img src={formData.hover_image} className="w-full h-full object-cover" />
+
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setFormData(prev => ({ ...prev, hover_image: '' }));
+                                                                            if (editingProduct?.id) {
+                                                                                adminService.updateProduct(editingProduct.id, { hover_image: null });
+                                                                            }
+                                                                        }}
+                                                                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition"
+                                                                    >
+                                                                        <Trash2 size={14} />
+                                                                    </button>
+                                                                </>
+                                                            ) : (
+                                                                <span className="text-[8px] text-gray-500 uppercase">Upload</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
                                                 </div>
                                             </div>
 
@@ -395,7 +654,7 @@ const AdminInventory = () => {
 
                                             <div className="space-y-4">
                                                 {formData.variants.map((v, i) => (
-                                                    <div key={i} className="grid grid-cols-6 gap-4 p-6 bg-white/[0.03] border border-white/5 items-end group/item">
+                                                    <div key={i} className="grid grid-cols-7 gap-4 p-6 bg-white/[0.03] border border-white/5 items-end group/item">
                                                         <div className="space-y-2">
                                                             <label className="text-[7px] uppercase tracking-widest font-black text-gray-600">Size</label>
                                                             <input
@@ -418,13 +677,13 @@ const AdminInventory = () => {
                                                         </div>
                                                         <div className="space-y-2">
                                                             <label className="text-[7px] uppercase tracking-widest font-black text-gray-600">Price (INR)</label>
-                                                            <input
-                                                                type="number"
-                                                                value={v.price}
-                                                                onChange={(e) => updateVariant(i, 'price', e.target.value)}
-                                                                className="w-full bg-black/50 border border-white/10 p-3 text-[10px] font-bold focus:border-white outline-none"
-                                                                placeholder="1999"
-                                                            />
+                                                        <input
+                                                            type="number"
+                                                            value={v.price}
+                                                            onChange={(e) => updateVariant(i, 'price', e.target.value)}
+                                                            className="w-full bg-black/50 border border-white/10 p-3 text-[10px] font-bold focus:border-white outline-none"
+                                                            placeholder={`Default ${formData.price || 0}`}
+                                                        />
                                                         </div>
                                                         <div className="space-y-2">
                                                             <label className="text-[7px] uppercase tracking-widest font-black text-gray-600">Stock</label>
@@ -446,6 +705,25 @@ const AdminInventory = () => {
                                                                 placeholder="TEE-BLK-M"
                                                             />
                                                         </div>
+                                                        {/* Image upload block for variant */}
+                                                        <div className="space-y-2">
+                                                            <label className="text-[7px] uppercase tracking-widest font-black text-gray-600">Images</label>
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setVariantUploadIndex(i);
+                                                                        fileInputRef.current.click();
+                                                                    }}
+                                                                    className="px-3 py-2 bg-white/5 border border-white/10 text-[9px] uppercase tracking-widest"
+                                                                >
+                                                                    Upload
+                                                                </button>
+                                                                <span className="text-[9px] text-gray-400">
+                                                                    {v.images?.length || 0} imgs
+                                                                </span>
+                                                            </div>
+                                                        </div>
                                                         <button
                                                             type="button"
                                                             onClick={() => removeVariant(i)}
@@ -460,40 +738,183 @@ const AdminInventory = () => {
                                     )}
 
                                     {activeTab === 'images' && (
-                                        <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
-                                            <div className="grid grid-cols-4 gap-6">
-                                                {/* Upload Trigger */}
-                                                <div
-                                                    onClick={() => fileInputRef.current.click()}
-                                                    className="aspect-[3/4] border-2 border-dashed border-white/10 flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-white/30 hover:bg-white/5 transition-all text-gray-500 hover:text-white"
-                                                >
-                                                    <Upload size={32} />
-                                                    <span className="text-[8px] font-black uppercase tracking-widest">Upload Image</span>
-                                                </div>
+                                        <div className="space-y-10 animate-in slide-in-from-right-4 duration-500">
 
-                                                {/* Gallery Items */}
-                                                {formData.images.map((img, i) => (
-                                                    <div key={i} className="aspect-[3/4] relative group bg-neutral-900 border border-white/5">
-                                                        <img
-                                                            src={img.image_url}
-                                                            className="w-full h-full object-cover"
-                                                            alt={`Gallery ${i}`}
-                                                        />
-                                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setFormData(p => ({ ...p, images: p.images.filter((_, idx) => idx !== i) }))}
-                                                                className="p-3 bg-red-500 text-white rounded-full hover:scale-110 transition-transform"
-                                                            >
-                                                                <Trash2 size={16} />
-                                                            </button>
+                                            {[...new Set(formData.variants.map(v => v.color))].map((color) => {
+
+                                                const colorVariants = formData.variants.filter(v => v.color === color);
+
+                                                const imageMap = new Map();
+
+                                                colorVariants.forEach(v => {
+                                                    if (v.image_url) {
+                                                        imageMap.set(v.image_url, { image_url: v.image_url });
+                                                    }
+
+                                                    (v.images || []).forEach(img => {
+                                                        if (img?.image_url) {
+                                                            imageMap.set(img.image_url, { image_url: img.image_url });
+                                                        }
+                                                    });
+                                                });
+
+                                                const images = Array.from(imageMap.values());
+
+                                                const mainImage = images[0];
+                                                const hoverImage = images[1];
+                                                const galleryImages = images.slice(2, 10);
+
+                                                return (
+                                                    <div key={color} className="space-y-6 border border-white/5 p-6 bg-white/[0.02]">
+
+                                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                                                            Color {color || "UNKNOWN"}
+                                                        </h3>
+
+                                                        {/* MAIN + HOVER */}
+                                                        <div className="grid grid-cols-2 gap-6">
+
+                                                            {/* MAIN IMAGE */}
+                                                            <div className="space-y-2">
+                                                                <p className="text-[8px] uppercase tracking-widest text-gray-500">Main Image</p>
+
+                                                                <div
+                                                                    onClick={() => {
+                                                                        const variantIndex = formData.variants.findIndex(v => v.color === color);
+                                                                        setVariantUploadIndex(variantIndex);
+                                                                        setUploadSlot("main");
+                                                                        fileInputRef.current.click();
+                                                                        // stay on images tab so upload is treated as main image
+                                                                    }}
+                                                                    className="aspect-square border border-white/10 bg-neutral-900 flex items-center justify-center cursor-pointer"
+                                                                >
+                                                                    {mainImage ? (
+                                                                        <img src={mainImage.image_url} className="w-full h-full object-cover" />
+                                                                    ) : (
+                                                                        <span className="text-[8px] text-gray-500 uppercase">Upload</span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                            {/* HOVER IMAGE */}
+                                                            <div className="space-y-2">
+                                                                <p className="text-[8px] uppercase tracking-widest text-gray-500">Hover Image</p>
+
+                                                                <div
+                                                                    onClick={() => {
+                                                                        const variantIndex = formData.variants.findIndex(v => v.color === color);
+                                                                        setVariantUploadIndex(variantIndex);
+                                                                        setUploadSlot("hover");
+                                                                        fileInputRef.current.click();
+                                                                        // stay on images tab so upload is treated as hover image
+                                                                    }}
+                                                                    className="aspect-square border border-white/10 bg-neutral-900 flex items-center justify-center cursor-pointer"
+                                                                >
+                                                                    {hoverImage ? (
+                                                                        <img src={hoverImage.image_url} className="w-full h-full object-cover" />
+                                                                    ) : (
+                                                                        <span className="text-[8px] text-gray-500 uppercase">Upload</span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
                                                         </div>
-                                                        {img.isNew && (
-                                                            <div className="absolute top-2 left-2 px-2 py-1 bg-white text-black text-[6px] font-black tracking-widest uppercase">New</div>
-                                                        )}
+
+                                                        {/* GALLERY */}
+                                                        <div className="space-y-3">
+                                                            <p className="text-[8px] uppercase tracking-widest text-gray-500">
+                                                                Gallery Images (max 10)
+                                                            </p>
+
+                                                            <div className="grid grid-cols-6 gap-4">
+
+                                                                {galleryImages.map((img, idx) => (
+                                                                    <div
+                                                                        key={idx}
+                                                                        draggable
+                                                                        onDragStart={() => {
+                                                                            setDragImageIndex(idx);
+                                                                            setDragColor(color);
+                                                                        }}
+                                                                        onDragOver={(e) => e.preventDefault()}
+                                                                        onDrop={() => {
+                                                                            if (dragImageIndex === null || dragColor !== color) return;
+
+                                                                            const reordered = [...galleryImages];
+                                                                            const dragged = reordered[dragImageIndex];
+                                                                            reordered.splice(dragImageIndex, 1);
+                                                                            reordered.splice(idx, 0, dragged);
+
+                                                                            const newVariants = [...formData.variants];
+
+                                                                            newVariants.forEach(v => {
+                                                                                if (v.color === color) {
+                                                                                    v.images = reordered.map((imgObj, pos) => ({
+                                                                                        ...imgObj,
+                                                                                        position: pos
+                                                                                    }));
+                                                                                }
+                                                                            });
+
+                                                                            setFormData(prev => ({ ...prev, variants: newVariants }));
+                                                                            setDragImageIndex(null);
+                                                                            setDragColor(null);
+                                                                        }}
+                                                                        className="aspect-square relative group bg-neutral-900 border border-white/5 cursor-move"
+                                                                    >
+
+                                                                        <img
+                                                                            src={img.image_url}
+                                                                            className="w-full h-full object-cover"
+                                                                        />
+
+                                                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center">
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={async () => {
+
+                                                                                    const newVariants = [...formData.variants];
+
+                                                                                    newVariants.forEach(v => {
+                                                                                        if (v.color === color && v.images) {
+                                                                                            v.images = v.images.filter(i => i.image_url !== img.image_url);
+                                                                                        }
+                                                                                    });
+
+                                                                                    setFormData(prev => ({ ...prev, variants: newVariants }));
+                                                                                }}
+                                                                                className="p-2 bg-red-500 text-white rounded-full"
+                                                                            >
+                                                                                <Trash2 size={14} />
+                                                                            </button>
+                                                                        </div>
+
+                                                                    </div>
+                                                                ))}
+
+                                                                {/* UPLOAD TILE */}
+                                                                {galleryImages.length < 10 && (
+                                                                    <div
+                                                                        onClick={() => {
+                                                                            const variantIndex = formData.variants.findIndex(v => v.color === color);
+                                                                            setVariantUploadIndex(variantIndex);
+                                                                            setUploadSlot("gallery");
+                                                                            fileInputRef.current.click();
+                                                                            // stay on images tab so upload is treated as gallery image
+                                                                        }}
+                                                                        className="aspect-square border-2 border-dashed border-white/10 flex items-center justify-center text-gray-500 cursor-pointer"
+                                                                    >
+                                                                        <Upload size={18} />
+                                                                    </div>
+                                                                )}
+
+                                                            </div>
+                                                        </div>
+
                                                     </div>
-                                                ))}
-                                            </div>
+                                                );
+                                            })}
+
                                         </div>
                                     )}
                                 </form>
@@ -516,6 +937,79 @@ const AdminInventory = () => {
                                     className="px-12 border border-white/10 text-[10px] font-black uppercase tracking-[0.3em] hover:border-white transition-all"
                                 >
                                     Relinquish
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {isCategoryModalOpen && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-6">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-black/90"
+                            onClick={() => setIsCategoryModalOpen(false)}
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 20 }}
+                            className="bg-[#0a0a0a] border border-white/10 w-full max-w-md p-8 relative z-10"
+                        >
+                            <h3 className="text-lg font-black uppercase tracking-widest mb-6">
+                                Create Category
+                            </h3>
+
+                            <input
+                                type="text"
+                                value={newCategoryName}
+                                onChange={(e) => setNewCategoryName(e.target.value)}
+                                placeholder="CATEGORY NAME"
+                                className="w-full bg-white/5 border border-white/10 p-4 text-xs font-bold focus:outline-none focus:border-white uppercase tracking-widest"
+                            />
+
+                            <div className="flex gap-4 mt-8">
+                                <button
+                                    onClick={async () => {
+                                        if (!newCategoryName) return;
+
+                                        try {
+                                            const slug = newCategoryName
+                                                .toLowerCase()
+                                                .replace(/\s+/g, '-');
+
+                                            const newCat = await adminService.createCategory({
+                                                name: newCategoryName.trim(),
+                                                slug
+                                            });
+
+                                            await fetchCategories();
+
+                                            setFormData((p) => ({
+                                                ...p,
+                                                category_id: newCat.id
+                                            }));
+
+                                            setNewCategoryName('');
+                                            setIsCategoryModalOpen(false);
+                                        } catch (err) {
+                                            alert('FAILED TO CREATE CATEGORY');
+                                        }
+                                    }}
+                                    className="flex-1 bg-white text-black py-3 text-[10px] font-black uppercase tracking-widest"
+                                >
+                                    Create
+                                </button>
+
+                                <button
+                                    onClick={() => setIsCategoryModalOpen(false)}
+                                    className="flex-1 border border-white/10 py-3 text-[10px] font-black uppercase tracking-widest"
+                                >
+                                    Cancel
                                 </button>
                             </div>
                         </motion.div>

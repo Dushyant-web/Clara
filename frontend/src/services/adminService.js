@@ -7,6 +7,7 @@ export const adminService = {
         return response.data;
     },
     updateProduct: async (productId, productData) => {
+        // Explicitly pass data as params to match the new backend signature
         const response = await api.put(`/admin/product/${productId}`, null, { params: productData });
         return response.data;
     },
@@ -17,7 +18,7 @@ export const adminService = {
 
     // Variants
     createVariant: async (productId, variantData) => {
-        const response = await api.post(`/admin/product/${productId}/variant`, null, { params: variantData });
+        const response = await api.post(`/admin/product/${productId}/variant`, variantData);
         return response.data;
     },
     updateVariantFull: async (variantId, variantData) => {
@@ -28,8 +29,20 @@ export const adminService = {
         const response = await api.put(`/admin/variant/${variantId}/stock`, null, { params: { stock } });
         return response.data;
     },
+    bulkUpdateStock: async (updates) => {
+        const response = await api.patch('/admin/variants/bulk-stock', updates);
+        return response.data;
+    },
     updatePrice: async (variantId, price) => {
         const response = await api.put(`/admin/variant/${variantId}/price`, null, { params: { price } });
+        return response.data;
+    },
+    updateVariantImage: async (variantId, imageUrl) => {
+        const response = await api.post(`/admin/variant/${variantId}/image`, null, { params: { image_url: imageUrl } });
+        return response.data;
+    },
+    deleteVariant: async (variantId) => {
+        const response = await api.delete(`/admin/variant/${variantId}`);
         return response.data;
     },
 
@@ -52,9 +65,23 @@ export const adminService = {
     },
 
     // Images & Uploads
-    addProductImage: async (productId, imageUrl) => {
-        const response = await api.post('/admin/admin/product-image', null, { params: { product_id: productId, image_url: imageUrl } });
-        return response.data;
+    addVariantImage(data) {
+        return api.post('/admin/variant-image', null, {
+            params: {
+                variant_id: data.variant_id,
+                image_url: data.image_url,
+                type: data.type,
+                position: data.position
+            }
+        });
+    },
+    addProductImage(productId, imageUrl) {
+        return api.post(`/admin/product-image`, null, {
+            params: {
+                product_id: productId,
+                image_url: imageUrl
+            }
+        });
     },
     uploadImage: async (file) => {
         const formData = new FormData();
@@ -78,8 +105,16 @@ export const adminService = {
         const response = await api.get('/admin/orders');
         return response.data;
     },
+    getOrderDetails: async (orderId) => {
+        const response = await api.get(`/admin/order/${orderId}`);
+        return response.data;
+    },
     getAllUsers: async () => {
         const response = await api.get('/admin/users');
+        return response.data;
+    },
+    getUserProfile: async (userId) => {
+        const response = await api.get(`/admin/user/${userId}/profile`);
         return response.data;
     },
     updateOrderStatus: async (orderId, status) => {
@@ -87,7 +122,21 @@ export const adminService = {
         return response.data;
     },
 
-    // Stats
+    // Reviews
+    getReviews: async (rating = null) => {
+        const response = await api.get('/admin/reviews', { params: { rating } });
+        return response.data;
+    },
+    deleteReview: async (reviewId) => {
+        const response = await api.delete(`/admin/review/${reviewId}`);
+        return response.data;
+    },
+    getReviewStats: async () => {
+        const response = await api.get('/admin/reviews/stats');
+        return response.data;
+    },
+
+    // Stats & Categories
     getStats: async () => {
         const response = await api.get('/admin/stats');
         return response.data;
@@ -96,9 +145,18 @@ export const adminService = {
         const response = await api.get('/admin/revenue');
         return response.data;
     },
+    getCategories: async () => {
+        const response = await api.get('/categories');
+        return response.data;
+    },
+    createCategory: async (categoryData) => {
+        const response = await api.post('/admin/category', categoryData);
+        return response.data;
+    },
 
     // Refund
     refundPayment: async (paymentId, amount = null) => {
+        // paymentId is from Razorpay, amount in paise
         const response = await api.post('/admin/refund', null, { params: { payment_id: paymentId, amount } });
         return response.data;
     }

@@ -7,9 +7,20 @@ const ProductCard = ({ product }) => {
     const { toggleWishlist, isInWishlist, addToCart } = useCart()
     const isWishlisted = isInWishlist(product.id)
 
-    // Using images from product data if available, or fallbacks
-    const mainImage = product.image || 'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200'
-    const hoverImage = product.image2 || product.hover_image || 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=90&w=1200'
+    // Determine product images with correct priority
+    const mainImage =
+        product.main_image ||
+        product.images?.find(img => img.type === "main")?.image_url ||
+        product.images?.[0]?.image_url ||
+        product.image ||
+        'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200'
+
+    const hoverImage =
+        product.hover_image ||
+        product.images?.find(img => img.type === "hover")?.image_url ||
+        product.images?.[1]?.image_url ||
+        product.image2 ||
+        null
 
     return (
         <motion.div

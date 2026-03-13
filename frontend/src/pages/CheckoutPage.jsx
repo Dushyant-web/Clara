@@ -393,9 +393,18 @@ const CheckoutPage = () => {
                             <h2 className="text-xl font-serif tracking-tighter mb-8 pb-8 border-b border-secondary/10 uppercase">Order Summary</h2>
                             <div className="space-y-4 mb-8">
                                 {cartItems.map(item => (
-                                    <div key={item.uniqueKey} className="flex justify-between text-[10px] tracking-widest transition-all font-bold">
-                                        <span className="text-gray-500">{item.name} x {item.quantity}</span>
-                                        <span>₹{(item.price * item.quantity).toFixed(2)}</span>
+                                    <div key={item.uniqueKey} className="flex flex-col gap-1 border-b border-secondary/5 pb-4 last:border-0 last:pb-0">
+                                        <div className="flex justify-between text-[10px] tracking-widest font-bold">
+                                            <span className="text-gray-500 uppercase">{item.name} x {item.quantity}</span>
+                                            <span>₹{(item.price * item.quantity).toFixed(2)}</span>
+                                        </div>
+                                        {(item.size || item.color) && (
+                                            <p className="text-[8px] uppercase tracking-widest text-gray-400 font-bold">
+                                                {item.size && `Size: ${item.size}`}
+                                                {item.size && item.color && ' | '}
+                                                {item.color && `Color: ${item.color}`}
+                                            </p>
+                                        )}
                                     </div>
                                 ))}
                             </div>

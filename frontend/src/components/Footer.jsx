@@ -9,9 +9,7 @@ const Footer = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 mb-20">
                     {/* Brand Info */}
                     <div className="lg:col-span-1">
-                        <Link to="/" className="text-2xl font-serif font-bold tracking-tighter mb-6 block brand-blue">
-                            NAME.
-                        </Link>
+                            GAURK
                         <p className="text-gray-400 text-sm leading-relaxed max-w-xs mb-8">
                             Luxury minimal crafted for the bold. Minimalist designs, high-end quality, and cinematic aesthetics.
                         </p>
@@ -94,9 +92,7 @@ const Footer = () => {
                 </div>
 
                 <div className="flex flex-col md:flex-row justify-between items-center gap-6 pt-12 border-t border-white/5">
-                    <p className="text-[10px] uppercase tracking-widest text-gray-500">
-                        © 2026 NAME LUXURY MINIMAL. ALL RIGHTS RESERVED.
-                    </p>
+                        © 2026 GAURK LUXURY MINIMAL. ALL RIGHTS RESERVED.
                     <div className="flex items-center gap-6">
                         <span className="text-[10px] uppercase tracking-widest text-gray-500 font-medium">Payment Methods</span>
                         <div className="flex gap-3 opacity-40 grayscale contrast-125">

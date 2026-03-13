@@ -32,11 +32,13 @@ export const CartProvider = ({ children }) => {
             if (data && data.items) {
                 const mappedItems = data.items.map(item => ({
                     ...item,
-                    variantImage: item.variant_image || item.image || null,
-                    image: item.variant_image || item.image || 'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200',
+                    variantImage: item.variant_image || item.image_url || null,
+                    image: item.variant_image || item.image_url || item.main_image || 'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200',
                     id: item.product_id, // Keep consistency with frontend product.id
                     itemId: item.item_id, // Backend primary key
                     variantId: item.variant_id,
+                    size: item.size,
+                    color: item.color,
                     uniqueKey: `${item.product_id}-${item.variant_id}`
                 }));
                 setCartItems(mappedItems);
@@ -71,56 +73,61 @@ export const CartProvider = ({ children }) => {
 
     const addToCart = async (product, variantId = null, quantity = 1) => {
         let finalVariantId = variantId;
+        let variantDetails = null;
 
-        // If no variantId is provided (e.g., from ProductCard Quick Add),
-        // we fetch the full product to get the first available variant.
-        if (!finalVariantId && user) {
-            try {
-                const { productService } = await import('../services/productService');
+        try {
+            const { productService } = await import('../services/productService');
+
+            // If no variantId is provided, discover the first one
+            if (!finalVariantId) {
                 const fullProduct = await productService.getProduct(product.id);
                 if (fullProduct.variants && fullProduct.variants.length > 0) {
                     finalVariantId = fullProduct.variants[0].id;
+                    variantDetails = fullProduct.variants[0];
                 }
-            } catch (error) {
-                console.error('Failed to auto-discover variant', error);
+            } else {
+                // If variantId IS provided, we still need its details (size, color, image) 
+                // to avoid falling back to product-level generic data in the UI
+                const fullProduct = await productService.getProduct(product.id);
+                variantDetails = fullProduct.variants?.find(v => v.id === finalVariantId);
             }
+        } catch (error) {
+            console.error('Failed to resolve variant details', error);
         }
 
-        // Ensure image fallback before persisting
-        const productWithImage = {
+        // Create the variant-specific item object
+        const activeItem = {
             ...product,
-            variantImage: product.variantImage || product.variant_image || product.main_image || product.image || null,
-            image: product.variantImage || product.variant_image || product.main_image || product.image || 'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200'
-        };
-
-        const newItem = {
-            ...productWithImage,
-            variantId: finalVariantId,
-            quantity,
             id: product.id,
+            variantId: finalVariantId,
+            size: variantDetails?.size || null,
+            color: variantDetails?.color || null,
+            price: variantDetails?.price || product.price,
+            image: variantDetails?.image_url || variantDetails?.image || variantDetails?.images?.main || product.variant_image || product.main_image || product.image || 'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200',
+            variantImage: variantDetails?.image_url || variantDetails?.image || variantDetails?.images?.main || product.variant_image || product.main_image || product.image || null,
             uniqueKey: `${product.id}-${finalVariantId || 'default'}`
         };
 
-        setCartItems(prev => {
-            const existing = prev.find(item => item.uniqueKey === newItem.uniqueKey);
-            if (existing) {
-                return prev.map(item =>
-                    item.uniqueKey === newItem.uniqueKey
-                        ? { ...item, quantity: item.quantity + quantity }
-                        : item
-                );
-            }
-            return [...prev, newItem];
-        });
-
-        if (user && finalVariantId) {
+        // If user logged in, sync with backend
+        if (user) {
             try {
-                const response = await cartService.addToCart(user.id, quantity, finalVariantId);
-                // After adding to server, we refresh to get standardized data (images etc.)
-                fetchCart();
+                await cartService.addToCart(user.id, quantity, finalVariantId);
+                await fetchCart(); // Refresh from source of truth
             } catch (error) {
-                console.error('Failed to sync cart with server', error);
+                console.error('Checkout sync failed', error);
             }
+        } else {
+            // Local state fallback for guests
+            setCartItems(prev => {
+                const existing = prev.find(i => i.uniqueKey === activeItem.uniqueKey);
+                if (existing) {
+                    return prev.map(i => i.uniqueKey === activeItem.uniqueKey
+                        ? { ...i, quantity: i.quantity + quantity }
+                        : i
+                    );
+                }
+                return [...prev, { ...activeItem, quantity }];
+            });
         }
         setIsCartOpen(true);
     };

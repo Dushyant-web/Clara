@@ -66,7 +66,13 @@ const CartDrawer = () => {
                                         <div key={item.uniqueKey} className="flex gap-6 group text-secondary">
                                             <div className="w-24 aspect-[3/4] bg-secondary/5 overflow-hidden border border-secondary/10 shrink-0">
                                                 <img
-                                                    src={item.image || 'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200'}
+                                                    src={
+                                                        item.variantImage ||
+                                                        item.variant_image ||
+                                                        item.image ||
+                                                        item.main_image ||
+                                                        'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200'
+                                                    }
                                                     alt={item.name}
                                                     style={{ imageRendering: '-webkit-optimize-contrast' }}
                                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
@@ -87,9 +93,18 @@ const CartDrawer = () => {
                                                             <Trash2 size={14} />
                                                         </button>
                                                     </div>
-                                                    <p className="text-[10px] text-gray-500 tracking-widest uppercase font-bold">
-                                                        Size: {item.size || 'One Size'}
-                                                    </p>
+                                                    <div className="flex flex-wrap gap-x-4 gap-y-1">
+                                                        {item.size && (
+                                                            <p className="text-[10px] text-gray-500 tracking-widest uppercase font-bold">
+                                                                Size: <span className="text-secondary">{item.size}</span>
+                                                            </p>
+                                                        )}
+                                                        {item.color && (
+                                                            <p className="text-[10px] text-gray-500 tracking-widest uppercase font-bold">
+                                                                Color: <span className="text-secondary">{item.color}</span>
+                                                            </p>
+                                                        )}
+                                                    </div>
                                                 </div>
                                                 <div className="flex justify-between items-end">
                                                     <div className="flex items-center border border-secondary/10">
@@ -107,7 +122,7 @@ const CartDrawer = () => {
                                                             <Plus size={12} />
                                                         </button>
                                                     </div>
-                                                    <span className="text-xs font-serif font-bold italic transition-all">₹{item.price * item.quantity}</span>
+                                                    <span className="text-xs font-serif font-bold transition-all">₹{item.price * item.quantity}</span>
                                                 </div>
                                             </div>
                                         </div>

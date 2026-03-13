@@ -7,7 +7,8 @@ import {
     ExternalLink,
     Filter,
     ChevronDown,
-    MoreVertical
+    MoreVertical,
+    RotateCcw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { adminService } from '../services/adminService';
@@ -40,6 +41,25 @@ const AdminOrders = () => {
         } catch (err) {
             console.error('Status update failed', err);
             alert('FAILED TO UPDATE STATUS.');
+        }
+    };
+
+    const handleRefund = async (order) => {
+        if (!window.confirm(`REFUND ORDER #${order.id}? THIS ACTION IS IRREVERSIBLE.`)) return;
+        
+        try {
+            // Use transaction_id or fallback to payment_id for refund
+            const paymentId = order.transaction_id || order.payment_id;
+            if (!paymentId) {
+                alert('NO VALID PAYMENT ID FOUND FOR THIS ORDER.');
+                return;
+            }
+            await adminService.refundPayment(paymentId);
+            alert('REFUND PROCESSED SUCCESSFULLY.');
+            fetchOrders();
+        } catch (err) {
+            console.error('Refund failed', err);
+            alert('REFUND FAILED. ENSURE PAYMENT ID IS VALID.');
         }
     };
 
@@ -114,7 +134,7 @@ const AdminOrders = () => {
                                     <td className="p-6 text-[10px] text-gray-500 font-bold uppercase tracking-widest">
                                         {new Date(o.created_at).toLocaleDateString()}
                                     </td>
-                                    <td className="p-6 text-right">
+                                    <td className="p-6 text-right flex items-center justify-end gap-3">
                                         <select
                                             value={o.status}
                                             onChange={(e) => handleUpdateStatus(o.id, e.target.value)}
@@ -126,6 +146,13 @@ const AdminOrders = () => {
                                             <option value="delivered">DELIVERED</option>
                                             <option value="cancelled">CANCELLED</option>
                                         </select>
+                                        <button
+                                            onClick={() => handleRefund(o)}
+                                            className="p-2 border border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white transition-all"
+                                            title="PROCESS REFUND"
+                                        >
+                                            <RotateCcw size={12} />
+                                        </button>
                                     </td>
                                 </tr>
                             ))

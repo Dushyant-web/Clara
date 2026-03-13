@@ -31,8 +31,12 @@ import AdminLayout from './admin/AdminLayout';
 import AdminDashboard from './admin/AdminDashboard';
 import AdminInventory from './admin/AdminInventory';
 import AdminOrders from './admin/AdminOrders';
+import AdminCustomers from './admin/AdminCustomers';
+import AdminReviews from './admin/AdminReviews';
 import AdminNewsletter from './admin/AdminNewsletter';
 import AdminPromos from './admin/AdminPromos';
+import AdminAnalytics from './admin/AdminAnalytics';
+import AdminSettings from './admin/AdminSettings';
 
 // Contexts
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -42,6 +46,7 @@ import { NotificationProvider } from './contexts/NotificationContext';
 
 function App() {
   const location = useLocation();
+  const isAdminPath = location.pathname.startsWith('/admin');
 
   return (
     <ThemeProvider>
@@ -49,8 +54,8 @@ function App() {
         <CartProvider>
           <NotificationProvider>
             <div className="min-h-screen flex flex-col bg-primary text-secondary overflow-hidden">
-              <Navbar />
-              <CartDrawer />
+              {!isAdminPath && <Navbar />}
+              {!isAdminPath && <CartDrawer />}
               <ChatWidget />
 
               <main className="flex-1">
@@ -79,14 +84,18 @@ function App() {
                       <Route index element={<AdminDashboard />} />
                       <Route path="products" element={<AdminInventory />} />
                       <Route path="orders" element={<AdminOrders />} />
+                      <Route path="customers" element={<AdminCustomers />} />
+                      <Route path="reviews" element={<AdminReviews />} />
                       <Route path="newsletter" element={<AdminNewsletter />} />
                       <Route path="promos" element={<AdminPromos />} />
+                      <Route path="analytics" element={<AdminAnalytics />} />
+                      <Route path="settings" element={<AdminSettings />} />
                     </Route>
                   </Routes>
                 </AnimatePresence>
               </main>
 
-              <Footer />
+              {!isAdminPath && <Footer />}
             </div>
           </NotificationProvider>
         </CartProvider>

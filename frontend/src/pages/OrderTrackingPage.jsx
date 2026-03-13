@@ -115,6 +115,37 @@ const OrderTrackingPage = () => {
                                 </div>
                             </div>
                         ))}
+
+                        {/* Items Ordered Section */}
+                        {order.items && order.items.length > 0 && (
+                            <div className="mt-20 pt-20 border-t border-secondary/10">
+                                <h3 className="text-xl font-serif uppercase tracking-tight mb-8">Items Ordered</h3>
+                                <div className="space-y-6">
+                                    {order.items.map((item, idx) => (
+                                        <div key={idx} className="flex gap-6 items-center bg-secondary/5 p-6 border border-secondary/5">
+                                            <div className="w-20 aspect-[3/4] bg-secondary/10 shrink-0 overflow-hidden">
+                                                <img 
+                                                    src={item.image || 'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200'} 
+                                                    className="w-full h-full object-cover" 
+                                                    alt={item.name} 
+                                                />
+                                            </div>
+                                            <div className="flex-grow">
+                                                <h4 className="text-xs font-bold uppercase tracking-widest mb-2">{item.name}</h4>
+                                                <div className="flex gap-4 text-[10px] text-gray-500 uppercase tracking-widest font-black">
+                                                    <span>Qty: {item.quantity}</span>
+                                                    {item.size && <span>Size: {item.size}</span>}
+                                                    {item.color && <span>Color: {item.color}</span>}
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-sm font-serif">₹{item.item_total}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Delivery Info Card */}

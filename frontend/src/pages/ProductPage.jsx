@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useParams, Link } from 'react-router-dom'
-import { Heart, ShoppingBag, ArrowLeft, Star, Share2, Info, Truck, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Heart, ShoppingBag, ArrowLeft, Star, Share2, Info, Truck, RotateCcw, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { productService } from '../services/productService'
 import { reviewService } from '../services/reviewService'
 import { useCart } from '../contexts/CartContext'
@@ -35,10 +35,18 @@ const ProductPage = () => {
                 ])
 
                 const mainImg = images?.main_image || productData.image
+
+                const galleryImages = [
+                    images?.main_image,
+                    images?.hover_image,
+                    ...(Array.isArray(images?.gallery) ? images.gallery : [])
+                ].filter(Boolean)
+
                 setProduct({
                     ...productData,
-                    images: images?.gallery ? [images.main_image, images.hover_image, ...images.gallery].filter(Boolean) : [productData.image],
+                    images: galleryImages.length ? galleryImages : [productData.image],
                 })
+
                 setActiveImage(mainImg)
                 setRelatedProducts(related)
                 setReviews(reviewData || [])
@@ -72,20 +80,69 @@ const ProductPage = () => {
 
     // Find a representative variant for the selected color (for images)
     const colorVariant = product?.variants?.find(v =>
-        selectedColor && v.color === selectedColor
+        selectedColor ? v.color === selectedColor : true
     );
 
+    // Auto select first color when product loads
     useEffect(() => {
-        // Update gallery when color changes
-        if (selectedColor && colorVariant) {
-            if (colorVariant.images && colorVariant.images.length) {
-                setVariantImages(colorVariant.images);
-                setActiveImage(colorVariant.images[0]);
-            } else if (colorVariant.image_url) {
-                setVariantImages([colorVariant.image_url]);
-                setActiveImage(colorVariant.image_url);
+        if (!product?.variants || selectedColor) return;
+
+        const firstColor = product.variants.find(v => v.color)?.color;
+        if (firstColor) {
+            setSelectedColor(firstColor);
+        }
+    }, [product]);
+
+    // Auto select first available size when color changes
+    useEffect(() => {
+        if (!product?.variants || !selectedColor) return;
+
+        const firstAvailable = product.variants.find(
+            v => v.color === selectedColor && v.stock > 0
+        );
+
+        if (firstAvailable) {
+            setSelectedSize(firstAvailable.size);
+        }
+    }, [selectedColor, product]);
+
+    useEffect(() => {
+        if (!product) return;
+
+        // Find all images for the selected color
+        if (selectedColor && product.variants) {
+            const colorImages = product.variants
+                .filter(v => v.color === selectedColor)
+                .flatMap(v => {
+                    // New structure: images = { main, hover, gallery[] }
+                    if (v.images && typeof v.images === "object") {
+                        const imgs = [
+                            v.images.main,
+                            v.images.hover,
+                            ...(Array.isArray(v.images.gallery) ? v.images.gallery : [])
+                        ].filter(Boolean);
+
+                        // remove duplicate image URLs
+                        return [...new Set(imgs)];
+                    }
+
+                    // Old fallback structure
+                    if (v.image_url) {
+                        return [v.image_url];
+                    }
+
+                    return [];
+                });
+
+            if (colorImages.length) {
+                setVariantImages(colorImages);
+                setActiveImage(colorImages[0]);
+                return;
             }
-        } else if (product?.images) {
+        }
+
+        // fallback to product gallery
+        if (product.images?.length) {
             setVariantImages(product.images);
             setActiveImage(product.images[0]);
         }
@@ -175,7 +232,9 @@ const ProductPage = () => {
                             <span className="text-xs uppercase tracking-[0.4em] text-gray-500 mb-4 block font-bold">{product.category || 'Luxury Base'}</span>
                             <h1 className="text-4xl md:text-5xl font-serif tracking-tighter mb-4 capitalize">{product.name}</h1>
                             <div className="flex items-center gap-4 mb-6">
-                                <p className="text-2xl font-serif">₹{product.price}</p>
+                                <p className="text-2xl font-serif">
+                                    ₹{selectedVariant?.price ?? product.price}
+                                </p>
                                 <div className="h-4 w-px bg-secondary/20" />
                                 <div className="flex items-center gap-1">
                                     {[...Array(5)].map((_, i) => (
@@ -252,7 +311,18 @@ const ProductPage = () => {
                         {/* Actions */}
                         <div className="flex flex-col gap-4 mb-12">
                             <button
-                                onClick={() => selectedSize && selectedVariant && addToCart(product, selectedVariant.id)}
+                                onClick={() => {
+                                    if (!selectedSize || !selectedVariant) return;
+
+                                    // attach the correct variant image to the product before sending to cart
+                                    const productWithVariantImage = {
+                                        ...product,
+                                        image: selectedVariant.image_url || activeImage || product.image,
+                                        variant_image: selectedVariant.image_url || activeImage || product.image
+                                    };
+
+                                    addToCart(productWithVariantImage, selectedVariant.id);
+                                }}
                                 className={`w-full py-5 text-xs font-bold uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 ${selectedSize
                                     ? 'bg-secondary text-primary hover:bg-gray-200'
                                     : 'bg-secondary/5 text-gray-500 cursor-not-allowed'
