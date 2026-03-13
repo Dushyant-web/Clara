@@ -47,58 +47,17 @@ def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db))
     if getattr(order, "status", None) in ["paid", "confirmed"]:
         raise HTTPException(status_code=400, detail="Order already paid or confirmed")
 
+    # Do NOT reuse old pending payments (they may have stale Razorpay orders or amounts)
+    # If a pending payment exists, delete it and create a fresh one
     existing = db.query(Payment).filter(Payment.order_id == order_id).first()
 
-    if existing:
-        # Detect if stored amount is stale BEFORE modifying it
-        original_amount = float(existing.amount)
-        order_amount = float(order.total_amount)
-
-        amount_changed = abs(original_amount - order_amount) > 0.01
-
-        # Always sync DB amount to order total
-        if amount_changed:
-            existing.amount = order_amount
-
-        # Decide if Razorpay order must be regenerated
-        needs_razorpay_regen = (
-            provider in ["upi", "card"]
-            and (amount_changed or not getattr(existing, "razorpay_order_id", None))
-        )
-
-        if amount_changed or needs_razorpay_regen:
-            try:
-                existing.provider = provider
-
-                if provider in ["upi", "card"]:
-                    amount_paise = int(round(order_amount * 100))
-
-                    razorpay_order = razorpay_client.order.create({
-                        "amount": amount_paise,
-                        "currency": "INR",
-                        "payment_capture": 1,
-                        "notes": {
-                            "order_id": order.id,
-                            "type": "recreation"
-                        }
-                    })
-
-                    existing.razorpay_order_id = razorpay_order["id"]
-
-                db.commit()
-                db.refresh(existing)
-
-            except Exception as e:
-                db.rollback()
-                raise HTTPException(status_code=400, detail=f"Payment Gateway Sync Failed: {str(e)}")
-
-        return {
-            "payment_id": existing.id,
-            "provider": existing.provider,
-            "amount": float(existing.amount),
-            "razorpay_order_id": getattr(existing, "razorpay_order_id", None),
-            "message": "payment synced"
-        }
+    if existing and existing.status != "paid":
+        try:
+            db.delete(existing)
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise HTTPException(status_code=400, detail="Failed to reset stale payment")
 
     order = db.query(Order).filter(Order.id == order_id).first()
 
