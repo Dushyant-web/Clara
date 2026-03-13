@@ -33,7 +33,7 @@ def get_products(
 
     for product, category in results:
         # Standardize image fallback
-        display_image = product.image
+        display_image = product.main_image or product.hover_image
         if not display_image:
             first_img = db.query(ProductImage).filter(ProductImage.product_id == product.id).order_by(ProductImage.position).first()
             if first_img:
@@ -44,7 +44,8 @@ def get_products(
             "name": product.name,
             "price": product.price,
             "category": category,
-            "image": display_image
+            "main_image": product.main_image,
+            "hover_image": product.hover_image
         })
 
     return {
@@ -103,7 +104,8 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
         "name": product.name,
         "description": product.description,
         "price": product.price,
-        "image": product.image,
+        "main_image": product.main_image,
+        "hover_image": product.hover_image,
         "category_id": product.category_id,
         "variants": variant_data
     }
@@ -132,7 +134,8 @@ def get_related_products(product_id: int, db: Session = Depends(get_db)):
             "id": p.id,
             "name": p.name,
             "price": p.price,
-            "image": p.image
+            "main_image": p.main_image,
+            "hover_image": p.hover_image
         })
 
     return result
