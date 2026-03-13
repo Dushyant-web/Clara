@@ -20,45 +20,39 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    items = db.query(OrderItem).filter(OrderItem.order_id == order_id).all()
-
-    result = []
-
-    for item in items:
-
+    
+    # Get items with variant details
+    items = []
+    for item in order.items:
         variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
-        if not variant:
+        product = db.query(Product).filter(Product.id == variant.product_id).first() if variant else None
+        
+        if not variant or not product:
             continue
-            
-        product = db.query(Product).filter(Product.id == variant.product_id).first()
-        if not product:
-            continue
-            
-        # Standardize image fallback
-        display_image = product.image
+
+        # Standardize image fallback (Prioritize Variant Image)
+        display_image = variant.image_url if variant.image_url else product.image
         if not display_image:
             first_img = db.query(ProductImage).filter(ProductImage.product_id == product.id).order_by(ProductImage.position).first()
             if first_img:
                 display_image = first_img.image_url
 
-        result.append({
-            "variant_id": item.variant_id,
-            "product_id": product.id,
+        items.append({
             "name": product.name,
             "image": display_image,
             "size": variant.size,
             "color": variant.color,
+            "sku": variant.sku,
             "quantity": item.quantity,
-            "price": float(item.price),
-            "item_total": float(item.price * item.quantity)
+            "price": float(item.price)
         })
 
     return {
-        "order_id": order.id,
+        "id": order.id,
+        "total_amount": float(order.total_amount),
         "status": order.status,
-        "total": float(order.total_amount),
         "created_at": order.created_at,
-        "items": result
+        "items": items
     }
 
 @router.get("/orders/{user_id}")

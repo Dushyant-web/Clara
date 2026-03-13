@@ -545,14 +545,15 @@ def admin_order_detail(order_id: int, db: Session = Depends(get_db)):
                 display_image = first_img.image_url
 
         items_detail.append({
-            "id": item.id,
+            "item_id": item.id,
             "variant_id": item.variant_id,
-            "product_name": product.name if product else "Unknown Product",
+            "name": product.name if product else "Unknown Product",
+            "image": display_image,
+            "size": variant.size if variant else "N/A",
+            "color": variant.color if variant else "N/A",
             "quantity": item.quantity,
             "price": float(item.price),
-            "size": variant.size if variant else None,
-            "color": variant.color if variant else None,
-            "image": display_image
+            "item_total": float(item.price * item.quantity)
         })
 
     # Convert to dict to add items

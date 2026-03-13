@@ -65,12 +65,12 @@ def get_cart(user_id: int, db: Session = Depends(get_db)):
 
         # Standardize image fallback (Prioritize Variant Image)
         display_image = variant.image_url if variant.image_url else product.image
-        
         if not display_image:
             first_img = db.query(ProductImage).filter(ProductImage.product_id == product.id).order_by(ProductImage.position).first()
             if first_img:
                 display_image = first_img.image_url
 
+        # Use variant-specific price
         price = variant.price
         item_total = price * item.quantity
         subtotal += item_total
@@ -83,17 +83,16 @@ def get_cart(user_id: int, db: Session = Depends(get_db)):
             "image": display_image,
             "size": variant.size,
             "color": variant.color,
+            "sku": variant.sku,
             "quantity": item.quantity,
             "price": float(price),
             "item_total": float(item_total)
         })
 
-    cart_total = subtotal
-
     return {
         "items": cart_items,
         "cart_subtotal": float(subtotal),
-        "cart_total": float(cart_total)
+        "cart_total": float(subtotal)
     }
 
 @router.delete("/cart/remove/{item_id}")
