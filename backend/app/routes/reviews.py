@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -25,6 +25,16 @@ def create_review(
     review: ReviewCreate,
     db: Session = Depends(get_db)
 ):
+    # Prevent multiple reviews for the same variant by the same user
+    if review.variant_id is not None:
+        existing_review = db.query(Review).filter(
+            Review.user_id == review.user_id,
+            Review.variant_id == review.variant_id
+        ).first()
+
+        if existing_review:
+            raise HTTPException(status_code=400, detail="You already reviewed this variant. You can edit your review instead.")
+
     review = Review(
         product_id=review.product_id,
         variant_id=review.variant_id,
@@ -38,6 +48,44 @@ def create_review(
     db.commit()
     db.refresh(review)
     return review
+
+
+# ---------------- EDIT REVIEW ----------------
+@router.put("/reviews/{review_id}")
+def update_review(
+    review_id: int,
+    review_data: ReviewCreate,
+    db: Session = Depends(get_db)
+):
+    review = db.query(Review).filter(Review.id == review_id).first()
+
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+
+    review.rating = review_data.rating
+    review.comment = review_data.comment
+    review.images = review_data.images
+    review.videos = review_data.videos
+
+    db.commit()
+    db.refresh(review)
+
+    return review
+
+
+# ---------------- DELETE REVIEW ----------------
+@router.delete("/reviews/{review_id}")
+def delete_review(review_id: int, db: Session = Depends(get_db)):
+
+    review = db.query(Review).filter(Review.id == review_id).first()
+
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+
+    db.delete(review)
+    db.commit()
+
+    return {"message": "Review deleted"}
 
 
 @router.get("/reviews/{product_id}")
