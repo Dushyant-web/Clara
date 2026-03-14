@@ -8,6 +8,7 @@ from app.models.review import Review
 from app.models.order import Order
 from app.models.order_item import OrderItem
 from app.models.product_variant import ProductVariant
+from app.models.product import Product
 
 router = APIRouter()
 
@@ -187,6 +188,62 @@ def get_reviews(
     return enriched_reviews
 
 
+@router.get("/reviews/user/{user_id}")
+def get_user_reviews(user_id: int, db: Session = Depends(get_db)):
+    """
+    Fetch all reviews written by a specific user.
+    Returns highly enriched data containing product names, variant details, and admin replies.
+    """
+    reviews = db.query(Review).filter(Review.user_id == user_id).order_by(Review.created_at.desc()).all()
+    
+    result = []
+    
+    for r in reviews:
+        # Get Product Name
+        product = db.query(Product).filter(Product.id == r.product_id).first()
+        product_name = product.name if product else "Unknown Product"
+        
+        # Get Variant Details (Color, Size)
+        variant_color = None
+        variant_size = None
+        if r.variant_id:
+            variant = db.query(ProductVariant).filter(ProductVariant.id == r.variant_id).first()
+            if variant:
+                variant_color = variant.color
+                variant_size = variant.size
+
+        # Fetch admin replies for this specific review
+        replies = db.execute(
+            text("SELECT id, reply, created_at FROM review_replies WHERE review_id = :rid ORDER BY created_at ASC"),
+            {"rid": r.id}
+        ).fetchall()
+        
+        reply_list = [
+            {
+                "id": row.id,
+                "reply": row.reply,
+                "created_at": row.created_at
+            }
+            for row in replies
+        ]
+        
+        result.append({
+            "id": r.id,
+            "product_id": r.product_id,
+            "product_name": product_name,
+            "rating": r.rating,
+            "comment": r.comment,
+            "images": r.images or [],
+            "videos": r.videos or [],
+            "color": variant_color,
+            "size": variant_size,
+            "created_at": r.created_at,
+            "replies": reply_list
+        })
+        
+    return result
+
+
 # Endpoint to get review statistics for a product
 @router.get("/reviews/{product_id}/stats")
 def get_review_stats(product_id: int, db: Session = Depends(get_db)):
@@ -337,52 +394,3 @@ def create_review_reply(data: ReviewReplyCreate, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Reply added"}
-
-@router.get("/reviews/user/{user_id}")
-def get_user_reviews(user_id: int, db: Session = Depends(get_db)):
-
-    reviews = db.query(Review).filter(
-        Review.user_id == user_id
-    ).order_by(Review.created_at.desc()).all()
-
-    enriched_reviews = []
-
-    for r in reviews:
-
-        variant = None
-        product = None
-
-        if r.variant_id:
-            variant = db.query(ProductVariant).filter(ProductVariant.id == r.variant_id).first()
-            if variant:
-                product = db.query(Product).filter(Product.id == variant.product_id).first()
-
-        replies = db.execute(
-            text("SELECT id, reply, created_at FROM review_replies WHERE review_id = :rid"),
-            {"rid": r.id}
-        ).fetchall()
-
-        reply_list = [
-            {
-                "id": row.id,
-                "reply": row.reply,
-                "created_at": row.created_at
-            }
-            for row in replies
-        ]
-
-        enriched_reviews.append({
-            "id": r.id,
-            "product_id": product.id if product else None,
-            "product_name": product.name if product else None,
-            "rating": r.rating,
-            "comment": r.comment,
-            "images": r.images,
-            "videos": r.videos,
-            "created_at": r.created_at,
-            "color": variant.color if variant else None,
-            "size": variant.size if variant else None,
-            "replies": reply_list
-        })
-
-    return enriched_reviews
