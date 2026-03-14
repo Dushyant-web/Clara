@@ -148,7 +148,10 @@ def get_reviews(
             "videos": r.videos,
             "created_at": r.created_at,
             "verified_purchase": verified,
-            "helpful_count": getattr(r, "helpful_count", 0)
+            "helpful_count": db.execute(
+                text("SELECT COUNT(*) FROM review_votes WHERE review_id = :rid"),
+                {"rid": r.id}
+            ).scalar() or 0
         })
 
     return enriched_reviews
@@ -209,12 +212,16 @@ def vote_helpful(
         {"review_id": review_id, "user_id": user_id}
     )
 
-    review.helpful_count = (review.helpful_count or 0) + 1
     db.commit()
+
+    helpful_count = db.execute(
+        text("SELECT COUNT(*) FROM review_votes WHERE review_id = :rid"),
+        {"rid": review_id}
+    ).scalar() or 0
 
     return {
         "review_id": review_id,
-        "helpful_count": review.helpful_count
+        "helpful_count": helpful_count
     }
 
 
@@ -244,11 +251,14 @@ def remove_helpful_vote(
         {"review_id": review_id, "user_id": user_id}
     )
 
-    review.helpful_count = max((review.helpful_count or 1) - 1, 0)
-
     db.commit()
+
+    helpful_count = db.execute(
+        text("SELECT COUNT(*) FROM review_votes WHERE review_id = :rid"),
+        {"rid": review_id}
+    ).scalar() or 0
 
     return {
         "review_id": review_id,
-        "helpful_count": review.helpful_count
+        "helpful_count": helpful_count
     }
