@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Body
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
@@ -15,8 +15,8 @@ def create_review(
     rating: int,
     comment: str,
     variant_id: int | None = None,
-    images: list[str] | None = None,
-    videos: list[str] | None = None,
+    images: list[str] | None = Body(default=None),
+    videos: list[str] | None = Body(default=None),
     db: Session = Depends(get_db)
 ):
 
@@ -47,7 +47,7 @@ def get_reviews(
 
     query = db.query(Review).filter(Review.product_id == product_id)
 
-    if rating:
+    if rating is not None:
         query = query.filter(Review.rating == rating)
 
     if photos:
