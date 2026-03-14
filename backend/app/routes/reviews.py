@@ -130,12 +130,16 @@ def get_reviews(
 
         # Fetch admin replies for this review
         replies = db.execute(
-            text("SELECT reply, created_at FROM review_replies WHERE review_id = :rid ORDER BY created_at ASC"),
+            text("SELECT id, reply, created_at FROM review_replies WHERE review_id = :rid ORDER BY created_at ASC"),
             {"rid": r.id}
         ).fetchall()
 
         reply_list = [
-            {"reply": row.reply, "created_at": row.created_at}
+            {
+                "id": row.id,
+                "reply": row.reply,
+                "created_at": row.created_at
+            }
             for row in replies
         ]
 
@@ -288,3 +292,24 @@ def remove_helpful_vote(
         "review_id": review_id,
         "helpful_count": helpful_count
     }
+
+# ---------------- DELETE ADMIN REPLY ----------------
+@router.delete("/reviews/replies/{reply_id}")
+def delete_review_reply(reply_id: int, db: Session = Depends(get_db)):
+
+    existing = db.execute(
+        text("SELECT id FROM review_replies WHERE id = :rid"),
+        {"rid": reply_id}
+    ).fetchone()
+
+    if not existing:
+        raise HTTPException(status_code=404, detail="Reply not found")
+
+    db.execute(
+        text("DELETE FROM review_replies WHERE id = :rid"),
+        {"rid": reply_id}
+    )
+
+    db.commit()
+
+    return {"message": "Reply deleted"}
