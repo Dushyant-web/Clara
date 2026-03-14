@@ -8,6 +8,7 @@ from app.models.product_variant import ProductVariant
 from app.models.product import Product
 from app.models.product_image import ProductImage
 from app.models.variant_image import VariantImage
+from app.models.address import Address
 
 router = APIRouter()
 
@@ -132,12 +133,31 @@ def get_user_orders(user_id: int, db: Session = Depends(get_db)):
                 "quantity": item.quantity
             })
 
+        # fetch shipping address
+        shipping_address = None
+        if order.shipping_address_id:
+            address = db.query(Address).filter(
+                Address.id == order.shipping_address_id
+            ).first()
+
+            if address:
+                shipping_address = {
+                    "name": address.name,
+                    "line1": address.address_line,
+                    "city": address.city,
+                    "state": address.state,
+                    "pincode": address.postal_code,
+                    "country": address.country,
+                    "phone": address.phone
+                }
+
         result.append({
             "order_id": order.id,
             "status": order.status,
             "total_amount": float(order.total_amount),
             "created_at": order.created_at,
-            "items": enriched_items
+            "items": enriched_items,
+            "shipping_address": shipping_address
         })
 
     return result
