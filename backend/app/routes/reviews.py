@@ -313,3 +313,27 @@ def delete_review_reply(reply_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Reply deleted"}
+
+
+# ---------------- CREATE ADMIN REPLY ----------------
+class ReviewReplyCreate(BaseModel):
+    review_id: int
+    reply: str
+
+@router.post("/reviews/replies")
+def create_review_reply(data: ReviewReplyCreate, db: Session = Depends(get_db)):
+
+    # Ensure review exists
+    review = db.query(Review).filter(Review.id == data.review_id).first()
+
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+
+    db.execute(
+        text("INSERT INTO review_replies (review_id, reply) VALUES (:review_id, :reply)"),
+        {"review_id": data.review_id, "reply": data.reply}
+    )
+
+    db.commit()
+
+    return {"message": "Reply added"}
