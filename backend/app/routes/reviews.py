@@ -349,6 +349,14 @@ def get_user_reviews(user_id: int, db: Session = Depends(get_db)):
 
     for r in reviews:
 
+        variant = None
+        product = None
+
+        if r.variant_id:
+            variant = db.query(ProductVariant).filter(ProductVariant.id == r.variant_id).first()
+            if variant:
+                product = db.query(Product).filter(Product.id == variant.product_id).first()
+
         replies = db.execute(
             text("SELECT id, reply, created_at FROM review_replies WHERE review_id = :rid"),
             {"rid": r.id}
@@ -365,11 +373,15 @@ def get_user_reviews(user_id: int, db: Session = Depends(get_db)):
 
         enriched_reviews.append({
             "id": r.id,
+            "product_id": product.id if product else None,
+            "product_name": product.name if product else None,
             "rating": r.rating,
             "comment": r.comment,
             "images": r.images,
             "videos": r.videos,
             "created_at": r.created_at,
+            "color": variant.color if variant else None,
+            "size": variant.size if variant else None,
             "replies": reply_list
         })
 
