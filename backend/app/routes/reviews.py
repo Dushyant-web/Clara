@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, text
 
 from app.database.db import get_db
 from app.models.review import Review
@@ -147,7 +147,8 @@ def get_reviews(
             "images": r.images,
             "videos": r.videos,
             "created_at": r.created_at,
-            "verified_purchase": verified
+            "verified_purchase": verified,
+            "helpful_count": getattr(r, "helpful_count", 0)
         })
 
     return enriched_reviews
@@ -177,4 +178,69 @@ def get_review_stats(product_id: int, db: Session = Depends(get_db)):
             "4": four_star,
             "5": five_star
         }
+    }
+
+
+# ---------------- HELPFUL VOTE (1 USER = 1 VOTE) ----------------
+@router.post("/reviews/{review_id}/helpful")
+def vote_helpful(review_id: int, user_id: int, db: Session = Depends(get_db)):
+
+    review = db.query(Review).filter(Review.id == review_id).first()
+
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+
+    # Check if user already voted
+    existing = db.execute(
+        text("SELECT id FROM review_votes WHERE review_id = :review_id AND user_id = :user_id"),
+        {"review_id": review_id, "user_id": user_id}
+    ).fetchone()
+
+    if existing:
+        raise HTTPException(status_code=400, detail="You already voted this review")
+
+    # Insert vote
+    db.execute(
+        text("INSERT INTO review_votes (review_id, user_id) VALUES (:review_id, :user_id)"),
+        {"review_id": review_id, "user_id": user_id}
+    )
+
+    review.helpful_count = (review.helpful_count or 0) + 1
+    db.commit()
+
+    return {
+        "review_id": review_id,
+        "helpful_count": review.helpful_count
+    }
+
+
+# ---------------- REMOVE HELPFUL VOTE ----------------
+@router.delete("/reviews/{review_id}/helpful")
+def remove_helpful_vote(review_id: int, user_id: int, db: Session = Depends(get_db)):
+
+    review = db.query(Review).filter(Review.id == review_id).first()
+
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+
+    existing = db.execute(
+        text("SELECT id FROM review_votes WHERE review_id = :review_id AND user_id = :user_id"),
+        {"review_id": review_id, "user_id": user_id}
+    ).fetchone()
+
+    if not existing:
+        raise HTTPException(status_code=400, detail="You have not voted this review")
+
+    db.execute(
+        text("DELETE FROM review_votes WHERE review_id = :review_id AND user_id = :user_id"),
+        {"review_id": review_id, "user_id": user_id}
+    )
+
+    review.helpful_count = max((review.helpful_count or 1) - 1, 0)
+
+    db.commit()
+
+    return {
+        "review_id": review_id,
+        "helpful_count": review.helpful_count
     }
