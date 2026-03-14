@@ -606,6 +606,7 @@ def admin_revenue(db: Session = Depends(get_db)):
     }
 
 
+
 @router.get("/stats")
 def admin_stats(db: Session = Depends(get_db)):
     orders = db.query(func.count(Order.id)).scalar()
@@ -618,6 +619,112 @@ def admin_stats(db: Session = Depends(get_db)):
         "users": users,
         "revenue": revenue,
         "promos": promos
+    }
+
+# ---------------- REVIEW INTELLIGENCE DASHBOARD ----------------
+
+@router.get("/review-intelligence")
+def review_intelligence_dashboard(db: Session = Depends(get_db)):
+    """
+    Returns analytics for the Admin Review Intelligence Dashboard
+    """
+
+    # ⭐ Website Rating
+    website_rating = db.query(func.avg(Review.rating)).scalar() or 0
+
+    # 🧾 Total Reviews
+    total_reviews = db.query(func.count(Review.id)).scalar() or 0
+
+    # 🔥 Best Product
+    best_product = (
+        db.query(
+            Product.id,
+            Product.name,
+            func.avg(Review.rating).label("avg_rating"),
+            func.count(Review.id).label("review_count")
+        )
+        .join(Review, Review.product_id == Product.id)
+        .group_by(Product.id)
+        .order_by(func.avg(Review.rating).desc())
+        .first()
+    )
+
+    # ⚠ Worst Product
+    worst_product = (
+        db.query(
+            Product.id,
+            Product.name,
+            func.avg(Review.rating).label("avg_rating"),
+            func.count(Review.id).label("review_count")
+        )
+        .join(Review, Review.product_id == Product.id)
+        .group_by(Product.id)
+        .order_by(func.avg(Review.rating).asc())
+        .first()
+    )
+
+    # 📈 Review Growth (reviews per day)
+    review_growth = (
+        db.query(
+            func.date(Review.created_at).label("date"),
+            func.count(Review.id).label("reviews")
+        )
+        .group_by(func.date(Review.created_at))
+        .order_by(func.date(Review.created_at))
+        .all()
+    )
+
+    review_growth_data = [
+        {
+            "date": str(r.date),
+            "reviews": r.reviews
+        }
+        for r in review_growth
+    ]
+
+    # 🏆 Product Review Rankings
+    rankings = (
+        db.query(
+            Product.id,
+            Product.name,
+            func.avg(Review.rating).label("avg_rating"),
+            func.count(Review.id).label("review_count")
+        )
+        .join(Review, Review.product_id == Product.id)
+        .group_by(Product.id)
+        .order_by(func.avg(Review.rating).desc())
+        .all()
+    )
+
+    ranking_data = []
+    rank = 1
+    for r in rankings:
+        ranking_data.append({
+            "rank": rank,
+            "product_id": r.id,
+            "product_name": r.name,
+            "avg_rating": round(float(r.avg_rating), 2),
+            "review_count": r.review_count
+        })
+        rank += 1
+
+    return {
+        "website_rating": round(float(website_rating), 2),
+        "total_reviews": total_reviews,
+        "best_product": {
+            "id": best_product.id,
+            "name": best_product.name,
+            "rating": round(float(best_product.avg_rating), 2),
+            "reviews": best_product.review_count
+        } if best_product else None,
+        "worst_product": {
+            "id": worst_product.id,
+            "name": worst_product.name,
+            "rating": round(float(worst_product.avg_rating), 2),
+            "reviews": worst_product.review_count
+        } if worst_product else None,
+        "review_growth": review_growth_data,
+        "product_rankings": ranking_data
     }
 
 # ---------------- ORDER STATUS MANAGEMENT ----------------
