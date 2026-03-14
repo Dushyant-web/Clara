@@ -128,6 +128,17 @@ def get_reviews(
     for r in reviews:
         verified = False
 
+        # Fetch admin replies for this review
+        replies = db.execute(
+            text("SELECT reply, created_at FROM review_replies WHERE review_id = :rid ORDER BY created_at ASC"),
+            {"rid": r.id}
+        ).fetchall()
+
+        reply_list = [
+            {"reply": row.reply, "created_at": row.created_at}
+            for row in replies
+        ]
+
         # Check if the user purchased this variant
         variant = None
         if r.variant_id:
@@ -162,6 +173,7 @@ def get_reviews(
             "color": variant.color if variant else None,
             "size": variant.size if variant else None,
             "user_voted": True if voted else False,
+            "replies": reply_list,
             "helpful_count": db.execute(
                 text("SELECT COUNT(*) FROM review_votes WHERE review_id = :rid"),
                 {"rid": r.id}
