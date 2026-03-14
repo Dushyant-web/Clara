@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, Body
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
@@ -8,32 +9,34 @@ from app.models.review import Review
 router = APIRouter()
 
 
+# Request schema for creating a review
+class ReviewCreate(BaseModel):
+    product_id: int
+    user_id: int
+    rating: int
+    comment: str
+    variant_id: int | None = None
+    images: list[str] | None = None
+    videos: list[str] | None = None
+
+
 @router.post("/reviews")
 def create_review(
-    product_id: int,
-    user_id: int,
-    rating: int,
-    comment: str,
-    variant_id: int | None = None,
-    images: list[str] | None = Body(default=None),
-    videos: list[str] | None = Body(default=None),
+    review: ReviewCreate,
     db: Session = Depends(get_db)
 ):
-
     review = Review(
-        product_id=product_id,
-        variant_id=variant_id,
-        user_id=user_id,
-        rating=rating,
-        comment=comment,
-        images=images,
-        videos=videos
+        product_id=review.product_id,
+        variant_id=review.variant_id,
+        user_id=review.user_id,
+        rating=review.rating,
+        comment=review.comment,
+        images=review.images,
+        videos=review.videos
     )
-
     db.add(review)
     db.commit()
     db.refresh(review)
-
     return review
 
 
