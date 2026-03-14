@@ -5,6 +5,8 @@ from sqlalchemy import func
 
 from app.database.db import get_db
 from app.models.review import Review
+from app.models.order import Order
+from app.models.order_item import OrderItem
 
 router = APIRouter()
 
@@ -119,7 +121,36 @@ def get_reviews(
 
     reviews = query.order_by(Review.created_at.desc()).all()
 
-    return reviews
+    enriched_reviews = []
+
+    for r in reviews:
+        verified = False
+
+        # Check if the user purchased this variant
+        if r.variant_id:
+            purchase = db.query(OrderItem).join(Order).filter(
+                Order.user_id == r.user_id,
+                OrderItem.variant_id == r.variant_id,
+                OrderItem.order_id == Order.id
+            ).first()
+
+            if purchase:
+                verified = True
+
+        enriched_reviews.append({
+            "id": r.id,
+            "product_id": r.product_id,
+            "variant_id": r.variant_id,
+            "user_id": r.user_id,
+            "rating": r.rating,
+            "comment": r.comment,
+            "images": r.images,
+            "videos": r.videos,
+            "created_at": r.created_at,
+            "verified_purchase": verified
+        })
+
+    return enriched_reviews
 
 
 # Endpoint to get review statistics for a product
