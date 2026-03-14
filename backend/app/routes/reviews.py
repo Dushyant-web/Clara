@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import func, text
@@ -183,7 +183,11 @@ def get_review_stats(product_id: int, db: Session = Depends(get_db)):
 
 # ---------------- HELPFUL VOTE (1 USER = 1 VOTE) ----------------
 @router.post("/reviews/{review_id}/helpful")
-def vote_helpful(review_id: int, user_id: int, db: Session = Depends(get_db)):
+def vote_helpful(
+    review_id: int,
+    user_id: int = Query(...),
+    db: Session = Depends(get_db)
+):
 
     review = db.query(Review).filter(Review.id == review_id).first()
 
@@ -216,7 +220,11 @@ def vote_helpful(review_id: int, user_id: int, db: Session = Depends(get_db)):
 
 # ---------------- REMOVE HELPFUL VOTE ----------------
 @router.delete("/reviews/{review_id}/helpful")
-def remove_helpful_vote(review_id: int, user_id: int, db: Session = Depends(get_db)):
+def remove_helpful_vote(
+    review_id: int,
+    user_id: int = Query(...),
+    db: Session = Depends(get_db)
+):
 
     review = db.query(Review).filter(Review.id == review_id).first()
 
