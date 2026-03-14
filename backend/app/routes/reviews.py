@@ -337,3 +337,40 @@ def create_review_reply(data: ReviewReplyCreate, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Reply added"}
+
+@router.get("/reviews/user/{user_id}")
+def get_user_reviews(user_id: int, db: Session = Depends(get_db)):
+
+    reviews = db.query(Review).filter(
+        Review.user_id == user_id
+    ).order_by(Review.created_at.desc()).all()
+
+    enriched_reviews = []
+
+    for r in reviews:
+
+        replies = db.execute(
+            text("SELECT id, reply, created_at FROM review_replies WHERE review_id = :rid"),
+            {"rid": r.id}
+        ).fetchall()
+
+        reply_list = [
+            {
+                "id": row.id,
+                "reply": row.reply,
+                "created_at": row.created_at
+            }
+            for row in replies
+        ]
+
+        enriched_reviews.append({
+            "id": r.id,
+            "rating": r.rating,
+            "comment": r.comment,
+            "images": r.images,
+            "videos": r.videos,
+            "created_at": r.created_at,
+            "replies": reply_list
+        })
+
+    return enriched_reviews
