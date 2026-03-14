@@ -410,6 +410,28 @@ def admin_get_reviews(rating: int = None, db: Session = Depends(get_db)):
     # Flatten the result to include user_email in the review object
     reviews = []
     for review, email in results:
+        # Fetch admin replies for this review
+        replies = db.execute(
+            text("""
+                SELECT id, review_id, admin_id, reply, created_at
+                FROM review_replies
+                WHERE review_id = :review_id
+                ORDER BY created_at ASC
+            """),
+            {"review_id": review.id}
+        ).fetchall()
+
+        reply_list = [
+            {
+                "id": r.id,
+                "review_id": r.review_id,
+                "admin_id": r.admin_id,
+                "reply": r.reply,
+                "created_at": r.created_at
+            }
+            for r in replies
+        ]
+
         review_dict = {
             "id": review.id,
             "product_id": review.product_id,
@@ -432,7 +454,9 @@ def admin_get_reviews(rating: int = None, db: Session = Depends(get_db)):
 
             # Media
             "images": review.images if hasattr(review, "images") else [],
-            "videos": review.videos if hasattr(review, "videos") else []
+            "videos": review.videos if hasattr(review, "videos") else [],
+
+            "replies": reply_list,
         }
         reviews.append(review_dict)
 
