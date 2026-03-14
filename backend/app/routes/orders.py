@@ -133,12 +133,17 @@ def get_user_orders(user_id: int, db: Session = Depends(get_db)):
                 "quantity": item.quantity
             })
 
-        # fetch shipping address
+        # fetch shipping address (safe handling for different column names)
         shipping_address = None
-        if order.shipping_address_id:
-            address = db.query(Address).filter(
-                Address.id == order.shipping_address_id
-            ).first()
+
+        address_id = None
+        if hasattr(order, "shipping_address_id"):
+            address_id = order.shipping_address_id
+        elif hasattr(order, "address_id"):
+            address_id = order.address_id
+
+        if address_id:
+            address = db.query(Address).filter(Address.id == address_id).first()
 
             if address:
                 shipping_address = {
