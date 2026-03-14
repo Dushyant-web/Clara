@@ -835,6 +835,88 @@ def review_intelligence_dashboard(db: Session = Depends(get_db)):
         "product_rankings": ranking_data
     }
 
+# ---------------- PRODUCT REVIEW BREAKDOWN ----------------
+
+@router.get("/product-review-breakdown/{product_id}")
+def product_review_breakdown(product_id: int, db: Session = Depends(get_db)):
+
+    breakdown = db.query(
+        Review.rating,
+        func.count(Review.id).label("count")
+    ).filter(
+        Review.product_id == product_id
+    ).group_by(
+        Review.rating
+    ).all()
+
+    result = {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+    }
+
+    for r in breakdown:
+        result[str(r.rating)] = r.count
+
+    return result
+
+
+# ---------------- REVIEW MODERATION QUEUE ----------------
+
+@router.get("/review-moderation-queue")
+def review_moderation_queue(db: Session = Depends(get_db)):
+
+    flagged_reviews = db.query(
+        Review,
+        User.email
+    ).join(
+        User, Review.user_id == User.id
+    ).filter(
+        Review.rating == 1
+    ).order_by(
+        Review.created_at.desc()
+    ).all()
+
+    result = []
+
+    for review, email in flagged_reviews:
+        result.append({
+            "review_id": review.id,
+            "user": email,
+            "rating": review.rating,
+            "comment": review.comment,
+            "product_id": review.product_id,
+            "reason": "1-star review",
+            "created_at": review.created_at
+        })
+
+    return result
+
+
+# ---------------- REVIEW TIMELINE GRAPH ----------------
+
+@router.get("/review-timeline")
+def review_timeline(db: Session = Depends(get_db)):
+
+    data = db.query(
+        func.date(Review.created_at).label("date"),
+        func.count(Review.id).label("reviews")
+    ).group_by(
+        func.date(Review.created_at)
+    ).order_by(
+        func.date(Review.created_at)
+    ).all()
+
+    return [
+        {
+            "date": str(row.date),
+            "reviews": row.reviews
+        }
+        for row in data
+    ]
+
 # ---------------- ORDER STATUS MANAGEMENT ----------------
 
 @router.patch("/orders/{order_id}/status")
