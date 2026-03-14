@@ -133,28 +133,34 @@ def get_user_orders(user_id: int, db: Session = Depends(get_db)):
                 "quantity": item.quantity
             })
 
-        # fetch shipping address (safe handling for different column names)
+        # fetch shipping address
         shipping_address = None
 
-        address_id = None
-        if hasattr(order, "shipping_address_id"):
-            address_id = order.shipping_address_id
-        elif hasattr(order, "address_id"):
-            address_id = order.address_id
+        address_id = getattr(order, "shipping_address_id", None)
 
-        if address_id:
+        # fallback if model does not expose the column correctly
+        if not address_id:
+            latest_address = db.query(Address).filter(
+                Address.user_id == order.user_id
+            ).order_by(Address.id.desc()).first()
+
+            if latest_address:
+                address = latest_address
+            else:
+                address = None
+        else:
             address = db.query(Address).filter(Address.id == address_id).first()
 
-            if address:
-                shipping_address = {
-                    "name": address.name,
-                    "line1": address.address_line,
-                    "city": address.city,
-                    "state": address.state,
-                    "pincode": address.postal_code,
-                    "country": address.country,
-                    "phone": address.phone
-                }
+        if address:
+            shipping_address = {
+                "name": address.name,
+                "line1": address.address_line,
+                "city": address.city,
+                "state": address.state,
+                "pincode": address.postal_code,
+                "country": address.country,
+                "phone": address.phone
+            }
 
         result.append({
             "order_id": order.id,
