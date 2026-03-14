@@ -135,6 +135,37 @@ export const adminService = {
         const response = await api.get('/admin/reviews/stats');
         return response.data;
     },
+    getReviewIntelligence: async () => {
+        const response = await api.get('/admin/review-intelligence');
+        return response.data;
+    },
+
+    getProductReviewBreakdown: async (productId) => {
+        const response = await api.get(`/admin/product-review-breakdown/${productId}`);
+        return response.data;
+    },
+
+    getModerationQueue: async () => {
+        const response = await api.get('/admin/review-moderation-queue');
+        return response.data;
+    },
+
+    getReviewTimeline: async () => {
+        const response = await api.get('/admin/review-timeline');
+        return response.data;
+    },
+    replyToReview: async ({ review_id, reply }) => {
+        const response = await api.post('/reviews/replies', {
+            review_id,
+            reply
+        });
+        return response.data;
+    },
+
+    deleteReply: async (replyId) => {
+        const response = await api.delete(`/reviews/replies/${replyId}`);
+        return response.data;
+    },
 
     // Stats & Categories
     getStats: async () => {

@@ -18,9 +18,17 @@ import { adminService } from '../services/adminService';
 const AdminReviews = () => {
     const [reviews, setReviews] = useState([]);
     const [stats, setStats] = useState(null);
+    const [intelligence, setIntelligence] = useState(null);
     const [loading, setLoading] = useState(true);
     const [ratingFilter, setRatingFilter] = useState('All');
-    const [searchQuery, setSearchQuery] = useState('');
+    const [replyDrafts, setReplyDrafts] = useState({});
+    const [sendingReply, setSendingReply] = useState(null);
+    const [timeline, setTimeline] = useState([]);
+    const [moderationQueue, setModerationQueue] = useState([]);
+
+    // --- Product Analytics State ---
+    const [selectedProduct, setSelectedProduct] = useState(null);
+    const [productBreakdown, setProductBreakdown] = useState(null);
 
     useEffect(() => {
         fetchData();
@@ -30,18 +38,35 @@ const AdminReviews = () => {
         setLoading(true);
         try {
             const rating = ratingFilter === 'All' ? null : parseInt(ratingFilter);
-            const [reviewsData, statsData] = await Promise.all([
+            const [reviewsData, statsData, intelligenceData, timelineData, queueData] = await Promise.all([
                 adminService.getReviews(rating),
-                adminService.getReviewStats()
+                adminService.getReviewStats(),
+                adminService.getReviewIntelligence(),
+                adminService.getReviewTimeline(),
+                adminService.getModerationQueue()
             ]);
             
             // Standardize results (handle cases where backend wraps data in keys)
             setReviews(Array.isArray(reviewsData) ? reviewsData : (reviewsData?.reviews || []));
             setStats(statsData);
+            setIntelligence(intelligenceData);
+            setTimeline(timelineData || []);
+            setModerationQueue(queueData || []);
         } catch (err) {
             console.error('Failed to load review data', err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // --- Load Product Analytics ---
+    const loadProductAnalytics = async (productId) => {
+        try {
+            const data = await adminService.getProductReviewBreakdown(productId);
+            setSelectedProduct(productId);
+            setProductBreakdown(data);
+        } catch (err) {
+            console.error('Failed to load product analytics', err);
         }
     };
 
@@ -59,10 +84,7 @@ const AdminReviews = () => {
         }
     };
 
-    const filteredReviews = reviews.filter(r => 
-        (r.comment?.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (r.user_email?.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    const filteredReviews = reviews;
 
     const renderStars = (rating, size = 8) => (
         <div className="flex gap-0.5">
@@ -112,6 +134,66 @@ const AdminReviews = () => {
             </header>
 
             {/* Intelligence Cards */}
+            {/* Review Intelligence Overview */}
+            {intelligence && (
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+                    <div className="bg-white/[0.03] border border-white/5 p-8">
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 font-bold">
+                            Website Rating
+                        </p>
+                        <p className="text-3xl font-black text-white mt-3">
+                            ⭐ {intelligence.website_rating}
+                        </p>
+                    </div>
+
+                    <div className="bg-white/[0.03] border border-white/5 p-8">
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 font-bold">
+                            Total Reviews
+                        </p>
+                        <p className="text-3xl font-black text-white mt-3">
+                            {intelligence.total_reviews}
+                        </p>
+                    </div>
+
+                    <div className="bg-white/[0.03] border border-white/5 p-8">
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 font-bold">
+                            Best Product
+                        </p>
+                        <p className="text-sm text-white mt-3">
+                            {intelligence.best_product?.name || '—'}
+                        </p>
+                        <p className="text-xs text-white/40">
+                            ⭐ {intelligence.best_product?.rating}
+                        </p>
+                    </div>
+
+                    <div className="bg-white/[0.03] border border-white/5 p-8">
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 font-bold">
+                            Worst Product
+                        </p>
+                        <p className="text-sm text-white mt-3">
+                            {intelligence.worst_product?.name || '—'}
+                        </p>
+                        <p className="text-xs text-white/40">
+                            ⭐ {intelligence.worst_product?.rating}
+                        </p>
+                    </div>
+
+                    <div className="bg-white/[0.03] border border-white/5 p-8">
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 font-bold">
+                            Review Growth
+                        </p>
+
+                        <p className="text-sm text-white mt-3">
+                            {Array.isArray(intelligence.review_growth) ? intelligence.review_growth.length : 0} days
+                        </p>
+
+                        <p className="text-xs text-white/40">
+                            Activity Recorded
+                        </p>
+                    </div>
+                </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white/[0.03] border border-white/5 p-10 flex flex-col justify-between h-40">
                     <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-500">Average Sentiment</p>
@@ -144,20 +226,120 @@ const AdminReviews = () => {
                 </div>
             </div>
 
-            {/* Moderation Manifest */}
-            <div className="space-y-10">
-                <div className="flex justify-between items-center border-b border-white/5 pb-10">
-                    <div className="relative w-full max-w-xl">
-                        <Search className="absolute left-0 top-1/2 -translate-y-1/2 text-white/20" size={14} />
-                        <input 
-                            type="text"
-                            placeholder="SEARCH INTELLIGENCE / IDENTITY / KEYWORD..."
-                            className="bg-transparent border-none pl-8 text-[11px] uppercase tracking-[0.2em] focus:outline-none w-full text-white placeholder:text-white/10 font-bold"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
+            {/* Review Breakdown (Star Distribution) */}
+            {stats && stats.ratings && (
+                <div className="space-y-6 mt-16">
+                    <h2 className="text-2xl font-serif text-white/90">
+                        Review Breakdown
+                    </h2>
+
+                    <div className="bg-white/[0.03] border border-white/5 p-8 space-y-4">
+                        {[5,4,3,2,1].map((star) => {
+                            const count = stats.ratings?.[star] || stats.ratings?.[String(star)] || 0;
+                            const total = stats.total_reviews || 1;
+                            const percent = (count / total) * 100;
+
+                            return (
+                                <div key={star} className="flex items-center gap-4">
+
+                                    <div className="w-10 text-xs text-white/70">
+                                        {star}★
+                                    </div>
+
+                                    <div className="flex-1 h-2 bg-white/10 relative">
+                                        <div
+                                            className="absolute left-0 top-0 h-2 bg-white"
+                                            style={{ width: `${percent}%` }}
+                                        />
+                                    </div>
+
+                                    <div className="w-12 text-xs text-white/50 text-right">
+                                        {count}
+                                    </div>
+
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
+            )}
+
+            {/* Product Review Rankings */}
+            {intelligence?.product_rankings && (
+            <div className="space-y-6 mt-16">
+            <h2 className="text-2xl font-serif text-white/90">Product Review Rankings</h2>
+
+            <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left">
+            <thead>
+            <tr className="border-b border-white/10">
+            <th className="p-4 text-xs text-white/40 uppercase">Rank</th>
+            <th className="p-4 text-xs text-white/40 uppercase">Product</th>
+            <th className="p-4 text-xs text-white/40 uppercase">Rating</th>
+            <th className="p-4 text-xs text-white/40 uppercase">Reviews</th>
+            </tr>
+            </thead>
+            <tbody>
+            {intelligence.product_rankings.map((p) => (
+            <tr
+            key={p.product_id}
+            className="border-b border-white/5 cursor-pointer hover:bg-white/[0.03]"
+            onClick={() => loadProductAnalytics(p.product_id)}
+            >
+            <td className="p-4 text-white">{p.rank}</td>
+            <td className="p-4 text-white/80">{p.product_name}</td>
+            <td className="p-4 text-white">⭐ {p.avg_rating}</td>
+            <td className="p-4 text-white/60">{p.review_count}</td>
+            </tr>
+            ))}
+            </tbody>
+            </table>
+            </div>
+            </div>
+            )}
+
+            {/* Product Analytics Panel */}
+            {selectedProduct && productBreakdown && (
+            <div className="mt-10 border border-white/10 p-8 bg-white/[0.02]">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-serif text-white">Product Review Analytics</h3>
+                    <button
+                        onClick={() => {
+                            setSelectedProduct(null);
+                            setProductBreakdown(null);
+                        }}
+                        className="text-xs uppercase tracking-wider text-white/40 hover:text-white"
+                    >
+                        Close
+                    </button>
+                </div>
+
+                <div className="space-y-3">
+                {[5,4,3,2,1].map((star) => {
+                const count = productBreakdown?.[star] || productBreakdown?.[String(star)] || 0;
+                const total = Object.values(productBreakdown).reduce((a,b)=>a+b,0) || 1;
+                const percent = (count/total)*100;
+
+                return (
+                <div key={star} className="flex items-center gap-4">
+                <div className="w-10 text-xs text-white/70">{star}★</div>
+                <div className="flex-1 h-2 bg-white/10 relative">
+                <div
+                className="absolute left-0 top-0 h-2 bg-white"
+                style={{width:`${percent}%`}}
+                />
+                </div>
+                <div className="w-10 text-xs text-white/50">{count}</div>
+                </div>
+                );
+                })}
+                </div>
+            </div>
+            )}
+
+            {/* Moderation Manifest */}
+            <div className="space-y-10">
+                <div className="border-b border-white/5 pb-10"></div>
 
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
@@ -165,7 +347,7 @@ const AdminReviews = () => {
                             <tr className="border-b border-white/5">
                                 <th className="p-8 text-[10px] uppercase tracking-[0.4em] font-bold text-white/20">Identity</th>
                                 <th className="p-8 text-[10px] uppercase tracking-[0.4em] font-bold text-white/20">Appraisal</th>
-                                <th className="p-8 text-[10px] uppercase tracking-[0.4em] font-bold text-white/20">Feedback Manifest</th>
+                                <th className="p-8 text-[10px] uppercase tracking-[0.4em] font-bold text-white/20">Review Details</th>
                                 <th className="p-8 text-[10px] uppercase tracking-[0.4em] font-bold text-white/20">Chronology</th>
                                 <th className="p-8 text-[10px] uppercase tracking-[0.4em] font-bold text-white/20 text-right">Actions</th>
                             </tr>
@@ -200,13 +382,140 @@ const AdminReviews = () => {
                                             </div>
                                         </td>
                                         <td className="p-8 max-w-md">
-                                            <p className="text-xs text-white/70 font-serif italic leading-relaxed">
+                                            <p className="text-xs text-white/80 font-serif italic leading-relaxed">
                                                 "{r.comment}"
                                             </p>
-                                            <div className="mt-4 flex items-center gap-3">
+
+                                            <div className="mt-4 flex flex-wrap items-center gap-3">
+
+                                                {/* Product Reference */}
                                                 <div className="px-2 py-0.5 border border-white/5 text-[9px] uppercase tracking-[0.2em] font-bold text-white/20">
-                                                    PIECE #{r.product_id}
+                                                    PRODUCT #{r.product_id}
                                                 </div>
+
+                                                {/* Variant Label */}
+                                                {(r.color || r.size) && (
+                                                    <div className="px-2 py-0.5 border border-white/5 text-[9px] uppercase tracking-[0.2em] font-bold text-white/40">
+                                                        {r.color ? `Color: ${r.color}` : ''} {r.size ? `Size: ${r.size}` : ''}
+                                                    </div>
+                                                )}
+
+                                                {/* Verified Purchase */}
+                                                {r.verified_purchase && (
+                                                    <div className="flex items-center gap-1 px-2 py-0.5 border border-emerald-500/20 text-[9px] uppercase tracking-[0.2em] font-bold text-emerald-400">
+                                                        <CheckCircle2 size={10} />
+                                                        Verified
+                                                    </div>
+                                                )}
+
+                                                {/* Helpful Votes */}
+                                                {typeof r.helpful_count === 'number' && (
+                                                    <div className="px-2 py-0.5 border border-white/10 text-[9px] uppercase tracking-[0.2em] font-bold text-white/40">
+                                                        Helpful: {r.helpful_count}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Media Preview */}
+                                            {(r.images?.length > 0 || r.videos?.length > 0) && (
+                                                <div className="mt-4 flex gap-3 flex-wrap">
+
+                                                    {r.images?.map((img, i) => (
+                                                        <img
+                                                            key={i}
+                                                            src={img}
+                                                            alt="review media"
+                                                            className="w-16 h-16 object-cover border border-white/10"
+                                                        />
+                                                    ))}
+
+                                                    {r.videos?.map((vid, i) => (
+                                                        <video
+                                                            key={i}
+                                                            src={vid}
+                                                            controls
+                                                            className="w-20 h-16 border border-white/10"
+                                                        />
+                                                    ))}
+
+                                                </div>
+                                            )}
+
+                                            {/* Admin Reply System */}
+                                            <div className="mt-6 border-t border-white/5 pt-4 space-y-3">
+                                                <p className="text-[9px] uppercase tracking-[0.3em] text-white/30 font-bold">
+                                                    Admin Reply
+                                                </p>
+
+                                                {/* Existing Admin Replies */}
+                                                {r.replies && r.replies.length > 0 && (
+                                                    <div className="space-y-2">
+                                                        {r.replies.map((rep) => (
+                                                            <div
+                                                                key={rep.id}
+                                                                className="flex justify-between items-start bg-white/[0.03] border border-white/10 p-2 text-xs text-white/80"
+                                                            >
+                                                                <div>
+                                                                    <p className="text-white/80">{rep.reply}</p>
+                                                                    <p className="text-[9px] text-white/30">
+                                                                        {new Date(rep.created_at).toLocaleDateString()}
+                                                                    </p>
+                                                                </div>
+
+                                                                <button
+                                                                    onClick={async () => {
+                                                                        try {
+                                                                            await adminService.deleteReply(rep.id);
+                                                                            fetchData();
+                                                                        } catch (err) {
+                                                                            console.error('Reply delete failed', err);
+                                                                        }
+                                                                    }}
+                                                                    className="text-red-400 text-[9px] uppercase tracking-wider hover:text-red-500"
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                <textarea
+                                                    value={replyDrafts[r.id] || ''}
+                                                    onChange={(e) =>
+                                                        setReplyDrafts({
+                                                            ...replyDrafts,
+                                                            [r.id]: e.target.value
+                                                        })
+                                                    }
+                                                    placeholder="Respond to this customer review..."
+                                                    className="w-full bg-white/[0.02] border border-white/10 text-xs text-white p-3 resize-none focus:outline-none focus:border-white/30"
+                                                    rows={2}
+                                                />
+
+                                                <button
+                                                    disabled={sendingReply === r.id}
+                                                    onClick={async () => {
+                                                        try {
+                                                            setSendingReply(r.id);
+
+                                                            await adminService.replyToReview({
+                                                                review_id: r.id,
+                                                                reply: replyDrafts[r.id]
+                                                            });
+
+                                                            setReplyDrafts({ ...replyDrafts, [r.id]: '' });
+                                                            fetchData();
+                                                        } catch (err) {
+                                                            console.error('Reply failed', err);
+                                                        } finally {
+                                                            setSendingReply(null);
+                                                        }
+                                                    }}
+                                                    className="px-4 py-2 text-[9px] uppercase tracking-[0.3em] border border-white/20 text-white/70 hover:bg-white hover:text-black transition-all"
+                                                >
+                                                    {sendingReply === r.id ? 'Sending...' : 'Reply'}
+                                                </button>
                                             </div>
                                         </td>
                                         <td className="p-8">
@@ -232,6 +541,80 @@ const AdminReviews = () => {
                                     </tr>
                                 ))
                             )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {/* Review Timeline */}
+            <div className="space-y-6 mt-16">
+                <h2 className="text-2xl font-serif text-white/90">
+                    Review Timeline
+                </h2>
+
+                <div>
+                    {timeline.length === 0 ? (
+                        <p className="text-xs text-white/30">No review activity yet</p>
+                    ) : (
+                        <div className="flex items-end gap-3 h-40">
+                            {timeline.map((t, i) => {
+                                const max = Math.max(...timeline.map(x => x.reviews));
+                                const height = max > 0 ? (t.reviews / max) * 160 : 0;
+
+                                return (
+                                    <div key={i} className="flex flex-col items-center gap-1">
+                                        <div
+                                            className="w-6 bg-white/80"
+                                            style={{ height: `${height}px` }}
+                                        />
+                                        <span className="text-[9px] text-white/40">
+                                            {t.date.slice(5)}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Moderation Queue */}
+            <div className="space-y-6 mt-16">
+                <h2 className="text-2xl font-serif text-white/90">
+                    Moderation Queue
+                </h2>
+
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-left">
+                        <thead>
+                            <tr className="border-b border-white/10">
+                                <th className="p-4 text-xs text-white/40 uppercase">ID</th>
+                                <th className="p-4 text-xs text-white/40 uppercase">User</th>
+                                <th className="p-4 text-xs text-white/40 uppercase">Review</th>
+                                <th className="p-4 text-xs text-white/40 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {moderationQueue.length === 0 ? (
+                                <tr>
+                                    <td colSpan={4} className="p-6 text-xs text-white/30 text-center">
+                                        No reviews require moderation
+                                    </td>
+                                </tr>
+                            ) : moderationQueue.map((q) => (
+                                <tr key={q.review_id} className="border-b border-white/5">
+                                    <td className="p-4 text-white/70">{q.review_id}</td>
+                                    <td className="p-4 text-white/80">{q.user}</td>
+                                    <td className="p-4 text-white/70">{q.comment}</td>
+                                    <td className="p-4">
+                                        <button
+                                            onClick={() => handleDeleteReview(q.review_id)}
+                                            className="text-red-400 text-xs uppercase tracking-wider hover:text-red-500"
+                                        >
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
                 </div>

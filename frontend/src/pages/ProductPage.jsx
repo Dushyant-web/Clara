@@ -15,23 +15,30 @@ const ProductPage = () => {
     const [product, setProduct] = useState(null)
     const [relatedProducts, setRelatedProducts] = useState([])
     const [reviews, setReviews] = useState([])
+    const [reviewStats, setReviewStats] = useState(null)
     const [loading, setLoading] = useState(true)
     const [selectedSize, setSelectedSize] = useState('')
     const [selectedColor, setSelectedColor] = useState('')
     const [activeImage, setActiveImage] = useState(null)
     const [variantImages, setVariantImages] = useState([])
-    const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' })
+    const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '', images: [], videos: [] })
+    const [reviewFilter, setReviewFilter] = useState('all') // all | 5 | 4 | 3 | 2 | 1
+    const [showPhotosOnly, setShowPhotosOnly] = useState(false)
     const [submittingReview, setSubmittingReview] = useState(false)
+
+    // detect if current user already reviewed this product
+    const userReview = reviews.find(r => r.user_id === user?.id)
 
     useEffect(() => {
         const fetchProductDetails = async () => {
             setLoading(true)
             try {
-                const [productData, images, related, reviewData] = await Promise.all([
+                const [productData, images, related, reviewData, stats] = await Promise.all([
                     productService.getProduct(id),
                     productService.getProductImages(id),
                     productService.getRelatedProducts(id),
-                    reviewService.getReviews(id)
+                    reviewService.getReviews(id, user?.id),
+                    reviewService.getReviewStats(id)
                 ])
 
                 const mainImg = images?.main_image || productData.image
@@ -50,6 +57,18 @@ const ProductPage = () => {
                 setActiveImage(mainImg)
                 setRelatedProducts(related)
                 setReviews(reviewData || [])
+                setReviewStats(stats || null)
+
+                // preload user review into form for editing
+                const existing = (reviewData || []).find(r => r.user_id === user?.id)
+                if (existing) {
+                    setReviewForm({
+                        rating: existing.rating,
+                        comment: existing.comment,
+                        images: existing.images || [],
+                        videos: existing.videos || []
+                    })
+                }
             } catch (err) {
                 console.error('Failed to fetch product details', err)
             } finally {
@@ -241,11 +260,11 @@ const ProductPage = () => {
                                         <Star
                                             key={i}
                                             size={14}
-                                            fill={i < Math.floor(reviews.reduce((acc, r) => acc + r.rating, 0) / (reviews.length || 1)) ? "currentColor" : "none"}
-                                            className={i < Math.floor(reviews.reduce((acc, r) => acc + r.rating, 0) / (reviews.length || 1)) ? "text-secondary" : "text-gray-600"}
+                                            fill={i < Math.floor(reviewStats?.average_rating || 0) ? "currentColor" : "none"}
+                                            className={i < Math.floor(reviewStats?.average_rating || 0) ? "text-secondary" : "text-gray-600"}
                                         />
                                     ))}
-                                    <span className="text-[10px] text-gray-400 ml-2 font-bold uppercase tracking-widest">({reviews.length} Reviews)</span>
+                                    <span className="text-[10px] text-gray-400 ml-2 font-bold uppercase tracking-widest">({reviewStats?.total_reviews || reviews.length} Reviews)</span>
                                 </div>
                             </div>
                         </div>
@@ -370,36 +389,58 @@ const ProductPage = () => {
                             <h2 className="text-3xl font-serif tracking-tighter uppercase mb-8">Client Journals</h2>
                             <div className="bg-secondary/5 p-10 border border-secondary/10">
                                 <div className="text-5xl font-serif mb-4">
-                                    {(reviews.reduce((acc, r) => acc + r.rating, 0) / (reviews.length || 1)).toFixed(1)}
+                                    {(reviewStats?.average_rating || 0).toFixed(1)}
                                 </div>
                                 <div className="flex items-center gap-1 mb-6">
                                     {[...Array(5)].map((_, i) => (
                                         <Star
                                             key={i}
                                             size={16}
-                                            fill={i < Math.floor(reviews.reduce((acc, r) => acc + r.rating, 0) / (reviews.length || 1)) ? "currentColor" : "none"}
-                                            className={i < Math.floor(reviews.reduce((acc, r) => acc + r.rating, 0) / (reviews.length || 1)) ? "text-secondary" : "text-gray-600"}
+                                            fill={i < Math.floor(reviewStats?.average_rating || 0) ? "currentColor" : "none"}
+                                            className={i < Math.floor(reviewStats?.average_rating || 0) ? "text-secondary" : "text-gray-600"}
                                         />
                                     ))}
                                 </div>
-                                <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Based on {reviews.length} shared experiences</p>
+                                <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Based on {reviewStats?.total_reviews || reviews.length} shared experiences</p>
                             </div>
 
                             {user ? (
                                 <div className="mt-12">
-                                    <h3 className="text-xs uppercase tracking-widest font-black mb-6">Submit Your Journal</h3>
+                                    <h3 className="text-xs uppercase tracking-widest font-black mb-6">
+                                        {userReview ? 'Edit Your Review' : 'Submit Your Journal'}
+                                    </h3>
                                     <form onSubmit={async (e) => {
                                         e.preventDefault();
                                         setSubmittingReview(true);
+                                        if (!selectedVariant) {
+                                            alert("Please select size and color before submitting your review.")
+                                            setSubmittingReview(false);
+                                            return;
+                                        }
                                         try {
-                                            await reviewService.createReview({
-                                                product_id: id,
-                                                user_id: user.id,
-                                                rating: reviewForm.rating,
-                                                comment: reviewForm.comment
-                                            });
-                                            setReviewForm({ rating: 5, comment: '' });
-                                            const updatedReviews = await reviewService.getReviews(id);
+                                            if (userReview) {
+                                                await reviewService.updateReview(userReview.id, {
+                                                    product_id: id,
+                                                    user_id: user.id,
+                                                    variant_id: selectedVariant?.id,
+                                                    rating: reviewForm.rating,
+                                                    comment: reviewForm.comment,
+                                                    images: reviewForm.images,
+                                                    videos: reviewForm.videos
+                                                });
+                                            } else {
+                                                await reviewService.createReview({
+                                                    product_id: id,
+                                                    user_id: user.id,
+                                                    variant_id: selectedVariant?.id,
+                                                    rating: reviewForm.rating,
+                                                    comment: reviewForm.comment,
+                                                    images: reviewForm.images,
+                                                    videos: reviewForm.videos
+                                                });
+                                            }
+                                            setReviewForm({ rating: 5, comment: '', images: [], videos: [] });
+                                            const updatedReviews = await reviewService.getReviews(id, user?.id);
                                             setReviews(updatedReviews);
                                         } catch (err) {
                                             console.error('Review submission failed', err);
@@ -425,12 +466,163 @@ const ProductPage = () => {
                                             onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
                                             className="w-full bg-transparent border-b border-secondary/20 py-4 text-xs font-bold focus:outline-none focus:border-secondary transition-all text-secondary uppercase tracking-widest min-h-[100px]"
                                         />
+                                        {/* Media Upload Section */}
+                                        <div className="space-y-4">
+                                            <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">
+                                                Upload Photos or Videos
+                                            </p>
+
+                                            <div className="flex gap-4 flex-wrap">
+
+                                                {/* Image Upload */}
+                                                <label className="w-24 h-24 border border-secondary/20 flex items-center justify-center text-[10px] uppercase tracking-widest cursor-pointer hover:border-secondary transition-all">
+                                                    + Photo
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        multiple
+                                                        hidden
+                                                        onChange={async (e) => {
+                                                            const files = Array.from(e.target.files)
+                                                            // limit to 5 images total
+                                                            if (reviewForm.images.length + files.length > 5) {
+                                                                alert("Maximum 5 photos allowed per review")
+                                                                return
+                                                            }
+                                                            for (const file of files) {
+                                                                const formData = new FormData()
+                                                                formData.append("file", file)
+                                                                formData.append("upload_preset", "clara_reviews")
+
+                                                                const res = await fetch("https://api.cloudinary.com/v1_1/dvslo87sg/auto/upload", {
+                                                                    method: "POST",
+                                                                    body: formData
+                                                                })
+
+                                                                const data = await res.json()
+                                                                if (data?.secure_url) {
+                                                                    setReviewForm(prev => ({
+                                                                        ...prev,
+                                                                        images: [...prev.images, data.secure_url]
+                                                                    }))
+                                                                }
+                                                            }
+                                                        }}
+                                                    />
+                                                </label>
+
+                                                {/* Video Upload */}
+                                                <label className="w-24 h-24 border border-secondary/20 flex items-center justify-center text-[10px] uppercase tracking-widest cursor-pointer hover:border-secondary transition-all">
+                                                    + Video
+                                                    <input
+                                                        type="file"
+                                                        accept="video/*"
+                                                        multiple
+                                                        hidden
+                                                        onChange={async (e) => {
+                                                            const files = Array.from(e.target.files)
+                                                            // allow only 1 video
+                                                            if (reviewForm.videos.length + files.length > 1) {
+                                                                alert("Only 1 video allowed per review")
+                                                                return
+                                                            }
+                                                            for (const file of files) {
+                                                                const formData = new FormData()
+                                                                formData.append("file", file)
+                                                                formData.append("upload_preset", "clara_reviews")
+
+                                                                const res = await fetch("https://api.cloudinary.com/v1_1/dvslo87sg/auto/upload", {
+                                                                    method: "POST",
+                                                                    body: formData
+                                                                })
+
+                                                                const data = await res.json()
+                                                                if (data?.secure_url) {
+                                                                    setReviewForm(prev => ({
+                                                                        ...prev,
+                                                                        videos: [...prev.videos, data.secure_url]
+                                                                    }))
+                                                                }
+                                                            }
+                                                        }}
+                                                    />
+                                                </label>
+
+                                            </div>
+
+                                            {/* Image Preview */}
+                                            {reviewForm.images?.length > 0 && (
+                                                <div className="flex gap-3 flex-wrap">
+                                                    {reviewForm.images.map((img, i) => (
+                                                        <div key={i} className="relative">
+                                                            <img
+                                                                src={img}
+                                                                className="w-16 h-16 object-cover border border-secondary/20"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    setReviewForm(prev => ({
+                                                                        ...prev,
+                                                                        images: prev.images.filter((_, idx) => idx !== i)
+                                                                    }))
+                                                                }
+                                                                className="absolute -top-2 -right-2 bg-black text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center border border-white/20"
+                                                            >
+                                                                ×
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* Video Preview */}
+                                            {reviewForm.videos?.length > 0 && (
+                                                <div className="flex gap-3 flex-wrap">
+                                                    {reviewForm.videos.map((vid, i) => (
+                                                        <div key={i} className="relative">
+                                                            <video
+                                                                src={vid}
+                                                                className="w-20 h-16 object-cover border border-secondary/20"
+                                                                controls
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    setReviewForm(prev => ({
+                                                                        ...prev,
+                                                                        videos: prev.videos.filter((_, idx) => idx !== i)
+                                                                    }))
+                                                                }
+                                                                className="absolute -top-2 -right-2 bg-black text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center border border-white/20"
+                                                            >
+                                                                ×
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
                                         <button
                                             disabled={submittingReview || !reviewForm.comment.trim()}
                                             className="w-full py-4 bg-secondary text-primary text-[10px] font-black uppercase tracking-[0.4em] hover:opacity-90 transition-all disabled:opacity-20"
                                         >
                                             {submittingReview ? <Loader2 className="animate-spin mx-auto" size={16} /> : 'Post Entry'}
                                         </button>
+                                        {userReview && (
+                                            <button
+                                                type="button"
+                                                onClick={async () => {
+                                                    if (!window.confirm('Delete your review?')) return
+                                                    await reviewService.deleteReview(userReview.id)
+                                                    const updatedReviews = await reviewService.getReviews(id, user?.id)
+                                                    setReviews(updatedReviews)
+                                                }}
+                                                className="w-full py-3 border border-red-500/30 text-red-400 text-[10px] font-black uppercase tracking-[0.3em] hover:bg-red-500/10 transition-all"
+                                            >
+                                                Delete Review
+                                            </button>
+                                        )}
                                     </form>
                                 </div>
                             ) : (
@@ -441,35 +633,166 @@ const ProductPage = () => {
                             )}
                         </div>
 
-                        <div className="lg:col-span-8 space-y-12">
-                            {reviews.length > 0 ? (
-                                reviews.map((review, idx) => (
-                                    <div key={idx} className="border-b border-secondary/5 pb-12">
-                                        <div className="flex justify-between items-center mb-6">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 bg-secondary/10 rounded-full flex items-center justify-center text-[10px] font-serif uppercase">
-                                                    U{idx + 1}
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs font-black uppercase tracking-widest">Verified Client</p>
-                                                    <div className="flex items-center gap-1 mt-1">
-                                                        {[...Array(5)].map((_, i) => <Star key={i} size={10} fill={i < review.rating ? "currentColor" : "none"} className={i < review.rating ? "text-secondary" : "text-gray-600"} />)}
+                        <div className="flex items-center gap-4 mb-10 flex-wrap">
+                            <select
+                                value={reviewFilter}
+                                onChange={(e) => setReviewFilter(e.target.value)}
+                                className="px-4 py-2 text-[10px] border border-secondary/10 bg-primary text-secondary uppercase tracking-widest font-bold"
+                            >
+                                <option value="all">All Reviews</option>
+                                <option value="5">5★ Reviews</option>
+                                <option value="4">4★ Reviews</option>
+                                <option value="3">3★ Reviews</option>
+                                <option value="2">2★ Reviews</option>
+                                <option value="1">1★ Reviews</option>
+                            </select>
+
+                            <select
+                                value={showPhotosOnly ? "media" : "all"}
+                                onChange={(e) => setShowPhotosOnly(e.target.value === "media")}
+                                className="px-4 py-2 text-[10px] border border-secondary/10 bg-primary text-secondary uppercase tracking-widest font-bold"
+                            >
+                                <option value="all">All Content</option>
+                                <option value="media">Photos & Videos</option>
+                            </select>
+                        </div>
+                        {/* Filtered reviews variable */}
+                        {/*
+                          4. Improve review filtering to avoid duplicate filtering.
+                        */}
+                        {(() => {
+                            // This IIFE is just to scope the variable for clarity
+                            // In actual code, you might want to move this declaration above the return statement
+                            // but per instruction, we place it here above the filtered rendering.
+                            // eslint-disable-next-line
+                            const filteredReviews = reviews
+                                .filter(r => reviewFilter === 'all' ? true : r.rating === parseInt(reviewFilter))
+                                .filter(r => showPhotosOnly ? ((r.images?.length > 0) || (r.videos?.length > 0)) : true)
+                            return (
+                                <div className="lg:col-span-8 space-y-12">
+                                    {filteredReviews.length > 0 ? (
+                                        filteredReviews.map((review, idx) => (
+                                            <div key={idx} className="border-b border-secondary/5 pb-12">
+                                            <div className="flex justify-between items-center mb-6">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-10 h-10 bg-secondary/10 rounded-full flex items-center justify-center text-[10px] font-serif uppercase">
+                                                        U{idx + 1}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                                                            {review.verified_purchase ? (
+                                                                <span className="text-emerald-400">✔ Verified Purchase</span>
+                                                            ) : (
+                                                                <span className="text-gray-400">Client</span>
+                                                            )}
+                                                        </p>
+                                                        <div className="flex items-center gap-1 mt-1">
+                                                            {[...Array(5)].map((_, i) => <Star key={i} size={10} fill={i < review.rating ? "currentColor" : "none"} className={i < review.rating ? "text-secondary" : "text-gray-600"} />)}
+                                                        </div>
                                                     </div>
                                                 </div>
+                                                <div className="text-right">
+                                                    <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">
+                                                        {new Date(review.created_at).toLocaleDateString()}
+                                                    </p>
+                                                    <p className="text-[9px] text-gray-600 uppercase tracking-widest">
+                                                        Ref #{idx + 1024}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <span className="text-[10px] text-gray-600 uppercase tracking-widest font-bold">Archive Ref: #{idx + 1024}</span>
+                                            <p className="text-gray-400 text-sm leading-relaxed uppercase tracking-widest font-medium">
+                                                "{review.comment}"
+                                            </p>
+                                            {/* Admin Reply */}
+                                            {review.replies && review.replies.length > 0 && (
+                                                <div className="mt-4 border-l border-secondary/20 pl-4">
+                                                    {review.replies.map((rep, i) => (
+                                                        <div key={i} className="text-xs text-gray-400 italic leading-relaxed">
+                                                            <span className="text-secondary font-bold uppercase tracking-widest text-[9px] mr-2">
+                                                                Admin:
+                                                            </span>
+                                                            {rep.reply}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            {(review.color || review.size) && (
+                                                <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-2">
+                                                    Color: {review.color || "—"} &nbsp; | &nbsp; Size: {review.size || "—"}
+                                                </p>
+                                            )}
+                                            
+                                            {/* MEDIA GALLERY */}
+                                            {(review.images?.length > 0 || review.videos?.length > 0) && (
+                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
+                                                    {review.images?.map((img, i) => (
+                                                        <img
+                                                            key={`img-${i}`}
+                                                            src={img}
+                                                            className="w-full h-48 object-contain bg-black border border-secondary/10"
+                                                        />
+                                                    ))}
+                                                    {review.videos?.map((vid, i) => (
+                                                        <video
+                                                            key={`vid-${i}`}
+                                                            src={vid}
+                                                            className="w-full h-48 object-contain bg-black border border-secondary/10"
+                                                            controls
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* Helpful Vote */}
+                                            <div className="mt-6 flex items-center gap-4">
+                                                <button
+                                                    onClick={async () => {
+                                                        if (!user) {
+                                                            alert("Login required to vote helpful")
+                                                            return
+                                                        }
+
+                                                        try {
+                                                            let data
+
+                                                            // toggle vote
+                                                            if (review.user_voted) {
+                                                                data = await reviewService.removeHelpfulVote(review.id, user.id)
+                                                            } else {
+                                                                data = await reviewService.voteHelpful(review.id, user.id)
+                                                            }
+
+                                                            setReviews(prev =>
+                                                                prev.map(r => {
+                                                                    if (r.id === review.id) {
+                                                                        return {
+                                                                            ...r,
+                                                                            helpful_count: data.helpful_count,
+                                                                            user_voted: !r.user_voted
+                                                                        }
+                                                                    }
+                                                                    return r
+                                                                })
+                                                            )
+                                                        } catch (err) {
+                                                            console.error("Helpful vote failed", err)
+                                                        }
+                                                    }}
+                                                    className="px-4 py-2 border border-secondary/20 text-[10px] uppercase tracking-widest hover:border-secondary transition-all"
+                                                >
+                                                    👍 Helpful ({review.helpful_count || 0})
+                                                </button>
+                                            </div>
                                         </div>
-                                        <p className="text-gray-400 text-sm leading-relaxed uppercase tracking-widest font-medium">
-                                            "{review.comment}"
-                                        </p>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="py-20 text-center border border-dashed border-secondary/10">
-                                    <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold italic">No archives found for this piece.</p>
+                                        ))
+                                    ) : (
+                                        <div className="py-20 text-center border border-dashed border-secondary/10">
+                                            <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold italic">No archives found for this piece.</p>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
+                            )
+                        })()}
                     </div>
                 </div>
 
