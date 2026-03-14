@@ -7,6 +7,7 @@ from app.database.db import get_db
 from app.models.review import Review
 from app.models.order import Order
 from app.models.order_item import OrderItem
+from app.models.product_variant import ProductVariant
 
 router = APIRouter()
 
@@ -127,7 +128,9 @@ def get_reviews(
         verified = False
 
         # Check if the user purchased this variant
+        variant = None
         if r.variant_id:
+            variant = db.query(ProductVariant).filter(ProductVariant.id == r.variant_id).first()
             purchase = db.query(OrderItem).join(Order).filter(
                 Order.user_id == r.user_id,
                 OrderItem.variant_id == r.variant_id,
@@ -136,6 +139,11 @@ def get_reviews(
 
             if purchase:
                 verified = True
+
+        voted = db.execute(
+            text("SELECT id FROM review_votes WHERE review_id = :review_id AND user_id = :user_id"),
+            {"review_id": r.id, "user_id": r.user_id}
+        ).fetchone()
 
         enriched_reviews.append({
             "id": r.id,
@@ -148,6 +156,9 @@ def get_reviews(
             "videos": r.videos,
             "created_at": r.created_at,
             "verified_purchase": verified,
+            "color": variant.color if variant else None,
+            "size": variant.size if variant else None,
+            "user_voted": True if voted else False,
             "helpful_count": db.execute(
                 text("SELECT COUNT(*) FROM review_votes WHERE review_id = :rid"),
                 {"rid": r.id}
