@@ -35,6 +35,13 @@ def create_review(
         if existing_review:
             raise HTTPException(status_code=400, detail="You already reviewed this variant. You can edit your review instead.")
 
+    # media limits
+    if review.images and len(review.images) > 5:
+        raise HTTPException(status_code=400, detail="Maximum 5 images allowed")
+
+    if review.videos and len(review.videos) > 1:
+        raise HTTPException(status_code=400, detail="Only 1 video allowed")
+
     review = Review(
         product_id=review.product_id,
         variant_id=review.variant_id,
@@ -61,6 +68,12 @@ def update_review(
 
     if not review:
         raise HTTPException(status_code=404, detail="Review not found")
+
+    if review_data.images and len(review_data.images) > 5:
+        raise HTTPException(status_code=400, detail="Maximum 5 images allowed")
+
+    if review_data.videos and len(review_data.videos) > 1:
+        raise HTTPException(status_code=400, detail="Only 1 video allowed")
 
     review.rating = review_data.rating
     review.comment = review_data.comment
