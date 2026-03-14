@@ -107,6 +107,7 @@ def delete_review(review_id: int, db: Session = Depends(get_db)):
 @router.get("/reviews/{product_id}")
 def get_reviews(
     product_id: int,
+    user_id: int | None = None,
     rating: int | None = None,
     photos: bool = False,
     db: Session = Depends(get_db)
@@ -134,16 +135,18 @@ def get_reviews(
             purchase = db.query(OrderItem).join(Order).filter(
                 Order.user_id == r.user_id,
                 OrderItem.variant_id == r.variant_id,
-                OrderItem.order_id == Order.id
+                Order.status == "paid"
             ).first()
 
             if purchase:
                 verified = True
 
-        voted = db.execute(
-            text("SELECT id FROM review_votes WHERE review_id = :review_id AND user_id = :user_id"),
-            {"review_id": r.id, "user_id": r.user_id}
-        ).fetchone()
+        voted = None
+        if user_id:
+            voted = db.execute(
+                text("SELECT id FROM review_votes WHERE review_id = :review_id AND user_id = :user_id"),
+                {"review_id": r.id, "user_id": user_id}
+            ).fetchone()
 
         enriched_reviews.append({
             "id": r.id,
