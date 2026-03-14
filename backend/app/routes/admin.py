@@ -8,6 +8,7 @@ from app.models.order import Order
 from app.models.user import User
 from app.models.review import Review
 from sqlalchemy import func
+from sqlalchemy import text
 from datetime import datetime
 from app.models.product_image import ProductImage
 from app.models.variant_image import VariantImage
@@ -412,11 +413,26 @@ def admin_get_reviews(rating: int = None, db: Session = Depends(get_db)):
         review_dict = {
             "id": review.id,
             "product_id": review.product_id,
+            "variant_id": review.variant_id,
             "user_id": review.user_id,
             "rating": review.rating,
             "comment": review.comment,
             "created_at": review.created_at,
-            "user_email": email
+            "user_email": email,
+
+            # Variant label
+            "color": getattr(review, "color", None),
+            "size": getattr(review, "size", None),
+
+            # Verified purchase badge
+            "verified_purchase": getattr(review, "verified_purchase", False),
+
+            # Helpful votes
+            "helpful_count": getattr(review, "helpful_count", 0),
+
+            # Media
+            "images": review.images if hasattr(review, "images") else [],
+            "videos": review.videos if hasattr(review, "videos") else []
         }
         reviews.append(review_dict)
 
@@ -438,6 +454,74 @@ def delete_review(review_id: int, db: Session = Depends(get_db)):
         "message": "Review deleted",
         "review_id": review_id
     }
+
+
+# ---------------- ADMIN REVIEW REPLY ----------------
+
+
+@router.post("/review-reply")
+def reply_to_review(
+    review_id: int,
+    reply: str,
+    admin_id: int = 1,
+    db: Session = Depends(get_db)
+):
+    """
+    Admin can reply to a customer review
+    """
+
+    review = db.query(Review).filter(Review.id == review_id).first()
+
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+
+    db.execute(
+        text("""
+            INSERT INTO review_replies (review_id, admin_id, reply, created_at)
+            VALUES (:review_id, :admin_id, :reply, NOW())
+        """),
+        {
+            "review_id": review_id,
+            "admin_id": admin_id,
+            "reply": reply
+        }
+    )
+
+    db.commit()
+
+    return {
+        "message": "Reply added",
+        "review_id": review_id
+    }
+
+
+# ----------- GET REVIEW REPLIES ENDPOINT -----------
+@router.get("/review-replies/{review_id}")
+def get_review_replies(review_id: int, db: Session = Depends(get_db)):
+    """
+    Fetch all admin replies for a specific review
+    """
+
+    replies = db.execute(
+        text("""
+            SELECT id, review_id, admin_id, reply, created_at
+            FROM review_replies
+            WHERE review_id = :review_id
+            ORDER BY created_at ASC
+        """),
+        {"review_id": review_id}
+    ).fetchall()
+
+    return [
+        {
+            "id": r.id,
+            "review_id": r.review_id,
+            "admin_id": r.admin_id,
+            "reply": r.reply,
+            "created_at": r.created_at
+        }
+        for r in replies
+    ]
 
 
 @router.get("/reviews/stats")
