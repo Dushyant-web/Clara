@@ -55,8 +55,18 @@ def get_products(
     # Category filter
     if category and category != "all":
         cat = db.query(Category).filter(Category.slug == category).first()
-        if cat:
-            query = query.filter(Product.category_id == cat.id)
+
+        # If category slug does not exist, return empty result instead of all products
+        if not cat:
+            return {
+                "products": [],
+                "total": 0,
+                "page": page,
+                "limit": limit,
+                "pages": 0
+            }
+
+        query = query.filter(Product.category_id == cat.id)
 
     # Price filters
     if min_price is not None:
