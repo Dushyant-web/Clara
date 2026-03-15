@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
+from sqlalchemy import and_, or_, func
 from app.database.db import get_db
 from app.models.product import Product
 from app.models.categories import Category
@@ -168,3 +168,32 @@ def get_product_images(product_id: int, db: Session = Depends(get_db)):
         "hover_image": hover_image,
         "gallery": gallery
     }
+
+@router.get("/products/search")
+def search_products(q: str, db: Session = Depends(get_db)):
+
+    products = (
+        db.query(Product)
+        .filter(
+            or_(
+                Product.name.ilike(f"%{q}%"),
+                func.similarity(Product.name, q) > 0.2
+            )
+        )
+        .order_by(func.similarity(Product.name, q).desc())
+        .limit(20)
+        .all()
+    )
+
+    results = []
+
+    for p in products:
+        results.append({
+            "id": p.id,
+            "name": p.name,
+            "price": p.price,
+            "main_image": p.main_image,
+            "hover_image": p.hover_image
+        })
+
+    return results
