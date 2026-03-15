@@ -38,7 +38,28 @@ def create_collection(name: str, slug: str, description: str = "", db: Session =
 # Get all collections
 @router.get("/collections")
 def get_collections(db: Session = Depends(get_db)):
-    return db.query(Collection).all()
+
+    collections = db.query(Collection).all()
+
+    result = []
+
+    for c in collections:
+
+        hero_image = (
+            db.query(CollectionImage)
+            .filter(CollectionImage.collection_id == c.id)
+            .first()
+        )
+
+        result.append({
+            "id": c.id,
+            "name": c.name,
+            "slug": c.slug,
+            "description": c.description,
+            "hero_image": hero_image.image_url if hero_image else None
+        })
+
+    return result
 
 
 # Get products in collection
