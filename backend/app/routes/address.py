@@ -41,10 +41,7 @@ def get_addresses(user_id: int, db: Session = Depends(get_db)):
 @router.put("/address/{address_id}")
 def update_address(
     address_id: int,
-    address_line: str,
-    city: str,
-    state: str,
-    postal_code: str,
+    data: AddressCreate,
     db: Session = Depends(get_db)
 ):
 
@@ -53,14 +50,19 @@ def update_address(
     if not address:
         return {"error": "address not found"}
 
-    address.address_line = address_line
-    address.city = city
-    address.state = state
-    address.postal_code = postal_code
+    address.name = data.name
+    address.phone = data.phone
+    address.address_line = data.address_line
+    address.city = data.city
+    address.state = data.state
+    address.postal_code = data.postal_code
+    address.country = data.country
+    address.label = data.label
 
     db.commit()
+    db.refresh(address)
 
-    return {"message": "address updated"}
+    return address
 
 
 @router.delete("/address/{address_id}")
