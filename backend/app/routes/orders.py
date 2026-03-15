@@ -32,7 +32,7 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
             continue
 
         # Standardize image fallback (Prioritize Variant Image)
-        display_image = variant.image_url
+        display_image = getattr(variant, "image_url", None)
         if not display_image:
             # Try to find 'main' first
             variant_main_img = db.query(VariantImage).filter(
@@ -50,17 +50,17 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
                 display_image = variant_main_img.image_url
         
         if not display_image:
-            display_image = product.main_image or product.hover_image
+            display_image = getattr(product, "main_image", None) or getattr(product, "hover_image", None)
         if not display_image:
             first_img = db.query(ProductImage).filter(ProductImage.product_id == product.id).order_by(ProductImage.position).first()
             if first_img:
                 display_image = first_img.image_url
-
+        
         items.append({
             "name": product.name,
             "image": display_image,
-            "size": variant.size,
-            "color": variant.color,
+            "size": getattr(variant, "size", None),
+            "color": getattr(variant, "color", None),
             "sku": variant.sku,
             "quantity": item.quantity,
             "price": float(item.price or 0)
@@ -103,7 +103,7 @@ def get_user_orders(user_id: int, db: Session = Depends(get_db)):
                 continue
 
             # image fallback logic
-            display_image = variant.image_url
+            display_image = getattr(variant, "image_url", None)
 
             if not display_image:
                 variant_main_img = db.query(VariantImage).filter(
@@ -115,7 +115,7 @@ def get_user_orders(user_id: int, db: Session = Depends(get_db)):
                     display_image = variant_main_img.image_url
 
             if not display_image:
-                display_image = product.main_image or product.hover_image
+                display_image = getattr(product, "main_image", None) or getattr(product, "hover_image", None)
 
             if not display_image:
                 first_img = db.query(ProductImage).filter(
@@ -127,8 +127,8 @@ def get_user_orders(user_id: int, db: Session = Depends(get_db)):
 
             enriched_items.append({
                 "product_name": product.name,
-                "color": variant.color,
-                "size": variant.size,
+                "color": getattr(variant, "color", None),
+                "size": getattr(variant, "size", None),
                 "image": display_image,
                 "quantity": item.quantity
             })
