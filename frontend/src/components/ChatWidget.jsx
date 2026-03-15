@@ -7,7 +7,7 @@ const ChatWidget = () => {
     const [isOpen, setIsOpen] = useState(false)
     const [input, setInput] = useState('')
     const [messages, setMessages] = useState([
-        { role: 'assistant', content: 'Welcome to NAME Elite Concierge. How can we assist you with your selection today?' }
+        { role: 'assistant', content: 'Welcome to GAURK Elite Concierge. How can we assist you with your selection today?' }
     ])
     const [isLoading, setIsLoading] = useState(false)
     const scrollRef = useRef(null)

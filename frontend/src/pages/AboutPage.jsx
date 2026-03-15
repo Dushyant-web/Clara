@@ -34,7 +34,7 @@ const AboutPage = () => {
                         transition={{ delay: 0.4 }}
                         className="text-gray-500 text-lg md:text-2xl uppercase tracking-widest leading-relaxed max-w-2xl font-bold"
                     >
-                        NAME was born from a singular vision: to strip away the noise of modern fashion and reveal the timeless beauty of pure form.
+                        GAURK was born from a singular vision: to strip away the noise of modern fashion and reveal the timeless beauty of pure form.
                     </motion.p>
                 </div>
 
@@ -75,7 +75,7 @@ const AboutPage = () => {
                         >
                             <h2 className="text-4xl font-serif tracking-tight mb-6 uppercase">The Craft</h2>
                             <p className="text-gray-500 leading-relaxed font-bold uppercase tracking-widest text-sm">
-                                Every NAME garment is a product of obsessive craftsmanship. From the selection of ultra-premium raw materials to the precision of hand-finished details, we prioritize longevity over trends and quality over volume.
+                                Every GAURK garment is a product of obsessive craftsmanship. From the selection of ultra-premium raw materials to the precision of hand-finished details, we prioritize longevity over trends and quality over volume.
                             </p>
                         </motion.div>
                     </div>

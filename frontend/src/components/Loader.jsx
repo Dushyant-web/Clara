@@ -11,7 +11,7 @@ const Loader = () => {
                     transition={{ duration: 1, repeat: Infinity, repeatType: "reverse" }}
                     className="text-4xl md:text-6xl font-serif tracking-tighter text-secondary"
                 >
-                    NAME.
+                    GAURK.
                 </motion.div>
                 <div className="flex items-center justify-center gap-2">
                     {[0, 1, 2].map((i) => (

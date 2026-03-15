@@ -227,14 +227,7 @@ const CheckoutPage = () => {
 
             setIsProcessing(true)
             try {
-                // Cleanup any previous unpaid order for this user
-                try {
-                    if (user?.id) {
-                        await orderService.deleteUnpaidOrders?.(user.id);
-                    }
-                } catch (cleanupErr) {
-                    console.warn("Pending order cleanup skipped:", cleanupErr);
-                }
+                // Previous unpaid order cleanup is now handled safely by the backend checkout endpoint
 
                 // 0. Ensure Razorpay script is loaded
                 if (!window.Razorpay) {
@@ -292,7 +285,7 @@ const CheckoutPage = () => {
 
                     const options = {
                         key: rzpKey,
-                        name: "NAME.",
+                        name: "GAURK.",
                         description: "Order #" + checkoutResponse.order_id,
                         order_id: paymentResponse.razorpay_order_id,
                         handler: async (response) => {

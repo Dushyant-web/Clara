@@ -65,7 +65,7 @@ const SignupPage = () => {
 
             addNotification(
                 'Account Created',
-                'Welcome to NAME. Your account is ready.',
+                'Welcome to GAURK. Your account is ready.',
                 'success'
             )
             navigate('/account')
@@ -90,7 +90,7 @@ const SignupPage = () => {
                             className="space-y-10"
                         >
                             <div className="space-y-4 text-center">
-                                <h2 className="text-4xl font-serif tracking-tighter uppercase text-secondary">Join NAME</h2>
+                                <h2 className="text-4xl font-serif tracking-tighter uppercase text-secondary">Join GAURK</h2>
                                 <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Create an account for exclusive access.</p>
                             </div>
 

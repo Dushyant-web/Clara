@@ -27,8 +27,8 @@ const AdminSettings = () => {
             title: 'Storefront Identity',
             icon: Globe,
             fields: [
-                { label: 'Store Name', value: 'NAME LUXURY' },
-                { label: 'Support Email', value: 'ARCHIVE@NAME.CO' },
+                { label: 'Store Name', value: 'GAURK LUXURY' },
+                { label: 'Support Email', value: 'ARCHIVE@GAURK.CO' },
                 { label: 'Currency', value: 'INR (₹)' }
             ]
         },

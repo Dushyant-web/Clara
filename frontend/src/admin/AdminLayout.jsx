@@ -38,7 +38,7 @@ const AdminLayout = () => {
                 <div className="p-8">
                     <Link to="/" className="text-xl font-bold tracking-tighter flex items-center gap-2">
                         <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                        NAME<span className="opacity-40 text-xs tracking-widest ml-1 uppercase">Admin</span>
+                        GAURK<span className="opacity-40 text-xs tracking-widest ml-1 uppercase">Admin</span>
                     </Link>
                 </div>
 

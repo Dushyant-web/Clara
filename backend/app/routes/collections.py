@@ -54,11 +54,31 @@ def get_collection_products(slug: str, db: Session = Depends(get_db)):
 
     return products
 
-@router.get("/collections/{collection_id}/images")
+
+@router.delete("/admin/{collection_id}")
+def delete_collection(collection_id: int, db: Session = Depends(get_db)):
+
+    collection = db.query(Collection).filter(Collection.id == collection_id).first()
+
+    if not collection:
+        raise HTTPException(status_code=404, detail="Collection not found")
+
+    db.delete(collection)
+    db.commit()
+
+    return {"message": "Collection deleted"}
+
+@router.get("/{collection_id}/images")
 def get_collection_images(collection_id: int, db: Session = Depends(get_db)):
 
     images = db.query(CollectionImage).filter(
         CollectionImage.collection_id == collection_id
     ).all()
 
-    return images
+    return [
+        {
+            "id": img.id,
+            "image_url": img.image_url
+        }
+        for img in images
+    ]

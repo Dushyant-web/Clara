@@ -1,21 +1,32 @@
 import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Filter, X, ChevronDown } from 'lucide-react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import { productService } from '../services/productService'
+import { categoryService } from '../services/categoryService'
 
 const ShopPage = () => {
     const [searchParams, setSearchParams] = useSearchParams()
+    const navigate = useNavigate()
+    const location = useLocation()
     const [isFilterOpen, setIsFilterOpen] = useState(false)
-    const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'All')
+    const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all')
     const [selectedPriceRange, setSelectedPriceRange] = useState('All')
     const [selectedSize, setSelectedSize] = useState('All')
     const [sortBy, setSortBy] = useState('Newest')
     const [isSortOpen, setIsSortOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || searchParams.get('q') || '')
-    const [products, setProducts] = useState([])
-    const [loading, setLoading] = useState(true)
+const [products, setProducts] = useState([])
+const [loading, setLoading] = useState(true)
+const initialPageFromPath = (() => {
+    const match = location.pathname.match(/\/shop\/page\/(\d+)/)
+    return match ? parseInt(match[1], 10) : parseInt(searchParams.get('page') || '1', 10)
+})()
+
+const [page, setPage] = useState(initialPageFromPath)
+const [totalPages, setTotalPages] = useState(1)
+const [totalProducts, setTotalProducts] = useState(0)
 
     useEffect(() => {
         const query = searchParams.get('search') || searchParams.get('q')
@@ -30,38 +41,100 @@ const ShopPage = () => {
     }, [searchParams])
 
     useEffect(() => {
-        const fetchProducts = async () => {
-            setLoading(true)
+        const params = new URLSearchParams(searchParams)
+
+        if (page === 1) {
+            navigate(`/shop?${params.toString()}`, { replace: true })
+        } else {
+            navigate(`/shop/page/${page}?${params.toString()}`, { replace: true })
+        }
+    }, [page])
+
+
+    useEffect(() => {
+        const loadCategories = async () => {
             try {
-                let data;
-                if (selectedCategory && selectedCategory !== 'All') {
-                    // Try backend category filtering if a specific category is selected
-                    try {
-                        data = await productService.getProductsByCategory(selectedCategory.toLowerCase())
-                    } catch (err) {
-                        // Fallback to all products if category endpoint fails
-                        console.warn(`Backend category filtering failed for ${selectedCategory}, falling back...`)
-                        data = await productService.getProducts(1, 40)
-                    }
-                } else {
-                    data = await productService.getProducts(1, 40)
-                }
-                setProducts(data.products || [])
+                const data = await categoryService.getCategories()
+
+                setCategories([
+                    { name: "All", slug: "all" },
+                    ...data.map(c => ({
+                        name: c.name,
+                        slug: c.slug
+                    }))
+                ])
             } catch (err) {
-                console.error('Failed to load products', err)
-            } finally {
-                setLoading(false)
+                console.error("Failed to load categories", err)
             }
         }
 
-        fetchProducts()
-    }, [selectedCategory])
+        loadCategories()
+    }, [])
 
-    const categories = ['All', 'Hoodies', 'Bottoms', 'T-Shirts', 'Outerwear', 'Accessories']
+useEffect(() => {
+    const fetchProducts = async () => {
+        setLoading(true)
+        setProducts([])
+        try {
+            const params = {
+                page,
+                limit: 40
+            }
+
+            if (searchQuery && searchQuery.trim() !== '') {
+                params.search = searchQuery.trim()
+            }
+
+            if (selectedCategory && selectedCategory !== 'all') {
+                params.category = selectedCategory
+            }
+
+            if (selectedPriceRange === 'Under ₹1000') {
+                params.max_price = 1000
+            } else if (selectedPriceRange === '₹1000 - ₹3000') {
+                params.min_price = 1000
+                params.max_price = 3000
+            } else if (selectedPriceRange === 'Above ₹3000') {
+                params.min_price = 3000
+            }
+
+            if (sortBy === 'Price: Low to High') {
+                params.sort = 'price_asc'
+            } else if (sortBy === 'Price: High to Low') {
+                params.sort = 'price_desc'
+            } else {
+                params.sort = 'newest'
+            }
+
+            const data = await productService.getProducts(params)
+
+            setProducts(data?.products || [])
+            setTotalPages(data?.pages || 1)
+            setTotalProducts(data?.total || 0)
+        } catch (err) {
+            console.error('Failed to load products', err)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    fetchProducts()
+}, [selectedCategory, searchQuery, selectedPriceRange, sortBy, page])
+
+    const [categories, setCategories] = useState([{ name: 'All', slug: 'all' }])
     const sortOptions = ['Newest', 'Price: Low to High', 'Price: High to Low', 'Popular']
 
     const filteredProducts = useMemo(() => {
         let result = [...products]
+
+        // Safety category filter (prevents wrong category items showing)
+        if (selectedCategory && selectedCategory !== 'all') {
+            result = result.filter(p => {
+                if (p.category_slug) return p.category_slug === selectedCategory
+                if (p.category) return p.category.toLowerCase() === selectedCategory.toLowerCase()
+                return true
+            })
+        }
 
         // Backend now handles category filtering, we only keep local filtering for price/size/search
         /* 
@@ -84,17 +157,20 @@ const ShopPage = () => {
             result = result.filter(p => p.sizes && p.sizes.includes(selectedSize))
         }
 
-        if (searchQuery) {
-            const lowQuery = searchQuery.toLowerCase()
-            result = result.filter(p =>
-                p.name.toLowerCase().includes(lowQuery) ||
-                p.category?.toLowerCase().includes(lowQuery) ||
-                p.description?.toLowerCase().includes(lowQuery)
-            )
+        // Backend already performs fuzzy + partial search.
+        // Do NOT filter again on the frontend, otherwise matches like "shrt" → "shirt" get removed.
+
+        if (sortBy === 'Newest') {
+            result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
         }
 
-        if (sortBy === 'Price: Low to High') result.sort((a, b) => a.price - b.price)
-        if (sortBy === 'Price: High to Low') result.sort((a, b) => b.price - a.price)
+        if (sortBy === 'Price: Low to High') {
+            result.sort((a, b) => parseFloat(a.price) - parseFloat(b.price))
+        }
+
+        if (sortBy === 'Price: High to Low') {
+            result.sort((a, b) => parseFloat(b.price) - parseFloat(a.price))
+        }
 
         return result
     }, [selectedCategory, selectedPriceRange, selectedSize, sortBy, searchQuery, products])
@@ -105,7 +181,9 @@ const ShopPage = () => {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-8">
                     <div>
                         <h1 className="text-5xl md:text-7xl font-serif tracking-tighter mb-4">THE SHOP</h1>
-                        <p className="text-gray-500 text-xs uppercase tracking-[0.3em]">Showing {filteredProducts.length} Premium Pieces</p>
+                        <p className="text-gray-500 text-xs uppercase tracking-[0.3em]">
+                            Showing {filteredProducts.length ? (page - 1) * 40 + 1 : 0}–{(page - 1) * 40 + filteredProducts.length} of {totalProducts} Premium Pieces
+                        </p>
                     </div>
                 </div>
 
@@ -122,12 +200,27 @@ const ShopPage = () => {
                         <div className="hidden lg:flex items-center gap-6">
                             {categories.map(cat => (
                                 <button
-                                    key={cat}
-                                    onClick={() => setSelectedCategory(cat)}
-                                    className={`text-[10px] uppercase tracking-[0.2em] font-bold transition-colors ${selectedCategory === cat ? 'text-secondary' : 'text-gray-500 hover:text-secondary'
+                                    key={cat.slug}
+                                    onClick={() => {
+                                        setSelectedCategory(cat.slug)
+                                        setPage(1)
+
+                                        // Clear search when switching categories
+                                        setSearchQuery('')
+
+                                        const params = new URLSearchParams(searchParams)
+                                        params.delete('search')
+                                        params.delete('q')
+
+                                        params.set('category', cat.slug)
+                                        params.set('page', '1')
+
+                                        setSearchParams(params)
+                                    }}
+                                    className={`text-[10px] uppercase tracking-[0.2em] font-bold transition-colors ${selectedCategory === cat.slug ? 'text-secondary' : 'text-gray-500 hover:text-secondary'
                                         }`}
                                 >
-                                    {cat}
+                                    {cat.name}
                                 </button>
                             ))}
                         </div>
@@ -191,6 +284,74 @@ const ShopPage = () => {
                         <p className="text-gray-500 uppercase tracking-widest">No pieces found matching your criteria.</p>
                     </div>
                 )}
+
+                <div className="flex justify-center mt-16 gap-2 text-xs uppercase tracking-widest">
+                    <button
+                        disabled={page === 1}
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        className="px-4 py-2 border border-secondary/20 disabled:opacity-30"
+                    >
+                        Previous
+                    </button>
+
+                    {(() => {
+                        const pages = []
+                        const start = Math.max(1, page - 2)
+                        const end = Math.min(totalPages, page + 2)
+
+                        if (start > 1) {
+                            pages.push(
+                                <button
+                                    key={1}
+                                    onClick={() => setPage(1)}
+                                    className={`px-4 py-2 border ${page === 1 ? 'border-secondary bg-secondary text-primary' : 'border-secondary/20'}`}
+                                >
+                                    1
+                                </button>
+                            )
+                            if (start > 2) {
+                                pages.push(<span key="start-ellipsis" className="px-2">...</span>)
+                            }
+                        }
+
+                        for (let p = start; p <= end; p++) {
+                            pages.push(
+                                <button
+                                    key={p}
+                                    onClick={() => setPage(p)}
+                                    className={`px-4 py-2 border ${page === p ? 'border-secondary bg-secondary text-primary' : 'border-secondary/20'}`}
+                                >
+                                    {p}
+                                </button>
+                            )
+                        }
+
+                        if (end < totalPages) {
+                            if (end < totalPages - 1) {
+                                pages.push(<span key="end-ellipsis" className="px-2">...</span>)
+                            }
+                            pages.push(
+                                <button
+                                    key={totalPages}
+                                    onClick={() => setPage(totalPages)}
+                                    className={`px-4 py-2 border ${page === totalPages ? 'border-secondary bg-secondary text-primary' : 'border-secondary/20'}`}
+                                >
+                                    {totalPages}
+                                </button>
+                            )
+                        }
+
+                        return pages
+                    })()}
+
+                    <button
+                        disabled={page === totalPages}
+                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                        className="px-4 py-2 border border-secondary/20 disabled:opacity-30"
+                    >
+                        Next
+                    </button>
+                </div>
             </div>
 
             {/* Filter Sidebar Overlay */}
@@ -222,12 +383,26 @@ const ShopPage = () => {
                                     <div className="flex flex-col gap-4">
                                         {categories.map(cat => (
                                             <button
-                                                key={cat}
-                                                onClick={() => setSelectedCategory(cat)}
-                                                className={`text-left text-xs uppercase tracking-widest hover:pl-2 transition-all ${selectedCategory === cat ? 'text-secondary font-bold' : 'text-gray-400'
+                                                key={cat.slug}
+                                                onClick={() => {
+                                                    setSelectedCategory(cat.slug)
+                                                    setPage(1)
+
+                                                    setSearchQuery('')
+
+                                                    const params = new URLSearchParams(searchParams)
+                                                    params.delete('search')
+                                                    params.delete('q')
+
+                                                    params.set('category', cat.slug)
+                                                    params.set('page', '1')
+
+                                                    setSearchParams(params)
+                                                }}
+                                                className={`text-left text-xs uppercase tracking-widest hover:pl-2 transition-all ${selectedCategory === cat.slug ? 'text-secondary font-bold' : 'text-gray-400'
                                                     }`}
                                             >
-                                                {cat}
+                                                {cat.name}
                                             </button>
                                         ))}
                                     </div>

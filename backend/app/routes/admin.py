@@ -1050,3 +1050,40 @@ def get_variant_images(variant_id: int, db: Session = Depends(get_db)):
         }
         for img in images
     ]
+
+# ---------------- PRODUCT CATEGORY ASSIGNMENT ----------------
+@router.patch("/product/{product_id}/category")
+def assign_category(product_id: int, category_id: int, db: Session = Depends(get_db)):
+
+    product = db.query(Product).filter(Product.id == product_id).first()
+
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    product.category_id = category_id
+    db.commit()
+
+    return {"message": "Category assigned"}
+
+
+# ---------------- PRODUCT COLLECTION ASSIGNMENT ----------------
+@router.patch("/product/{product_id}/collection")
+def assign_collection(product_id: int, collection_id: int, db: Session = Depends(get_db)):
+
+    product = db.query(Product).filter(Product.id == product_id).first()
+
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    product.collection_id = collection_id
+    db.commit()
+
+    return {"message": "Collection assigned"}
+
+
+@router.get("/products/unassigned")
+def get_unassigned_products(db: Session = Depends(get_db)):
+
+    products = db.query(Product).filter(Product.category_id == None).all()
+
+    return products

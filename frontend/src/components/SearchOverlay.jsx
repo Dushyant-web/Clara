@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { productService } from '../services/productService';
 
 const SearchOverlay = ({ isOpen, onClose }) => {
     const [query, setQuery] = useState('');
+    const [trendingProducts, setTrendingProducts] = useState([]);
+    const debounceRef = useRef(null);
     const navigate = useNavigate();
 
     const handleSearch = (e) => {
@@ -16,17 +19,40 @@ const SearchOverlay = ({ isOpen, onClose }) => {
     };
 
     const handleTagClick = (tag) => {
-        navigate(`/shop?search=${encodeURIComponent(tag)}`);
+        switch (tag) {
+            case 'New Arrivals':
+                navigate('/shop?sort=newest');
+                break;
+            case 'Best Sellers':
+                navigate('/shop?sort=best');
+                break;
+            case 'Exclusive Editorial':
+                navigate('/lookbook');
+                break;
+            case 'About The Brand':
+                navigate('/about');
+                break;
+            default:
+                navigate(`/shop?search=${encodeURIComponent(tag)}`);
+        }
         onClose();
     };
 
-    const trendingSearches = [
-        'Oversized Hoodies',
-        'Raw Denim',
-        'Lunar Drop 2026',
-        'Signature Cargos',
-        'Minimalist Tees'
-    ];
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const fetchTrending = async () => {
+            try {
+                const data = await productService.getTrendingProducts(20);
+                setTrendingProducts(data.products || []);
+            } catch (err) {
+                console.error("Failed to load trending products", err);
+            }
+        };
+
+        fetchTrending();
+    }, [isOpen]);
 
     useEffect(() => {
         if (isOpen) {
@@ -35,6 +61,20 @@ const SearchOverlay = ({ isOpen, onClose }) => {
             document.body.style.overflow = 'unset';
         }
     }, [isOpen]);
+
+    useEffect(() => {
+        if (!query.trim()) return;
+
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+        }
+
+        debounceRef.current = setTimeout(() => {
+            navigate(`/shop?search=${encodeURIComponent(query.trim())}`);
+        }, 350);
+
+        return () => clearTimeout(debounceRef.current);
+    }, [query]);
 
     return (
         <AnimatePresence>
@@ -65,7 +105,7 @@ const SearchOverlay = ({ isOpen, onClose }) => {
                                 <input
                                     autoFocus
                                     type="text"
-                                    placeholder="Search NAME..."
+                                    placeholder="Search GAURK..."
                                     value={query}
                                     onChange={(e) => setQuery(e.target.value)}
                                     className="w-full bg-transparent border-b-2 border-secondary py-6 pl-14 text-2xl md:text-5xl font-serif tracking-tight focus:outline-none transition-all placeholder:text-secondary/20 text-secondary"
@@ -89,13 +129,16 @@ const SearchOverlay = ({ isOpen, onClose }) => {
                                         Trending Now
                                     </h4>
                                     <div className="flex flex-wrap gap-3">
-                                        {trendingSearches.map((tag) => (
+                                        {trendingProducts.map((product) => (
                                             <button
-                                                key={tag}
-                                                onClick={() => handleTagClick(tag)}
+                                                key={product.id}
+                                                onClick={() => {
+                                                    navigate(`/product/${product.id}`);
+                                                    onClose();
+                                                }}
                                                 className="px-6 py-3 bg-secondary/5 hover:bg-secondary text-secondary hover:text-primary text-[10px] uppercase tracking-widest font-bold transition-all border border-secondary/10 rounded-full"
                                             >
-                                                {tag}
+                                                {product.name}
                                             </button>
                                         ))}
                                     </div>

@@ -55,7 +55,7 @@ const AdminDashboard = () => {
         <div className="space-y-12">
             <header>
                 <h1 className="text-4xl font-bold tracking-tighter uppercase mb-2">Command Center</h1>
-                <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Real-time performance analytics for NAME LUXURY</p>
+                <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Real-time performance analytics for GAURK LUXURY</p>
             </header>
 
             {/* Stats Grid */}
