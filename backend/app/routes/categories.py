@@ -126,3 +126,18 @@ def create_category(data: CategoryCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(category)
     return category
+
+
+# Delete category (admin)
+@router.delete("/admin/category/{category_id}")
+def delete_category(category_id: int, db: Session = Depends(get_db)):
+
+    category = db.query(Category).filter(Category.id == category_id).first()
+
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+
+    db.delete(category)
+    db.commit()
+
+    return {"message": "Category deleted"}
