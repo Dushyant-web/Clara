@@ -24,7 +24,8 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
     
     # Get items with variant details
     items = []
-    for item in order.items:
+    items_db = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
+    for item in items_db:
         variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
         product = db.query(Product).filter(Product.id == variant.product_id).first() if variant else None
         
@@ -61,7 +62,7 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
             "image": display_image,
             "size": getattr(variant, "size", None),
             "color": getattr(variant, "color", None),
-            "sku": variant.sku,
+            "sku": getattr(variant, "sku", None),
             "quantity": item.quantity,
             "price": float(item.price or 0)
         })
