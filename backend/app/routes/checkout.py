@@ -8,6 +8,7 @@ from app.models.inventory_reservation import InventoryReservation
 from app.models.order import Order
 from app.models.order_item import OrderItem
 from app.models.user import User
+from app.models.payment import Payment
 
 router = APIRouter()
 
@@ -22,17 +23,25 @@ def checkout(user_id: int, promo_code: str | None = None, idempotency_key: str |
     ).order_by(Order.created_at.desc()).first()
 
     if existing_order:
-        # delete previous unpaid order items
-        db.query(OrderItem).filter(OrderItem.order_id == existing_order.id).delete()
 
-        # release previous inventory reservations
-        db.query(InventoryReservation).filter(
-            InventoryReservation.user_id == user_id
-        ).delete()
+        # check if payment already exists for this order
+        payment_exists = db.query(Payment).filter(
+            Payment.order_id == existing_order.id
+        ).first()
 
-        # delete the old order
-        db.delete(existing_order)
-        db.commit()
+        # only delete the order if no payment record exists
+        if not payment_exists:
+
+            db.query(OrderItem).filter(
+                OrderItem.order_id == existing_order.id
+            ).delete()
+
+            db.query(InventoryReservation).filter(
+                InventoryReservation.user_id == user_id
+            ).delete()
+
+            db.delete(existing_order)
+            db.commit()
 
     # Transaction handled by FastAPI session
 
