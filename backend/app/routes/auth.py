@@ -37,7 +37,9 @@ def signup(data: dict, db: Session = Depends(get_db)):
     return {
         "message": "account created",
         "access_token": jwt_token,
-        "user_id": user.id
+        "user_id": user.id,
+        "name": user.name,
+        "email": user.email
     }
 
 @router.post("/login")
@@ -56,5 +58,7 @@ def login(data: dict, db: Session = Depends(get_db)):
 
     return {
         "access_token": jwt_token,
-        "user_id": user.id
+        "user_id": user.id,
+        "name": user.name,
+        "email": user.email
     }
