@@ -78,112 +78,80 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
 
 @router.get("/orders/user/{user_id}")
 def get_user_orders(user_id: int, db: Session = Depends(get_db)):
+    rows = db.execute(
+        text("""
+        SELECT 
+            o.id AS order_id,
+            o.status,
+            o.total_amount,
+            o.created_at,
 
-    orders = db.query(Order).filter(Order.user_id == user_id).all()
+            oi.quantity,
 
-    result = []
+            p.name AS product_name,
 
-    for order in orders:
+            pv.size,
+            pv.color,
+            pv.image_url,
 
-        items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
+            a.name AS address_name,
+            a.address_line,
+            a.city,
+            a.state,
+            a.postal_code,
+            a.country,
+            a.phone
 
-        enriched_items = []
+        FROM orders o
+        LEFT JOIN order_items oi ON oi.order_id = o.id
+        LEFT JOIN product_variants pv ON pv.id = oi.variant_id
+        LEFT JOIN products p ON p.id = pv.product_id
+        LEFT JOIN addresses a ON a.id = o.shipping_address_id
 
-        for item in items:
-            variant = db.query(ProductVariant).filter(
-                ProductVariant.id == item.variant_id
-            ).first()
+        WHERE o.user_id = :user_id
+        ORDER BY o.created_at DESC
+        """),
+        {"user_id": user_id}
+    ).mappings().all()
 
-            if not variant:
-                continue
+    orders_map = {}
 
-            product = db.query(Product).filter(
-                Product.id == variant.product_id
-            ).first()
+    for row in rows:
+        order_id = row["order_id"]
 
-            if not product:
-                continue
+        if order_id not in orders_map:
 
-            # image fallback logic
-            display_image = getattr(variant, "image_url", None)
+            shipping_address = None
+            if row["address_name"]:
+                shipping_address = {
+                    "name": row["address_name"],
+                    "line1": row["address_line"],
+                    "city": row["city"],
+                    "state": row["state"],
+                    "pincode": row["postal_code"],
+                    "country": row["country"],
+                    "phone": row["phone"]
+                }
 
-            if not display_image:
-                variant_main_img = db.query(VariantImage).filter(
-                    VariantImage.variant_id == variant.id,
-                    VariantImage.type == "main"
-                ).first()
-
-                if variant_main_img:
-                    display_image = variant_main_img.image_url
-
-            if not display_image:
-                display_image = getattr(product, "main_image", None) or getattr(product, "hover_image", None)
-
-            if not display_image:
-                first_img = db.query(ProductImage).filter(
-                    ProductImage.product_id == product.id
-                ).order_by(ProductImage.position).first()
-
-                if first_img:
-                    display_image = first_img.image_url
-
-            enriched_items.append({
-                "product_name": product.name,
-                "color": getattr(variant, "color", None),
-                "size": getattr(variant, "size", None),
-                "image": display_image,
-                "quantity": item.quantity
-            })
-
-        # fetch shipping address
-        shipping_address = None
-
-        address = None
-        address_id = getattr(order, "shipping_address_id", None)
-
-        if address_id:
-            address = db.execute(
-                text("""
-                SELECT name, address_line, city, state, postal_code, country, phone
-                FROM addresses
-                WHERE id = :id
-                LIMIT 1
-                """),
-                {"id": address_id}
-            ).mappings().first()
-        else:
-            address = db.execute(
-                text("""
-                SELECT name, address_line, city, state, postal_code, country, phone
-                FROM addresses
-                WHERE user_id = :user_id
-                ORDER BY id DESC
-                LIMIT 1
-                """),
-                {"user_id": order.user_id}
-            ).mappings().first()
-
-        if address:
-            shipping_address = {
-                "name": address["name"],
-                "line1": address["address_line"],
-                "city": address["city"],
-                "state": address["state"],
-                "pincode": address["postal_code"],
-                "country": address["country"],
-                "phone": address["phone"]
+            orders_map[order_id] = {
+                "order_id": order_id,
+                "status": row["status"],
+                "total_amount": float(row["total_amount"] or 0),
+                "created_at": row["created_at"],
+                "items": [],
+                "shipping_address": shipping_address
             }
 
-        result.append({
-            "order_id": order.id,
-            "status": order.status,
-            "total_amount": float(order.total_amount or 0),
-            "created_at": order.created_at,
-            "items": enriched_items,
-            "shipping_address": shipping_address
-        })
+        if row["product_name"]:
+            orders_map[order_id]["items"].append({
+                "product_name": row["product_name"],
+                "size": row["size"],
+                "color": row["color"],
+                "image": row["image_url"],
+                "quantity": row["quantity"]
+            })
 
-    return result
+    return list(orders_map.values())
 
 @router.delete("/orders/unpaid/{user_id}")
 def delete_unpaid_orders(user_id: int, db: Session = Depends(get_db)):
