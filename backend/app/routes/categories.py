@@ -41,6 +41,8 @@ def get_products(
     sort: str | None = Query("newest"),
     min_price: float | None = Query(None),
     max_price: float | None = Query(None),
+    page: int = Query(1),
+    limit: int = Query(40),
     db: Session = Depends(get_db)
 ):
 
@@ -71,7 +73,22 @@ def get_products(
     else:
         query = query.order_by(Product.created_at.desc())
 
-    return query.limit(40).all()
+    total = query.count()
+
+    products = (
+        query
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .all()
+    )
+
+    return {
+        "products": products,
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "pages": (total + limit - 1) // limit
+    }
 
 @router.post("/admin/category")
 def create_category(data: CategoryCreate, db: Session = Depends(get_db)):
