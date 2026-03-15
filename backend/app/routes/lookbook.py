@@ -1,15 +1,3 @@
-@router.delete("/admin/lookbook-image/{image_id}")
-def delete_lookbook_image(image_id: int, db: Session = Depends(get_db)):
-
-    image = db.query(LookbookImage).filter(LookbookImage.id == image_id).first()
-
-    if not image:
-        return {"error": "Image not found"}
-
-    db.delete(image)
-    db.commit()
-
-    return {"message": "Lookbook image deleted", "image_id": image_id}
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -69,3 +57,16 @@ def get_lookbook_images(lookbook_id: int, db: Session = Depends(get_db)):
     ).all()
 
     return images
+
+@router.delete("/admin/lookbook-image/{image_id}")
+def delete_lookbook_image(image_id: int, db: Session = Depends(get_db)):
+
+    image = db.query(LookbookImage).filter(LookbookImage.id == image_id).first()
+
+    if not image:
+        return {"error": "Image not found"}
+
+    db.delete(image)
+    db.commit()
+
+    return {"message": "Lookbook image deleted", "image_id": image_id}
