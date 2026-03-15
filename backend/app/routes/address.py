@@ -7,28 +7,24 @@ from app.models.address import Address
 router = APIRouter()
 
 
+from app.schemas.address import AddressCreate
+
 @router.post("/address")
 def create_address(
-    user_id: int,
-    full_name: str,
-    phone: str,
-    address_line: str,
-    city: str,
-    state: str,
-    postal_code: str,
-    country: str,
+    data: AddressCreate,
     db: Session = Depends(get_db)
 ):
 
     address = Address(
-        user_id=user_id,
-        name=full_name,
-        phone=phone,
-        address_line=address_line,
-        city=city,
-        state=state,
-        postal_code=postal_code,
-        country=country
+        user_id=data.user_id,
+        name=data.name,
+        phone=data.phone,
+        address_line=data.address_line,
+        city=data.city,
+        state=data.state,
+        postal_code=data.postal_code,
+        country=data.country,
+        label=data.label
     )
 
     db.add(address)
