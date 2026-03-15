@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 from app.database.db import get_db
 from app.models.order import Order
@@ -137,30 +138,40 @@ def get_user_orders(user_id: int, db: Session = Depends(get_db)):
         # fetch shipping address
         shipping_address = None
 
+        address = None
         address_id = getattr(order, "shipping_address_id", None)
 
-        # fallback if model does not expose the column correctly
-        if not address_id:
-            latest_address = db.query(Address).filter(
-                Address.user_id == order.user_id
-            ).order_by(Address.id.desc()).first()
-
-            if latest_address:
-                address = latest_address
-            else:
-                address = None
+        if address_id:
+            address = db.execute(
+                text("""
+                SELECT name, address_line, city, state, postal_code, country, phone
+                FROM addresses
+                WHERE id = :id
+                LIMIT 1
+                """),
+                {"id": address_id}
+            ).mappings().first()
         else:
-            address = db.query(Address).filter(Address.id == address_id).first()
+            address = db.execute(
+                text("""
+                SELECT name, address_line, city, state, postal_code, country, phone
+                FROM addresses
+                WHERE user_id = :user_id
+                ORDER BY id DESC
+                LIMIT 1
+                """),
+                {"user_id": order.user_id}
+            ).mappings().first()
 
         if address:
             shipping_address = {
-                "name": address.name,
-                "line1": address.address_line,
-                "city": address.city,
-                "state": address.state,
-                "pincode": address.postal_code,
-                "country": address.country,
-                "phone": address.phone
+                "name": address["name"],
+                "line1": address["address_line"],
+                "city": address["city"],
+                "state": address["state"],
+                "pincode": address["postal_code"],
+                "country": address["country"],
+                "phone": address["phone"]
             }
 
         result.append({
