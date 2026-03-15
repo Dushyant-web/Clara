@@ -84,6 +84,11 @@ def delete_collection(collection_id: int, db: Session = Depends(get_db)):
     if not collection:
         raise HTTPException(status_code=404, detail="Collection not found")
 
+    # Remove collection from products first
+    db.query(Product).filter(Product.collection_id == collection_id).update(
+        {"collection_id": None}
+    )
+
     db.delete(collection)
     db.commit()
 
