@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.database.db import get_db
@@ -31,6 +31,43 @@ def get_products_by_category(slug: str, db: Session = Depends(get_db)):
         .limit(12)
         .all()
     )
+
+
+# Unified product query endpoint with search, category, sorting, min_price
+@router.get("/products")
+def get_products(
+    search: str | None = Query(None),
+    category: str | None = Query(None),
+    sort: str | None = Query("newest"),
+    min_price: float | None = Query(None),
+    db: Session = Depends(get_db)
+):
+
+    query = db.query(Product)
+
+    # Search (simple partial search, your trigram search can replace this later)
+    if search:
+        query = query.filter(Product.name.ilike(f"%{search}%"))
+
+    # Category filter
+    if category and category != "all":
+        cat = db.query(Category).filter(Category.slug == category).first()
+        if cat:
+            query = query.filter(Product.category_id == cat.id)
+
+    # Price filter
+    if min_price is not None:
+        query = query.filter(Product.price >= min_price)
+
+    # Sorting
+    if sort == "price_asc":
+        query = query.order_by(Product.price.asc())
+    elif sort == "price_desc":
+        query = query.order_by(Product.price.desc())
+    else:
+        query = query.order_by(Product.created_at.desc())
+
+    return query.limit(40).all()
 
 @router.post("/admin/category")
 def create_category(data: CategoryCreate, db: Session = Depends(get_db)):
