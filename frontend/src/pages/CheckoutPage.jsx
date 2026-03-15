@@ -5,8 +5,54 @@ import { ChevronRight, Check, MapPin, Truck, CreditCard, ShoppingBag, ArrowLeft,
 import { useCart } from '../contexts/CartContext'
 import { useAuth } from '../contexts/AuthContext'
 import { orderService } from '../services/orderService'
+import { addressService } from '../services/addressService'
 
 const CheckoutPage = () => {
+    const indianStates = [
+        "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa",
+        "Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala",
+        "Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland",
+        "Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura",
+        "Uttar Pradesh","Uttarakhand","West Bengal","Delhi","Jammu and Kashmir",
+        "Ladakh","Chandigarh","Puducherry","Andaman and Nicobar Islands",
+        "Dadra and Nagar Haveli and Daman and Diu","Lakshadweep"
+    ];
+
+    const formatPhone = (value) => {
+        const digits = value.replace(/\D/g, "").slice(0,10);
+        if (digits.length <= 5) return digits;
+        return digits.slice(0,5) + " " + digits.slice(5);
+    };
+
+    const detectStateFromPincode = async (pin) => {
+        if (pin.length !== 6) return;
+
+        try {
+            const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+            const data = await res.json();
+            const offices = data?.[0]?.PostOffice;
+
+            if (offices && offices.length > 0) {
+                const state = offices[0].State;
+
+                const cities = [
+                    ...new Set(
+                        offices.map(o => o.District || o.Name)
+                    )
+                ];
+
+                setCityOptions(cities);
+
+                setShippingData(prev => ({
+                    ...prev,
+                    state: state,
+                    city: cities[0] || ''
+                }));
+            }
+        } catch (e) {
+            console.warn("Pincode lookup failed");
+        }
+    };
     const [step, setStep] = useState(1)
     const [paymentMethod, setPaymentMethod] = useState('upi') // Default to 'upi' (Razorpay)
     const [isProcessing, setIsProcessing] = useState(false)
@@ -20,6 +66,10 @@ const CheckoutPage = () => {
         pincode: '',
     })
     const [promoCode, setPromoCode] = useState('')
+    const [cityOptions, setCityOptions] = useState([])
+    const [savedAddresses, setSavedAddresses] = useState([])
+    const [selectedAddress, setSelectedAddress] = useState("")
+    const [savingAddress, setSavingAddress] = useState(false)
     const [discount, setDiscount] = useState(0)
     const [applyingPromo, setApplyingPromo] = useState(false)
     const [serverTotal, setServerTotal] = useState(null)
@@ -33,6 +83,22 @@ const CheckoutPage = () => {
             navigate('/cart')
         }
     }, [cartItems, navigate, isProcessing])
+
+    useEffect(() => {
+        const fetchAddresses = async () => {
+            if (!user?.id) return
+            try {
+                const data = await addressService.getAddresses(user.id)
+                if (Array.isArray(data)) {
+                    setSavedAddresses(data)
+                }
+            } catch (err) {
+                console.warn("Failed to load saved addresses")
+            }
+        }
+
+        fetchAddresses()
+    }, [user])
 
     const subtotal = cartTotal
     const total = serverTotal !== null
@@ -63,9 +129,77 @@ const CheckoutPage = () => {
         { id: 3, name: 'Payment', icon: CreditCard },
     ]
 
+    const autofillAddress = (addrId) => {
+        const addr = savedAddresses.find(a => a.id === Number(addrId))
+        if (!addr) return
+
+        setShippingData({
+            fullname: addr.name || "",
+            email: user?.email || "",
+            phone: addr.phone || "",
+            address: addr.address_line || "",
+            city: addr.city || "",
+            state: addr.state || "",
+            pincode: addr.postal_code || ""
+        })
+    }
+
+    const saveCurrentAddress = async () => {
+        if (!user?.id) return
+
+        const label = prompt("Save address as (home / office / etc):")
+        if (!label) return
+
+        setSavingAddress(true)
+
+        try {
+            await addressService.createAddress({
+                user_id: user.id,
+                name: shippingData.fullname,
+                phone: shippingData.phone.replace(/\D/g, ""),
+                address_line: shippingData.address,
+                city: shippingData.city,
+                state: shippingData.state,
+                postal_code: shippingData.pincode,
+                country: "India",
+                label: label
+            })
+
+            alert("Address saved successfully")
+            const refreshed = await addressService.getAddresses(user.id)
+            if (Array.isArray(refreshed)) {
+                setSavedAddresses(refreshed)
+                const latest = refreshed[refreshed.length - 1]
+                if (latest) {
+                    setSelectedAddress(latest.id)
+                    autofillAddress(latest.id)
+                }
+            }
+
+        } catch (err) {
+            console.error("Save address failed", err)
+            alert("Failed to save address")
+        } finally {
+            setSavingAddress(false)
+        }
+    }
+
     const validateShipping = () => {
-        const { fullname, email, phone, address, city, state, pincode } = shippingData
-        return fullname && email && phone && address && city && state && pincode
+        const { fullname, email, phone, address, city, state, pincode } = shippingData;
+
+        const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        const phoneValid = phone.replace(/\D/g,"").length === 10;
+        const pinValid = /^\d{6}$/.test(pincode);
+
+        return (
+            fullname &&
+            address &&
+            city &&
+            state &&
+            emailValid &&
+            phoneValid &&
+            pinValid
+        );
     }
 
     const loadRazorpay = () => {
@@ -93,6 +227,15 @@ const CheckoutPage = () => {
 
             setIsProcessing(true)
             try {
+                // Cleanup any previous unpaid order for this user
+                try {
+                    if (user?.id) {
+                        await orderService.deleteUnpaidOrders?.(user.id);
+                    }
+                } catch (cleanupErr) {
+                    console.warn("Pending order cleanup skipped:", cleanupErr);
+                }
+
                 // 0. Ensure Razorpay script is loaded
                 if (!window.Razorpay) {
                     const res = await loadRazorpay();
@@ -238,6 +381,28 @@ const CheckoutPage = () => {
                                 className="space-y-8 relative"
                             >
                                 {step === 1 && (
+                                    <>
+                                    <div className="md:col-span-2 mb-6">
+                                        <label className="text-[10px] tracking-widest text-gray-500 mb-2 block font-bold uppercase">
+                                            Saved Address
+                                        </label>
+
+                                        <select
+                                            value={selectedAddress}
+                                            onChange={(e) => {
+                                                setSelectedAddress(e.target.value)
+                                                autofillAddress(e.target.value)
+                                            }}
+                                            className="w-full bg-transparent border-b border-secondary/20 py-4 text-xs font-bold focus:outline-none focus:border-secondary transition-all text-secondary"
+                                        >
+                                            <option value="">Select Saved Address</option>
+                                            {savedAddresses.map(addr => (
+                                                <option key={addr.id} value={addr.id}>
+                                                    {addr.label || "Saved Address"} - {addr.city}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="md:col-span-2">
                                             <label className="text-[10px] tracking-widest text-gray-500 mb-2 block font-bold">Shipping Country</label>
@@ -268,6 +433,7 @@ const CheckoutPage = () => {
                                             type="email"
                                             placeholder="Email Address"
                                             required
+                                            pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
                                             value={shippingData.email}
                                             onChange={(e) => setShippingData({ ...shippingData, email: e.target.value })}
                                             className="bg-transparent border-b border-secondary/20 py-4 text-xs font-bold focus:outline-none focus:border-secondary transition-all text-secondary"
@@ -278,38 +444,72 @@ const CheckoutPage = () => {
                                                 type="tel"
                                                 placeholder="Phone Number"
                                                 required
+                                                pattern="[0-9]{10}"
+                                                maxLength="11"
                                                 value={shippingData.phone}
-                                                onChange={(e) => setShippingData({ ...shippingData, phone: e.target.value })}
+                                                onChange={(e) =>
+                                                    setShippingData({
+                                                        ...shippingData,
+                                                        phone: formatPhone(e.target.value)
+                                                    })
+                                                }
                                                 className="w-full bg-transparent pl-8 py-4 text-xs font-bold focus:outline-none transition-all text-secondary"
                                             />
                                         </div>
                                         <div className="grid grid-cols-2 gap-6">
-                                            <input
-                                                type="text"
-                                                placeholder="City"
+                                            <select
                                                 required
                                                 value={shippingData.city}
                                                 onChange={(e) => setShippingData({ ...shippingData, city: e.target.value })}
                                                 className="bg-transparent border-b border-secondary/20 py-4 text-xs font-bold focus:outline-none focus:border-secondary transition-all text-secondary"
-                                            />
-                                            <input
-                                                type="text"
-                                                placeholder="State"
+                                            >
+                                                <option value="">Select City</option>
+                                                {shippingData.city && !cityOptions.includes(shippingData.city) && (
+                                                    <option value={shippingData.city}>{shippingData.city}</option>
+                                                )}
+                                                {cityOptions.map((city) => (
+                                                    <option key={city} value={city}>{city}</option>
+                                                ))}
+                                            </select>
+
+                                            <select
                                                 required
                                                 value={shippingData.state}
                                                 onChange={(e) => setShippingData({ ...shippingData, state: e.target.value })}
                                                 className="bg-transparent border-b border-secondary/20 py-4 text-xs font-bold focus:outline-none focus:border-secondary transition-all text-secondary"
-                                            />
+                                            >
+                                                <option value="">Select State</option>
+                                                {indianStates.map((st) => (
+                                                    <option key={st} value={st}>{st}</option>
+                                                ))}
+                                            </select>
                                         </div>
                                         <input
                                             type="text"
                                             placeholder="Pincode"
                                             required
+                                            pattern="\d{6}"
+                                            maxLength="6"
                                             value={shippingData.pincode}
-                                            onChange={(e) => setShippingData({ ...shippingData, pincode: e.target.value })}
+                                            onChange={(e) => {
+                                                const pin = e.target.value.replace(/\D/g,"").slice(0,6);
+                                                setShippingData({ ...shippingData, pincode: pin });
+                                                detectStateFromPincode(pin);
+                                            }}
                                             className="bg-transparent border-b border-secondary/20 py-4 text-xs font-bold focus:outline-none focus:border-secondary transition-all text-secondary"
                                         />
+                                        <div className="md:col-span-2 pt-4">
+                                            <button
+                                                type="button"
+                                                onClick={saveCurrentAddress}
+                                                disabled={savingAddress}
+                                                className="text-[10px] uppercase tracking-widest border border-secondary px-4 py-2 hover:bg-secondary hover:text-primary transition-all"
+                                            >
+                                                {savingAddress ? "Saving..." : "Save This Address"}
+                                            </button>
+                                        </div>
                                     </div>
+                                    </>
                                 )}
 
                                 {step === 2 && (
@@ -376,7 +576,7 @@ const CheckoutPage = () => {
 
                         <button
                             onClick={nextStep}
-                            disabled={isProcessing}
+                            disabled={isProcessing || (step === 1 && !validateShipping())}
                             className="w-full mt-16 bg-secondary text-primary py-5 text-xs font-bold flex items-center justify-center gap-3 hover:bg-gray-200 transition-colors uppercase tracking-widest disabled:opacity-50"
                         >
                             {isProcessing ? (

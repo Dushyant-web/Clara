@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useParams, Link } from 'react-router-dom'
-import { Heart, ShoppingBag, ArrowLeft, Star, Share2, Info, Truck, RotateCcw, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { Heart, ShoppingBag, ArrowLeft, Star, Share2, Info, Truck, RotateCcw, ChevronLeft, ChevronRight, ChevronDown, Loader2 } from 'lucide-react'
 import { productService } from '../services/productService'
 import { reviewService } from '../services/reviewService'
 import { useCart } from '../contexts/CartContext'
@@ -383,31 +383,31 @@ const ProductPage = () => {
                 </div>
 
                 {/* Reviews Section */}
-                <div className="mt-32 border-t border-secondary/5 pt-24">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
-                        <div className="lg:col-span-4">
-                            <h2 className="text-3xl font-serif tracking-tighter uppercase mb-8">Client Journals</h2>
-                            <div className="bg-secondary/5 p-10 border border-secondary/10">
-                                <div className="text-5xl font-serif mb-4">
+                <div className="mt-40 border-t border-secondary/10 pt-32">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-20">
+                        <div className="lg:col-span-4 lg:sticky lg:top-32 lg:h-max">
+                            <h2 className="text-4xl font-serif tracking-tight uppercase mb-12 text-secondary/90">Client Journals</h2>
+                            <div className="bg-secondary/[0.02] p-12 border border-secondary/10 flex flex-col items-center justify-center text-center">
+                                <div className="text-7xl font-serif mb-6 text-secondary/90">
                                     {(reviewStats?.average_rating || 0).toFixed(1)}
                                 </div>
-                                <div className="flex items-center gap-1 mb-6">
+                                <div className="flex items-center gap-2 mb-8">
                                     {[...Array(5)].map((_, i) => (
                                         <Star
                                             key={i}
-                                            size={16}
+                                            size={18}
                                             fill={i < Math.floor(reviewStats?.average_rating || 0) ? "currentColor" : "none"}
-                                            className={i < Math.floor(reviewStats?.average_rating || 0) ? "text-secondary" : "text-gray-600"}
+                                            className={i < Math.floor(reviewStats?.average_rating || 0) ? "text-secondary/80" : "text-secondary/20"}
                                         />
                                     ))}
                                 </div>
-                                <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Based on {reviewStats?.total_reviews || reviews.length} shared experiences</p>
+                                <p className="text-[9px] uppercase tracking-[0.3em] text-secondary/50 font-medium">Based on {reviewStats?.total_reviews || reviews.length} shared experiences</p>
                             </div>
 
                             {user ? (
-                                <div className="mt-12">
-                                    <h3 className="text-xs uppercase tracking-widest font-black mb-6">
-                                        {userReview ? 'Edit Your Review' : 'Submit Your Journal'}
+                                <div className="mt-16">
+                                    <h3 className="text-[10px] uppercase tracking-[0.4em] font-bold mb-8 text-secondary/70 border-b border-secondary/10 pb-4">
+                                        {userReview ? 'Refine Your Journal' : 'Contribute a Journal'}
                                     </h3>
                                     <form onSubmit={async (e) => {
                                         e.preventDefault();
@@ -448,7 +448,7 @@ const ProductPage = () => {
                                             setSubmittingReview(false);
                                         }
                                     }} className="space-y-6">
-                                        <div className="flex gap-2">
+                                        <div className="flex gap-3 justify-center py-4">
                                             {[1, 2, 3, 4, 5].map(star => (
                                                 <button
                                                     key={star}
@@ -456,7 +456,7 @@ const ProductPage = () => {
                                                     onClick={() => setReviewForm({ ...reviewForm, rating: star })}
                                                     className="transition-transform hover:scale-110"
                                                 >
-                                                    <Star size={20} fill={star <= reviewForm.rating ? "currentColor" : "none"} className={star <= reviewForm.rating ? "text-secondary" : "text-gray-600"} />
+                                                    <Star size={24} fill={star <= reviewForm.rating ? "currentColor" : "none"} className={star <= reviewForm.rating ? "text-secondary/80" : "text-secondary/20"} />
                                                 </button>
                                             ))}
                                         </div>
@@ -464,19 +464,20 @@ const ProductPage = () => {
                                             placeholder="DESCRIBE YOUR PIECE EXPERIENCE..."
                                             value={reviewForm.comment}
                                             onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
-                                            className="w-full bg-transparent border-b border-secondary/20 py-4 text-xs font-bold focus:outline-none focus:border-secondary transition-all text-secondary uppercase tracking-widest min-h-[100px]"
+                                            className="w-full bg-transparent border-b border-secondary/20 py-4 text-[11px] font-medium focus:outline-none focus:border-secondary transition-all text-secondary uppercase tracking-[0.2em] min-h-[120px] placeholder:text-secondary/30 placeholder:font-normal resize-none"
                                         />
                                         {/* Media Upload Section */}
-                                        <div className="space-y-4">
-                                            <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">
-                                                Upload Photos or Videos
+                                        <div className="space-y-6 pt-4">
+                                            <p className="text-[9px] uppercase tracking-[0.3em] text-secondary/50 font-medium">
+                                                Attach Visual Documentation
                                             </p>
 
                                             <div className="flex gap-4 flex-wrap">
 
                                                 {/* Image Upload */}
-                                                <label className="w-24 h-24 border border-secondary/20 flex items-center justify-center text-[10px] uppercase tracking-widest cursor-pointer hover:border-secondary transition-all">
-                                                    + Photo
+                                                <label className="w-28 h-28 border border-secondary/20 flex flex-col gap-2 items-center justify-center text-[9px] uppercase tracking-[0.3em] cursor-pointer hover:border-secondary hover:bg-secondary/5 transition-all text-secondary/60">
+                                                    <span className="text-lg font-light">+</span>
+                                                    <span>Photo</span>
                                                     <input
                                                         type="file"
                                                         accept="image/*"
@@ -512,8 +513,9 @@ const ProductPage = () => {
                                                 </label>
 
                                                 {/* Video Upload */}
-                                                <label className="w-24 h-24 border border-secondary/20 flex items-center justify-center text-[10px] uppercase tracking-widest cursor-pointer hover:border-secondary transition-all">
-                                                    + Video
+                                                <label className="w-28 h-28 border border-secondary/20 flex flex-col gap-2 items-center justify-center text-[9px] uppercase tracking-[0.3em] cursor-pointer hover:border-secondary hover:bg-secondary/5 transition-all text-secondary/60">
+                                                    <span className="text-lg font-light">+</span>
+                                                    <span>Video</span>
                                                     <input
                                                         type="file"
                                                         accept="video/*"
@@ -605,9 +607,9 @@ const ProductPage = () => {
                                         </div>
                                         <button
                                             disabled={submittingReview || !reviewForm.comment.trim()}
-                                            className="w-full py-4 bg-secondary text-primary text-[10px] font-black uppercase tracking-[0.4em] hover:opacity-90 transition-all disabled:opacity-20"
+                                            className="w-full py-5 bg-secondary text-primary text-[10px] font-bold uppercase tracking-[0.4em] hover:bg-secondary/90 transition-all disabled:opacity-20 mt-8"
                                         >
-                                            {submittingReview ? <Loader2 className="animate-spin mx-auto" size={16} /> : 'Post Entry'}
+                                            {submittingReview ? <Loader2 className="animate-spin mx-auto text-primary" size={16} /> : 'Post Entry'}
                                         </button>
                                         {userReview && (
                                             <button
@@ -618,44 +620,53 @@ const ProductPage = () => {
                                                     const updatedReviews = await reviewService.getReviews(id, user?.id)
                                                     setReviews(updatedReviews)
                                                 }}
-                                                className="w-full py-3 border border-red-500/30 text-red-400 text-[10px] font-black uppercase tracking-[0.3em] hover:bg-red-500/10 transition-all"
+                                                className="w-full py-4 border border-red-500/20 text-red-400 text-[9px] font-medium uppercase tracking-[0.3em] hover:bg-red-500/5 transition-all"
                                             >
-                                                Delete Review
+                                                Retract Entry
                                             </button>
                                         )}
                                     </form>
                                 </div>
                             ) : (
-                                <div className="mt-12 p-8 border border-secondary/10 text-center">
-                                    <p className="text-[10px] uppercase tracking-widest text-gray-500 mb-6 font-bold">Please identify yourself to leave a journal entry.</p>
-                                    <Link to="/login" className="text-[10px] font-black uppercase tracking-[0.4em] border-b border-secondary">Identfication</Link>
+                                <div className="mt-16 p-12 border border-secondary/10 bg-secondary/[0.02] text-center">
+                                    <p className="text-[9px] uppercase tracking-[0.3em] text-secondary/60 mb-6 font-medium">Please identify yourself to leave a journal entry.</p>
+                                    <Link to="/login" className="text-[10px] font-bold uppercase tracking-[0.4em] border-b border-secondary/30 hover:border-secondary transition-all pb-1 text-secondary/90">Identification</Link>
                                 </div>
                             )}
                         </div>
 
-                        <div className="flex items-center gap-4 mb-10 flex-wrap">
-                            <select
-                                value={reviewFilter}
-                                onChange={(e) => setReviewFilter(e.target.value)}
-                                className="px-4 py-2 text-[10px] border border-secondary/10 bg-primary text-secondary uppercase tracking-widest font-bold"
-                            >
-                                <option value="all">All Reviews</option>
-                                <option value="5">5★ Reviews</option>
-                                <option value="4">4★ Reviews</option>
-                                <option value="3">3★ Reviews</option>
-                                <option value="2">2★ Reviews</option>
-                                <option value="1">1★ Reviews</option>
-                            </select>
+                        <div className="lg:col-span-8">
+                            <div className="flex items-center gap-6 mb-16 pb-6 border-b border-secondary/10 flex-wrap">
+                                <div className="relative">
+                                    <select
+                                        value={reviewFilter}
+                                        onChange={(e) => setReviewFilter(e.target.value)}
+                                        className="appearance-none pr-8 py-2 text-[9px] bg-transparent text-secondary uppercase tracking-[0.3em] font-medium cursor-pointer focus:outline-none border-none"
+                                    >
+                                        <option value="all">All Chronicles</option>
+                                        <option value="5">5★ Chronicles</option>
+                                        <option value="4">4★ Chronicles</option>
+                                        <option value="3">3★ Chronicles</option>
+                                        <option value="2">2★ Chronicles</option>
+                                        <option value="1">1★ Chronicles</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 text-secondary/50 pointer-events-none" size={14} />
+                                </div>
 
-                            <select
-                                value={showPhotosOnly ? "media" : "all"}
-                                onChange={(e) => setShowPhotosOnly(e.target.value === "media")}
-                                className="px-4 py-2 text-[10px] border border-secondary/10 bg-primary text-secondary uppercase tracking-widest font-bold"
-                            >
-                                <option value="all">All Content</option>
-                                <option value="media">Photos & Videos</option>
-                            </select>
+                                <div className="relative border-l border-secondary/20 pl-6">
+                                    <select
+                                        value={showPhotosOnly ? "media" : "all"}
+                                        onChange={(e) => setShowPhotosOnly(e.target.value === "media")}
+                                        className="appearance-none pr-8 py-2 text-[9px] bg-transparent text-secondary uppercase tracking-[0.3em] font-medium cursor-pointer focus:outline-none border-none"
+                                    >
+                                        <option value="all">All Content</option>
+                                        <option value="media">Visuals Only</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 text-secondary/50 pointer-events-none" size={14} />
+                                </div>
+                            </div>
                         </div>
+
                         {/* Filtered reviews variable */}
                         {/*
                           4. Improve review filtering to avoid duplicate filtering.
@@ -672,18 +683,21 @@ const ProductPage = () => {
                                 <div className="lg:col-span-8 space-y-12">
                                     {filteredReviews.length > 0 ? (
                                         filteredReviews.map((review, idx) => (
-                                            <div key={idx} className="border-b border-secondary/5 pb-12">
-                                            <div className="flex justify-between items-center mb-6">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-10 h-10 bg-secondary/10 rounded-full flex items-center justify-center text-[10px] font-serif uppercase">
+                                            <div key={idx} className="border-b border-secondary/10 pb-16 pt-8 first:pt-0">
+                                            <div className="flex justify-between items-start mb-8">
+                                                <div className="flex items-start gap-5">
+                                                    <div className="w-12 h-12 bg-secondary/5 rounded-full flex items-center justify-center text-[11px] font-serif uppercase border border-secondary/10 text-secondary/70">
                                                         U{idx + 1}
                                                     </div>
-                                                    <div>
-                                                        <p className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                                                    <div className="pt-1">
+                                                        <p className="text-[11px] font-bold uppercase tracking-[0.2em] flex items-center gap-3 text-secondary/90">
                                                             {review.verified_purchase ? (
-                                                                <span className="text-emerald-400">✔ Verified Purchase</span>
+                                                                <span className="text-secondary/70 flex items-center gap-1">
+                                                                    <svg viewBox="0 0 24 24" fill="none" className="w-3 h-3 text-emerald-600/70" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                                                    Verified Patron
+                                                                </span>
                                                             ) : (
-                                                                <span className="text-gray-400">Client</span>
+                                                                <span className="text-secondary/40">Digital Client</span>
                                                             )}
                                                         </p>
                                                         <div className="flex items-center gap-1 mt-1">
@@ -691,99 +705,115 @@ const ProductPage = () => {
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="text-right">
-                                                    <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">
-                                                        {new Date(review.created_at).toLocaleDateString()}
+                                                <div className="text-right pt-1">
+                                                    <p className="text-[9px] text-secondary/40 uppercase tracking-[0.3em] font-medium mb-1 border-b border-secondary/10 pb-1 inline-block">
+                                                        {new Date(review.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                                                     </p>
-                                                    <p className="text-[9px] text-gray-600 uppercase tracking-widest">
-                                                        Ref #{idx + 1024}
+                                                    <p className="text-[8px] text-secondary/30 uppercase tracking-[0.4em]">
+                                                        Manifest #{idx + 1024}
                                                     </p>
                                                 </div>
                                             </div>
-                                            <p className="text-gray-400 text-sm leading-relaxed uppercase tracking-widest font-medium">
-                                                "{review.comment}"
-                                            </p>
-                                            {/* Admin Reply */}
-                                            {review.replies && review.replies.length > 0 && (
-                                                <div className="mt-4 border-l border-secondary/20 pl-4">
-                                                    {review.replies.map((rep, i) => (
-                                                        <div key={i} className="text-xs text-gray-400 italic leading-relaxed">
-                                                            <span className="text-secondary font-bold uppercase tracking-widest text-[9px] mr-2">
-                                                                Admin:
-                                                            </span>
-                                                            {rep.reply}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                            {(review.color || review.size) && (
-                                                <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-2">
-                                                    Color: {review.color || "—"} &nbsp; | &nbsp; Size: {review.size || "—"}
+                                            <div className="pl-[68px]">
+                                                <p className="text-secondary/80 text-[13px] leading-8 font-serif italic mb-6">
+                                                    "{review.comment}"
                                                 </p>
-                                            )}
-                                            
-                                            {/* MEDIA GALLERY */}
-                                            {(review.images?.length > 0 || review.videos?.length > 0) && (
-                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
-                                                    {review.images?.map((img, i) => (
-                                                        <img
-                                                            key={`img-${i}`}
-                                                            src={img}
-                                                            className="w-full h-48 object-contain bg-black border border-secondary/10"
-                                                        />
-                                                    ))}
-                                                    {review.videos?.map((vid, i) => (
-                                                        <video
-                                                            key={`vid-${i}`}
-                                                            src={vid}
-                                                            className="w-full h-48 object-contain bg-black border border-secondary/10"
-                                                            controls
-                                                        />
-                                                    ))}
-                                                </div>
-                                            )}
+                                                {/* Admin Reply */}
+                                                {review.replies && review.replies.length > 0 && (
+                                                    <div className="mt-6 mb-6 border-l-2 border-secondary/20 pl-6 py-2 bg-secondary/[0.02]">
+                                                        {review.replies.map((rep, i) => (
+                                                            <div key={i} className="text-[11px] text-secondary/60 leading-relaxed uppercase tracking-wider">
+                                                                <span className="font-bold text-secondary/80 mr-3 inline-block">
+                                                                    — The Brand:
+                                                                </span>
+                                                                {rep.reply}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                {(review.color || review.size) && (
+                                                    <div className="flex items-center gap-3 mt-4 mb-2">
+                                                        <span className="px-3 py-1 bg-secondary/5 border border-secondary/10 text-[9px] text-secondary/60 uppercase tracking-[0.2em] font-medium">
+                                                            Variant Profile
+                                                        </span>
+                                                        <span className="text-[9px] text-secondary/40 uppercase tracking-[0.2em]">
+                                                            {review.color && `Color: ${review.color}`}
+                                                            {review.color && review.size && <span className="mx-2 opacity-30">/</span>}
+                                                            {review.size && `Size: ${review.size}`}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                
+                                                {/* MEDIA GALLERY */}
+                                                {(review.images?.length > 0 || review.videos?.length > 0) && (
+                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-8">
+                                                        {review.images?.map((img, i) => (
+                                                            <div key={`img-${i}`} className="aspect-square bg-secondary/5 border border-secondary/10 overflow-hidden group">
+                                                                <img
+                                                                    src={img}
+                                                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale-[50%] hover:grayscale-0"
+                                                                />
+                                                            </div>
+                                                        ))}
+                                                        {review.videos?.map((vid, i) => (
+                                                            <div key={`vid-${i}`} className="aspect-square bg-secondary/5 border border-secondary/10 overflow-hidden">
+                                                                <video
+                                                                    src={vid}
+                                                                    className="w-full h-full object-cover grayscale-[50%] hover:grayscale-0 transition-all duration-500"
+                                                                    controls
+                                                                />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
 
-                                            {/* Helpful Vote */}
-                                            <div className="mt-6 flex items-center gap-4">
-                                                <button
-                                                    onClick={async () => {
-                                                        if (!user) {
-                                                            alert("Login required to vote helpful")
-                                                            return
-                                                        }
-
-                                                        try {
-                                                            let data
-
-                                                            // toggle vote
-                                                            if (review.user_voted) {
-                                                                data = await reviewService.removeHelpfulVote(review.id, user.id)
-                                                            } else {
-                                                                data = await reviewService.voteHelpful(review.id, user.id)
+                                                {/* Helpful Vote */}
+                                                <div className="mt-8 flex items-center gap-4">
+                                                    <button
+                                                        onClick={async () => {
+                                                            if (!user) {
+                                                                alert("Authentication required for network actions.")
+                                                                return
                                                             }
 
-                                                            setReviews(prev =>
-                                                                prev.map(r => {
-                                                                    if (r.id === review.id) {
-                                                                        return {
-                                                                            ...r,
-                                                                            helpful_count: data.helpful_count,
-                                                                            user_voted: !r.user_voted
+                                                            try {
+                                                                let data
+
+                                                                // toggle vote
+                                                                if (review.user_voted) {
+                                                                    data = await reviewService.removeHelpfulVote(review.id, user.id)
+                                                                } else {
+                                                                    data = await reviewService.voteHelpful(review.id, user.id)
+                                                                }
+
+                                                                setReviews(prev =>
+                                                                    prev.map(r => {
+                                                                        if (r.id === review.id) {
+                                                                            return {
+                                                                                ...r,
+                                                                                helpful_count: data.helpful_count,
+                                                                                user_voted: !r.user_voted
+                                                                            }
                                                                         }
-                                                                    }
-                                                                    return r
-                                                                })
-                                                            )
-                                                        } catch (err) {
-                                                            console.error("Helpful vote failed", err)
-                                                        }
-                                                    }}
-                                                    className="px-4 py-2 border border-secondary/20 text-[10px] uppercase tracking-widest hover:border-secondary transition-all"
-                                                >
-                                                    👍 Helpful ({review.helpful_count || 0})
-                                                </button>
+                                                                        return r
+                                                                    })
+                                                                )
+                                                            } catch (err) {
+                                                                console.error("Network validation failed", err)
+                                                            }
+                                                        }}
+                                                        className={`px-5 py-2 text-[9px] uppercase tracking-[0.3em] font-medium transition-all flex items-center gap-2 
+                                                            ${review.user_voted 
+                                                                ? 'bg-secondary text-primary border border-secondary' 
+                                                                : 'border border-secondary/20 text-secondary/60 hover:border-secondary hover:text-secondary'}`}
+                                                    >
+                                                        <svg viewBox="0 0 24 24" fill={review.user_voted ? "currentColor" : "none"} className="w-3 h-3" stroke="currentColor" strokeWidth="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                                        Acknowledged ({review.helpful_count || 0})
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
+
                                         ))
                                     ) : (
                                         <div className="py-20 text-center border border-dashed border-secondary/10">

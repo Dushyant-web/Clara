@@ -2,7 +2,7 @@ import api from './api';
 
 export const orderService = {
     getUserOrders: async (userId) => {
-        const response = await api.get(`/orders/${userId}`);
+        const response = await api.get(`/orders/user/${userId}`);
         return response.data;
     },
     getOrder: async (orderId) => {
@@ -48,5 +48,11 @@ export const orderService = {
     reserveStock: async (data) => {
         const response = await api.post('/reserve', data);
         return response.data;
+    },
+
+    deleteUnpaidOrders(userId) {
+        return api.delete(`/orders/unpaid/${userId}`)
     }
+
 };
+

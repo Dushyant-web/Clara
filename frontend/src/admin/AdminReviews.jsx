@@ -45,7 +45,7 @@ const AdminReviews = () => {
                 adminService.getReviewTimeline(),
                 adminService.getModerationQueue()
             ]);
-            
+
             // Standardize results (handle cases where backend wraps data in keys)
             setReviews(Array.isArray(reviewsData) ? reviewsData : (reviewsData?.reviews || []));
             setStats(statsData);
@@ -109,10 +109,10 @@ const AdminReviews = () => {
     return (
         <div className="space-y-12 max-w-7xl mx-auto">
             {/* Header Section */}
-            <header className="flex flex-col gap-8">
-                <div className="space-y-1">
-                    <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-white/30">Reputation Moderation</p>
-                    <h1 className="text-5xl font-medium tracking-tight font-serif text-white/90">Review Intelligence</h1>
+            <header className="flex flex-col gap-8 border-b border-white/10 pb-12">
+                <div className="space-y-2">
+                    <p className="text-[10px] uppercase tracking-[0.4em] font-medium text-white/40">Reputation Moderation</p>
+                    <h1 className="text-4xl font-serif tracking-tight text-white/90">Review Intelligence</h1>
                 </div>
 
                 {/* Quick Filters - Minimal Outlined Boxes */}
@@ -121,11 +121,10 @@ const AdminReviews = () => {
                         <button
                             key={r}
                             onClick={() => setRatingFilter(r)}
-                            className={`px-5 py-2 text-[10px] uppercase tracking-widest font-bold border transition-all ${
-                                ratingFilter === r 
-                                ? 'bg-white text-black border-white' 
-                                : 'border-white/10 text-gray-500 hover:border-white/30 hover:text-white'
-                            }`}
+                            className={`px-5 py-2 text-[9px] uppercase tracking-[0.4em] font-medium border transition-all ${ratingFilter === r
+                                    ? 'bg-white text-black border-white'
+                                    : 'border-white/10 text-white/40 hover:border-white/30 hover:text-white/80'
+                                }`}
                         >
                             {r === 'All' ? 'ALL' : `${r} \u2606`}
                         </button>
@@ -137,123 +136,123 @@ const AdminReviews = () => {
             {/* Review Intelligence Overview */}
             {intelligence && (
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-                    <div className="bg-white/[0.03] border border-white/5 p-8">
-                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 font-bold">
+                    <div className="bg-white/[0.02] border border-white/5 p-8 flex flex-col items-center justify-center text-center">
+                        <p className="text-[9px] uppercase tracking-[0.3em] text-white/40 font-medium mb-4">
                             Website Rating
                         </p>
-                        <p className="text-3xl font-black text-white mt-3">
-                            ⭐ {intelligence.website_rating}
+                        <p className="text-3xl font-serif text-white/90">
+                            {intelligence.website_rating}
                         </p>
                     </div>
 
-                    <div className="bg-white/[0.03] border border-white/5 p-8">
-                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 font-bold">
+                    <div className="bg-white/[0.02] border border-white/5 p-8 flex flex-col items-center justify-center text-center">
+                        <p className="text-[9px] uppercase tracking-[0.3em] text-white/40 font-medium mb-4">
                             Total Reviews
                         </p>
-                        <p className="text-3xl font-black text-white mt-3">
+                        <p className="text-3xl font-serif text-white/90">
                             {intelligence.total_reviews}
                         </p>
                     </div>
 
-                    <div className="bg-white/[0.03] border border-white/5 p-8">
-                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 font-bold">
+                    <div className="bg-white/[0.02] border border-white/5 p-8 flex flex-col items-center justify-center text-center">
+                        <p className="text-[9px] uppercase tracking-[0.3em] text-white/40 font-medium mb-4">
                             Best Product
                         </p>
-                        <p className="text-sm text-white mt-3">
+                        <p className="text-sm text-white/80 uppercase tracking-widest">
                             {intelligence.best_product?.name || '—'}
                         </p>
-                        <p className="text-xs text-white/40">
+                        <p className="text-[10px] tracking-widest text-white/40 mt-2">
                             ⭐ {intelligence.best_product?.rating}
                         </p>
                     </div>
 
-                    <div className="bg-white/[0.03] border border-white/5 p-8">
-                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 font-bold">
+                    <div className="bg-white/[0.02] border border-white/5 p-8 flex flex-col items-center justify-center text-center">
+                        <p className="text-[9px] uppercase tracking-[0.3em] text-white/40 font-medium mb-4">
                             Worst Product
                         </p>
-                        <p className="text-sm text-white mt-3">
+                        <p className="text-sm text-white/80 uppercase tracking-widest">
                             {intelligence.worst_product?.name || '—'}
                         </p>
-                        <p className="text-xs text-white/40">
+                        <p className="text-[10px] tracking-widest text-white/40 mt-2">
                             ⭐ {intelligence.worst_product?.rating}
                         </p>
                     </div>
 
-                    <div className="bg-white/[0.03] border border-white/5 p-8">
-                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 font-bold">
+                    <div className="bg-white/[0.02] border border-white/5 p-8 flex flex-col items-center justify-center text-center">
+                        <p className="text-[9px] uppercase tracking-[0.3em] text-white/40 font-medium mb-4">
                             Review Growth
                         </p>
 
-                        <p className="text-sm text-white mt-3">
+                        <p className="text-sm text-white/80 uppercase tracking-widest">
                             {Array.isArray(intelligence.review_growth) ? intelligence.review_growth.length : 0} days
                         </p>
 
-                        <p className="text-xs text-white/40">
+                        <p className="text-[9px] uppercase tracking-[0.2em] text-white/40 mt-2">
                             Activity Recorded
                         </p>
                     </div>
                 </div>
             )}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white/[0.03] border border-white/5 p-10 flex flex-col justify-between h-40">
-                    <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-500">Average Sentiment</p>
+                <div className="bg-white/[0.02] border border-white/5 p-10 flex flex-col justify-between h-40">
+                    <p className="text-[9px] uppercase tracking-[0.3em] font-medium text-white/40">Average Sentiment</p>
                     <div className="flex items-center gap-4">
-                        <span className="text-4xl font-black tracking-tight text-white/90 uppercase">
+                        <span className="text-4xl font-serif text-white/90">
                             {stats?.average_rating?.toFixed(1) || '0.0'}
                         </span>
                         <div>
-                           {renderStars(Math.round(stats?.average_rating || 0), 10)}
+                            {renderStars(Math.round(stats?.average_rating || 0), 10)}
                         </div>
                     </div>
                 </div>
-                <div className="bg-white/[0.03] border border-white/5 p-10 flex flex-col justify-between h-40">
-                    <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-500">Total Testimonials</p>
+                <div className="bg-white/[0.02] border border-white/5 p-10 flex flex-col justify-between h-40">
+                    <p className="text-[9px] uppercase tracking-[0.3em] font-medium text-white/40">Total Testimonials</p>
                     <div className="flex items-center gap-3">
-                        <span className="text-4xl font-black tracking-tight text-white/90">
+                        <span className="text-4xl font-serif text-white/90">
                             {stats?.total_count || reviews.length || 0}
                         </span>
-                        <span className="text-[8px] uppercase tracking-[0.3em] text-emerald-500/80 font-black flex items-center gap-1.5 self-end mb-1">
+                        <span className="text-[8px] uppercase tracking-[0.3em] text-emerald-500/80 font-medium flex items-center gap-1.5 self-end mb-2">
                             <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse" /> Live
                         </span>
                     </div>
                 </div>
-                <div className="bg-white/[0.03] border border-white/5 p-10 flex flex-col justify-between h-40">
-                    <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-500">Pending Moderation</p>
+                <div className="bg-white/[0.02] border border-white/5 p-10 flex flex-col justify-between h-40">
+                    <p className="text-[9px] uppercase tracking-[0.3em] font-medium text-white/40">Pending Moderation</p>
                     <div className="flex items-center gap-3">
-                        <span className="text-4xl font-medium tracking-tight text-white/20">0</span>
-                        <span className="text-[8px] uppercase tracking-[0.3em] text-gray-600 font-black self-end mb-1 underline underline-offset-4 decoration-gray-800">No Signal Delay</span>
+                        <span className="text-4xl font-serif text-white/30">0</span>
+                        <span className="text-[8px] uppercase tracking-[0.3em] text-white/40 font-medium self-end mb-2 border-b border-white/10 pb-1">No Signal Delay</span>
                     </div>
                 </div>
             </div>
 
             {/* Review Breakdown (Star Distribution) */}
             {stats && stats.ratings && (
-                <div className="space-y-6 mt-16">
-                    <h2 className="text-2xl font-serif text-white/90">
+                <div className="space-y-8 mt-24">
+                    <h2 className="text-2xl font-serif text-white/90 uppercase tracking-widest">
                         Review Breakdown
                     </h2>
 
-                    <div className="bg-white/[0.03] border border-white/5 p-8 space-y-4">
-                        {[5,4,3,2,1].map((star) => {
+                    <div className="bg-white/[0.02] border border-white/5 p-10 space-y-6">
+                        {[5, 4, 3, 2, 1].map((star) => {
                             const count = stats.ratings?.[star] || stats.ratings?.[String(star)] || 0;
                             const total = stats.total_reviews || 1;
                             const percent = (count / total) * 100;
 
                             return (
-                                <div key={star} className="flex items-center gap-4">
+                                <div key={star} className="flex items-center gap-6">
 
-                                    <div className="w-10 text-xs text-white/70">
+                                    <div className="w-12 text-[10px] uppercase tracking-widest text-white/60">
                                         {star}★
                                     </div>
 
-                                    <div className="flex-1 h-2 bg-white/10 relative">
+                                    <div className="flex-1 h-[1px] bg-white/10 relative">
                                         <div
-                                            className="absolute left-0 top-0 h-2 bg-white"
+                                            className="absolute left-0 top-1/2 -translate-y-1/2 h-[3px] bg-white/80 transition-all duration-1000 ease-out"
                                             style={{ width: `${percent}%` }}
                                         />
                                     </div>
 
-                                    <div className="w-12 text-xs text-white/50 text-right">
+                                    <div className="w-12 text-[10px] uppercase tracking-widest text-white/60 text-right">
                                         {count}
                                     </div>
 
@@ -266,75 +265,75 @@ const AdminReviews = () => {
 
             {/* Product Review Rankings */}
             {intelligence?.product_rankings && (
-            <div className="space-y-6 mt-16">
-            <h2 className="text-2xl font-serif text-white/90">Product Review Rankings</h2>
+                <div className="space-y-6 mt-16">
+                    <h2 className="text-2xl font-serif text-white/90">Product Review Rankings</h2>
 
-            <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left">
-            <thead>
-            <tr className="border-b border-white/10">
-            <th className="p-4 text-xs text-white/40 uppercase">Rank</th>
-            <th className="p-4 text-xs text-white/40 uppercase">Product</th>
-            <th className="p-4 text-xs text-white/40 uppercase">Rating</th>
-            <th className="p-4 text-xs text-white/40 uppercase">Reviews</th>
-            </tr>
-            </thead>
-            <tbody>
-            {intelligence.product_rankings.map((p) => (
-            <tr
-            key={p.product_id}
-            className="border-b border-white/5 cursor-pointer hover:bg-white/[0.03]"
-            onClick={() => loadProductAnalytics(p.product_id)}
-            >
-            <td className="p-4 text-white">{p.rank}</td>
-            <td className="p-4 text-white/80">{p.product_name}</td>
-            <td className="p-4 text-white">⭐ {p.avg_rating}</td>
-            <td className="p-4 text-white/60">{p.review_count}</td>
-            </tr>
-            ))}
-            </tbody>
-            </table>
-            </div>
-            </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full border-collapse text-left">
+                            <thead>
+                                <tr className="border-b border-white/10">
+                                    <th className="p-4 text-xs text-white/40 uppercase">Rank</th>
+                                    <th className="p-4 text-xs text-white/40 uppercase">Product</th>
+                                    <th className="p-4 text-xs text-white/40 uppercase">Rating</th>
+                                    <th className="p-4 text-xs text-white/40 uppercase">Reviews</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {intelligence.product_rankings.map((p) => (
+                                    <tr
+                                        key={p.product_id}
+                                        className="border-b border-white/5 cursor-pointer hover:bg-white/[0.03]"
+                                        onClick={() => loadProductAnalytics(p.product_id)}
+                                    >
+                                        <td className="p-4 text-white">{p.rank}</td>
+                                        <td className="p-4 text-white/80">{p.product_name}</td>
+                                        <td className="p-4 text-white">⭐ {p.avg_rating}</td>
+                                        <td className="p-4 text-white/60">{p.review_count}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             )}
 
             {/* Product Analytics Panel */}
             {selectedProduct && productBreakdown && (
-            <div className="mt-10 border border-white/10 p-8 bg-white/[0.02]">
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-serif text-white">Product Review Analytics</h3>
-                    <button
-                        onClick={() => {
-                            setSelectedProduct(null);
-                            setProductBreakdown(null);
-                        }}
-                        className="text-xs uppercase tracking-wider text-white/40 hover:text-white"
-                    >
-                        Close
-                    </button>
-                </div>
+                <div className="mt-10 border border-white/10 p-8 bg-white/[0.02]">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-xl font-serif text-white">Product Review Analytics</h3>
+                        <button
+                            onClick={() => {
+                                setSelectedProduct(null);
+                                setProductBreakdown(null);
+                            }}
+                            className="text-xs uppercase tracking-wider text-white/40 hover:text-white"
+                        >
+                            Close
+                        </button>
+                    </div>
 
-                <div className="space-y-3">
-                {[5,4,3,2,1].map((star) => {
-                const count = productBreakdown?.[star] || productBreakdown?.[String(star)] || 0;
-                const total = Object.values(productBreakdown).reduce((a,b)=>a+b,0) || 1;
-                const percent = (count/total)*100;
+                    <div className="space-y-3">
+                        {[5, 4, 3, 2, 1].map((star) => {
+                            const count = productBreakdown?.[star] || productBreakdown?.[String(star)] || 0;
+                            const total = Object.values(productBreakdown).reduce((a, b) => a + b, 0) || 1;
+                            const percent = (count / total) * 100;
 
-                return (
-                <div key={star} className="flex items-center gap-4">
-                <div className="w-10 text-xs text-white/70">{star}★</div>
-                <div className="flex-1 h-2 bg-white/10 relative">
-                <div
-                className="absolute left-0 top-0 h-2 bg-white"
-                style={{width:`${percent}%`}}
-                />
+                            return (
+                                <div key={star} className="flex items-center gap-4">
+                                    <div className="w-10 text-xs text-white/70">{star}★</div>
+                                    <div className="flex-1 h-2 bg-white/10 relative">
+                                        <div
+                                            className="absolute left-0 top-0 h-2 bg-white"
+                                            style={{ width: `${percent}%` }}
+                                        />
+                                    </div>
+                                    <div className="w-10 text-xs text-white/50">{count}</div>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
-                <div className="w-10 text-xs text-white/50">{count}</div>
-                </div>
-                );
-                })}
-                </div>
-            </div>
             )}
 
             {/* Moderation Manifest */}
@@ -356,7 +355,7 @@ const AdminReviews = () => {
                             {filteredReviews.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="p-24 text-center">
-                                       <p className="text-[10px] uppercase tracking-[0.5em] font-black text-white/10">No Feedback Entries Identified</p>
+                                        <p className="text-[10px] uppercase tracking-[0.5em] font-black text-white/10">No Feedback Entries Identified</p>
                                     </td>
                                 </tr>
                             ) : (
@@ -368,7 +367,7 @@ const AdminReviews = () => {
                                                     <User size={14} className="text-white" />
                                                 </div>
                                                 <div className="space-y-1">
-                                                    <p className="text-[11px] font-bold uppercase tracking-widest text-white/80">
+                                                    <p className="text-[11px] font-medium uppercase tracking-widest text-white/80">
                                                         {r.user_email || 'Verified Patron'}
                                                     </p>
                                                     <p className="text-[9px] uppercase tracking-[0.2em] text-white/20 font-medium">Digital Identity</p>
@@ -378,31 +377,31 @@ const AdminReviews = () => {
                                         <td className="p-8">
                                             <div className="space-y-3">
                                                 {renderStars(r.rating, 10)}
-                                                <p className="text-[9px] uppercase font-bold tracking-[0.2em] text-white/30">{r.rating}/5 SIGNAL</p>
+                                                <p className="text-[9px] uppercase font-medium tracking-[0.2em] text-white/30">{r.rating}/5 SIGNAL</p>
                                             </div>
                                         </td>
                                         <td className="p-8 max-w-md">
-                                            <p className="text-xs text-white/80 font-serif italic leading-relaxed">
+                                            <p className="text-xs text-white/80 font-serif leading-relaxed">
                                                 "{r.comment}"
                                             </p>
 
                                             <div className="mt-4 flex flex-wrap items-center gap-3">
 
                                                 {/* Product Reference */}
-                                                <div className="px-2 py-0.5 border border-white/5 text-[9px] uppercase tracking-[0.2em] font-bold text-white/20">
+                                                <div className="px-2 py-0.5 border border-white/5 text-[9px] uppercase tracking-[0.2em] font-medium text-white/20">
                                                     PRODUCT #{r.product_id}
                                                 </div>
 
                                                 {/* Variant Label */}
                                                 {(r.color || r.size) && (
-                                                    <div className="px-2 py-0.5 border border-white/5 text-[9px] uppercase tracking-[0.2em] font-bold text-white/40">
+                                                    <div className="px-2 py-0.5 border border-white/5 text-[9px] uppercase tracking-[0.2em] font-medium text-white/40">
                                                         {r.color ? `Color: ${r.color}` : ''} {r.size ? `Size: ${r.size}` : ''}
                                                     </div>
                                                 )}
 
                                                 {/* Verified Purchase */}
                                                 {r.verified_purchase && (
-                                                    <div className="flex items-center gap-1 px-2 py-0.5 border border-emerald-500/20 text-[9px] uppercase tracking-[0.2em] font-bold text-emerald-400">
+                                                    <div className="flex items-center gap-1.5 px-2 py-0.5 border border-emerald-500/10 text-[9px] uppercase tracking-[0.2em] font-medium text-emerald-400">
                                                         <CheckCircle2 size={10} />
                                                         Verified
                                                     </div>
@@ -410,7 +409,7 @@ const AdminReviews = () => {
 
                                                 {/* Helpful Votes */}
                                                 {typeof r.helpful_count === 'number' && (
-                                                    <div className="px-2 py-0.5 border border-white/10 text-[9px] uppercase tracking-[0.2em] font-bold text-white/40">
+                                                    <div className="px-2 py-0.5 border border-white/10 text-[9px] uppercase tracking-[0.2em] font-medium text-white/40">
                                                         Helpful: {r.helpful_count}
                                                     </div>
                                                 )}
@@ -443,7 +442,7 @@ const AdminReviews = () => {
 
                                             {/* Admin Reply System */}
                                             <div className="mt-6 border-t border-white/5 pt-4 space-y-3">
-                                                <p className="text-[9px] uppercase tracking-[0.3em] text-white/30 font-bold">
+                                                <p className="text-[9px] uppercase tracking-[0.3em] text-white/30 font-medium">
                                                     Admin Reply
                                                 </p>
 
@@ -519,7 +518,7 @@ const AdminReviews = () => {
                                             </div>
                                         </td>
                                         <td className="p-8">
-                                            <p className="text-[11px] text-white/30 font-bold uppercase tracking-widest">
+                                            <p className="text-[11px] text-white/30 font-medium uppercase tracking-widest">
                                                 {new Date(r.created_at).toLocaleDateString(undefined, {
                                                     day: '2-digit',
                                                     month: 'short',
@@ -578,9 +577,9 @@ const AdminReviews = () => {
             </div>
 
             {/* Moderation Queue */}
-            <div className="space-y-6 mt-16">
+            <div className="space-y-6 mt-16 pointer-events-none opacity-50">
                 <h2 className="text-2xl font-serif text-white/90">
-                    Moderation Queue
+                    Moderation Queue (Inactive)
                 </h2>
 
                 <div className="overflow-x-auto">

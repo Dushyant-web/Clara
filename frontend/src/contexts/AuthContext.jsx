@@ -29,7 +29,11 @@ export const AuthProvider = ({ children }) => {
     const login = async (idToken, name, email) => {
         try {
             const data = await authService.login(idToken);
-            const userObj = { id: data.user_id, name, email };
+            const userObj = {
+                id: data.user_id,
+                name: data.name || name || "User",
+                email: data.email || email
+            };
             setToken(data.access_token);
             setUser(userObj);
             localStorage.setItem('token', data.access_token);
@@ -43,7 +47,11 @@ export const AuthProvider = ({ children }) => {
     const signup = async (idToken, name, email) => {
         try {
             const data = await authService.signup(idToken, name, email);
-            const userObj = { id: data.user_id, name, email };
+            const userObj = {
+                id: data.user_id,
+                name: data.name || name || "User",
+                email: data.email || email
+            };
             setToken(data.access_token);
             setUser(userObj);
             localStorage.setItem('token', data.access_token);

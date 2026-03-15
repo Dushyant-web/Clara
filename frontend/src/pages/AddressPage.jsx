@@ -13,14 +13,14 @@ const AddressPage = () => {
     const [editingId, setEditingId] = useState(null);
     const [formData, setFormData] = useState({
         user_id: user?.id,
-        first_name: '',
-        last_name: '',
-        address_line1: '',
-        address_line2: '',
+        name: '',
+        address_line: '',
         city: '',
         state: '',
-        pincode: '',
-        phone: ''
+        postal_code: '',
+        phone: '',
+        label: '',
+        country: 'India'
     });
 
     useEffect(() => {
@@ -54,14 +54,14 @@ const AddressPage = () => {
             fetchAddresses();
             setFormData({
                 user_id: user?.id,
-                first_name: '',
-                last_name: '',
-                address_line1: '',
-                address_line2: '',
+                name: '',
+                address_line: '',
                 city: '',
                 state: '',
-                pincode: '',
-                phone: ''
+                postal_code: '',
+                phone: '',
+                label: '',
+                country: 'India'
             });
         } catch (error) {
             console.error('Error saving address:', error);
@@ -125,17 +125,29 @@ const AddressPage = () => {
                                                 <MapPin size={18} className="text-secondary/40" />
                                             </div>
                                             <div>
-                                                <h3 className="text-xs font-black uppercase tracking-widest">{address.first_name} {address.last_name}</h3>
+                                                <h3 className="text-xs font-black uppercase tracking-widest">
+                                                    {address.first_name || address.name || ''} {address.last_name || ''}
+                                                </h3>
                                                 <p className="text-[10px] text-gray-500 font-bold uppercase mt-1 tracking-widest">{address.phone}</p>
                                             </div>
                                         </div>
                                         <div className="flex gap-4">
                                             <button
-                                                onClick={() => {
-                                                    setEditingId(address.id);
-                                                    setFormData(address);
-                                                    setIsAdding(true);
-                                                }}
+                                            onClick={() => {
+                                                setEditingId(address.id);
+                                                setFormData({
+                                                    user_id: address.user_id,
+                                                    name: address.name || '',
+                                                    address_line: address.address_line || '',
+                                                    city: address.city || '',
+                                                    state: address.state || '',
+                                                    postal_code: address.postal_code || '',
+                                                    phone: address.phone || '',
+                                                    label: address.label || '',
+                                                    country: address.country || 'India'
+                                                });
+                                                setIsAdding(true);
+                                            }}
                                                 className="text-gray-400 hover:text-secondary transition-colors"
                                             >
                                                 <Edit2 size={16} />
@@ -149,9 +161,9 @@ const AddressPage = () => {
                                         </div>
                                     </div>
                                     <div className="text-[10px] text-gray-500 font-medium tracking-[0.2em] leading-relaxed uppercase">
-                                        {address.address_line1}<br />
+                                        {address.address_line1 || address.address_line}<br />
                                         {address.address_line2 && <>{address.address_line2}<br /></>}
-                                        {address.city}, {address.state} - {address.pincode}
+                                        {address.city}, {address.state} - {address.pincode || address.postal_code}
                                     </div>
                                 </motion.div>
                             ))
@@ -184,33 +196,24 @@ const AddressPage = () => {
                                     </button>
                                 </div>
                                 <form onSubmit={handleSubmit} className="space-y-6">
-                                    <div className="grid grid-cols-2 gap-6">
-                                        <input
-                                            placeholder="First Name"
-                                            required
-                                            value={formData.first_name}
-                                            onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                                            className="bg-transparent border-b border-secondary/20 py-4 text-xs font-bold focus:outline-none focus:border-secondary transition-all text-secondary uppercase tracking-widest"
-                                        />
-                                        <input
-                                            placeholder="Last Name"
-                                            required
-                                            value={formData.last_name}
-                                            onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                                            className="bg-transparent border-b border-secondary/20 py-4 text-xs font-bold focus:outline-none focus:border-secondary transition-all text-secondary uppercase tracking-widest"
-                                        />
-                                    </div>
                                     <input
-                                        placeholder="Address Line 1"
-                                        required
-                                        value={formData.address_line1}
-                                        onChange={(e) => setFormData({ ...formData, address_line1: e.target.value })}
+                                        placeholder="Label (Home / Office / etc)"
+                                        value={formData.label || ''}
+                                        onChange={(e) => setFormData({ ...formData, label: e.target.value })}
                                         className="w-full bg-transparent border-b border-secondary/20 py-4 text-xs font-bold focus:outline-none focus:border-secondary transition-all text-secondary uppercase tracking-widest"
                                     />
                                     <input
-                                        placeholder="Address Line 2 (Optional)"
-                                        value={formData.address_line2}
-                                        onChange={(e) => setFormData({ ...formData, address_line2: e.target.value })}
+                                        placeholder="Full Name"
+                                        required
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        className="w-full bg-transparent border-b border-secondary/20 py-4 text-xs font-bold focus:outline-none focus:border-secondary transition-all text-secondary uppercase tracking-widest"
+                                    />
+                                    <input
+                                        placeholder="Address"
+                                        required
+                                        value={formData.address_line}
+                                        onChange={(e) => setFormData({ ...formData, address_line: e.target.value })}
                                         className="w-full bg-transparent border-b border-secondary/20 py-4 text-xs font-bold focus:outline-none focus:border-secondary transition-all text-secondary uppercase tracking-widest"
                                     />
                                     <div className="grid grid-cols-2 gap-6">
@@ -233,8 +236,8 @@ const AddressPage = () => {
                                         <input
                                             placeholder="Pincode"
                                             required
-                                            value={formData.pincode}
-                                            onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+                                            value={formData.postal_code}
+                                            onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
                                             className="bg-transparent border-b border-secondary/20 py-4 text-xs font-bold focus:outline-none focus:border-secondary transition-all text-secondary uppercase tracking-widest"
                                         />
                                         <input
