@@ -40,6 +40,7 @@ def get_products(
     category: str | None = Query(None),
     sort: str | None = Query("newest"),
     min_price: float | None = Query(None),
+    max_price: float | None = Query(None),
     db: Session = Depends(get_db)
 ):
 
@@ -55,9 +56,12 @@ def get_products(
         if cat:
             query = query.filter(Product.category_id == cat.id)
 
-    # Price filter
+    # Price filters
     if min_price is not None:
         query = query.filter(Product.price >= min_price)
+
+    if max_price is not None:
+        query = query.filter(Product.price <= max_price)
 
     # Sorting
     if sort == "price_asc":
