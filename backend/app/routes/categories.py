@@ -46,7 +46,7 @@ def get_products(
     db: Session = Depends(get_db)
 ):
 
-    query = db.query(Product)
+    query = db.query(Product, Category.slug.label("category_slug"), Category.name.label("category_name")).join(Category, Product.category_id == Category.id)
 
     # Search (simple partial search, your trigram search can replace this later)
     if search:
@@ -85,12 +85,25 @@ def get_products(
 
     total = query.count()
 
-    products = (
+    results = (
         query
         .offset((page - 1) * limit)
         .limit(limit)
         .all()
     )
+
+    products = []
+    for product, category_slug, category_name in results:
+        products.append({
+            "id": product.id,
+            "name": product.name,
+            "price": product.price,
+            "main_image": getattr(product, "main_image", None),
+            "hover_image": getattr(product, "hover_image", None),
+            "created_at": product.created_at,
+            "category_slug": category_slug,
+            "category": category_name
+        })
 
     return {
         "products": products,
