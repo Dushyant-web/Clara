@@ -15,39 +15,24 @@ router = APIRouter()
 @router.post("/checkout")
 def checkout(user_id: int, promo_code: str | None = None, idempotency_key: str | None = None, db: Session = Depends(get_db)):
 
-    # --- Idempotency check ---
-    if idempotency_key:
-        existing_order = db.query(Order).filter(
-            Order.user_id == user_id,
-            Order.status == "pending"
-        ).order_by(Order.created_at.desc()).first()
+    # --- Cleanup previous unpaid order ---
+    existing_order = db.query(Order).filter(
+        Order.user_id == user_id,
+        Order.status == "pending"
+    ).order_by(Order.created_at.desc()).first()
 
-        if existing_order:
-            # If promo_code is provided, update the existing order's amount
-            if promo_code:
-                try:
-                    from app.routes.promo import apply_promo
-                    from app.schemas.checkout_schema import PromoApplyRequest
-                    # apply_promo will update existing_order.total_amount because we pass order_id
-                    res = apply_promo(
-                        PromoApplyRequest(code=promo_code, user_id=user_id, order_id=existing_order.id),
-                        db
-                    )
-                    # We continue to return the existing order
-                    return {
-                        "message": "order updated with promo",
-                        "order_id": existing_order.id,
-                        "total": float(res["final_amount"])
-                    }
-                except Exception as e:
-                    # If promo fails, we still return the existing order's current total
-                    pass
-            
-            return {
-                "message": "order already created",
-                "order_id": existing_order.id,
-                "total": float(existing_order.total_amount)
-            }
+    if existing_order:
+        # delete previous unpaid order items
+        db.query(OrderItem).filter(OrderItem.order_id == existing_order.id).delete()
+
+        # release previous inventory reservations
+        db.query(InventoryReservation).filter(
+            InventoryReservation.user_id == user_id
+        ).delete()
+
+        # delete the old order
+        db.delete(existing_order)
+        db.commit()
 
     # Transaction handled by FastAPI session
 
