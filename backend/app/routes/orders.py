@@ -172,3 +172,13 @@ def get_user_orders(user_id: int, db: Session = Depends(get_db)):
         })
 
     return result
+
+@router.delete("/orders/unpaid/{user_id}")
+def delete_unpaid_orders(user_id: int, db: Session = Depends(get_db)):
+    db.query(Order).filter(
+        Order.user_id == user_id,
+        Order.status == "pending"
+    ).delete()
+    
+    db.commit()
+    return {"message": "Unpaid orders cleared"}
