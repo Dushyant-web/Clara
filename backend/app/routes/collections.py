@@ -82,3 +82,12 @@ def get_collection_images(collection_id: int, db: Session = Depends(get_db)):
         }
         for img in images
     ]
+
+@router.get("/collections/{slug}")
+def get_collection(slug: str, db: Session = Depends(get_db)):
+    collection = db.query(Collection).filter(Collection.slug == slug).first()
+
+    if not collection:
+        raise HTTPException(status_code=404, detail="Collection not found")
+
+    return collection
