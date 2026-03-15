@@ -55,7 +55,7 @@ def get_collection_products(slug: str, db: Session = Depends(get_db)):
     return products
 
 
-@router.delete("/admin/{collection_id}")
+@router.delete("/admin/collection/{collection_id}")
 def delete_collection(collection_id: int, db: Session = Depends(get_db)):
 
     collection = db.query(Collection).filter(Collection.id == collection_id).first()
@@ -68,7 +68,7 @@ def delete_collection(collection_id: int, db: Session = Depends(get_db)):
 
     return {"message": "Collection deleted"}
 
-@router.get("/{collection_id}/images")
+@router.get("/collections/{collection_id}/images")
 def get_collection_images(collection_id: int, db: Session = Depends(get_db)):
 
     images = db.query(CollectionImage).filter(
