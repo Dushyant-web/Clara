@@ -63,12 +63,12 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
             "color": variant.color,
             "sku": variant.sku,
             "quantity": item.quantity,
-            "price": float(item.price)
+            "price": float(item.price or 0)
         })
 
     return {
         "id": order.id,
-        "total_amount": float(order.total_amount),
+        "total_amount": float(order.total_amount or 0),
         "status": order.status,
         "created_at": order.created_at,
         "items": items
@@ -165,7 +165,7 @@ def get_user_orders(user_id: int, db: Session = Depends(get_db)):
         result.append({
             "order_id": order.id,
             "status": order.status,
-            "total_amount": float(order.total_amount),
+            "total_amount": float(order.total_amount or 0),
             "created_at": order.created_at,
             "items": enriched_items,
             "shipping_address": shipping_address
