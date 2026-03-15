@@ -376,6 +376,7 @@ def add_collection_image(collection_id: int, image_url: str, db: Session = Depen
         "image": new_image.image_url
     }
 
+
 @router.post("/admin/lookbook-image")
 def add_lookbook_image(lookbook_id: int, image_url: str, db: Session = Depends(get_db)):
 
@@ -391,6 +392,25 @@ def add_lookbook_image(lookbook_id: int, image_url: str, db: Session = Depends(g
     return {
         "message": "Lookbook image added",
         "image": new_image.image_url
+    }
+
+# ----------- DELETE LOOKBOOK -----------
+@router.delete("/lookbook/{lookbook_id}")
+def delete_lookbook(lookbook_id: int, db: Session = Depends(get_db)):
+
+    from app.models.lookbook import Lookbook
+
+    lookbook = db.query(Lookbook).filter(Lookbook.id == lookbook_id).first()
+
+    if not lookbook:
+        raise HTTPException(status_code=404, detail="Lookbook not found")
+
+    db.delete(lookbook)
+    db.commit()
+
+    return {
+        "message": "Lookbook deleted",
+        "lookbook_id": lookbook_id
     }
 
 # ---------------- REVIEW MANAGEMENT ----------------
