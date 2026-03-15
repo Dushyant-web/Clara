@@ -169,6 +169,39 @@ def get_product_images(product_id: int, db: Session = Depends(get_db)):
         "gallery": gallery
     }
 
+@router.get("/products/trending")
+def get_trending_products(
+    limit: int = Query(20, ge=1, le=50),
+    db: Session = Depends(get_db)
+):
+    """
+    Trending products endpoint.
+    Until sales tracking exists, this uses a weighted random selection
+    of active products so the overlay does not always show the newest items.
+    """
+
+    products = (
+        db.query(Product)
+        .order_by(func.random())
+        .limit(limit)
+        .all()
+    )
+
+    results = []
+
+    for p in products:
+        results.append({
+            "id": p.id,
+            "name": p.name,
+            "price": p.price,
+            "main_image": p.main_image,
+            "hover_image": p.hover_image
+        })
+
+    return {
+        "products": results
+    }
+
 @router.get("/products/search")
 def search_products(q: str, db: Session = Depends(get_db)):
 
