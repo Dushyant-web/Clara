@@ -359,7 +359,7 @@ def get_product_images(product_id: int, db: Session = Depends(get_db)):
         for img in images
     ]
 
-@router.post("/admin/collection-image")
+@router.post("/collection-image")
 def add_collection_image(collection_id: int, image_url: str, db: Session = Depends(get_db)):
 
     new_image = CollectionImage(
@@ -377,7 +377,7 @@ def add_collection_image(collection_id: int, image_url: str, db: Session = Depen
     }
 
 
-@router.post("/admin/lookbook-image")
+@router.post("/lookbook-image")
 def add_lookbook_image(lookbook_id: int, image_url: str, db: Session = Depends(get_db)):
 
     new_image = LookbookImage(
