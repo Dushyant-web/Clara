@@ -22,4 +22,7 @@ class Order(Base):
 
     total_amount = Column(Numeric(10, 2))
 
+    # Shipping address reference (required for logistics / Shiprocket)
+    shipping_address_id = Column(Integer, ForeignKey("addresses.id"))
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
