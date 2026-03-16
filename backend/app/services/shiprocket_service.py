@@ -66,12 +66,18 @@ def create_shipment(order, db: Session):
         Address.id == order.shipping_address_id
     ).first()
 
+    # Split name into first and last (Shiprocket requires both)
+    name_parts = (address.name or "Customer").strip().split(" ", 1)
+    billing_first_name = name_parts[0]
+    billing_last_name = name_parts[1] if len(name_parts) > 1 else "Customer"
+
     payload = {
         "order_id": f"CLARA_{order.id}",
         "order_date": str(order.created_at.date()),
         "pickup_location": "Primary",
 
-        "billing_customer_name": address.name,
+        "billing_first_name": billing_first_name,
+        "billing_last_name": billing_last_name,
         "billing_address": address.address_line,
         "billing_city": address.city,
         "billing_pincode": address.postal_code,
