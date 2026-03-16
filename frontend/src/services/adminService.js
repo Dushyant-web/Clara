@@ -1,6 +1,6 @@
 import api from './api';
 
-export const adminService = {
+const adminService = {
     // Products
     createProduct: async (productData) => {
         const response = await api.post('/admin/product', null, { params: productData });
@@ -13,6 +13,14 @@ export const adminService = {
     },
     deleteProduct: async (productId) => {
         const response = await api.delete(`/admin/product/${productId}`);
+        return response.data;
+    },
+    assignCategory: async (productId, categoryId) => {
+        const response = await api.patch(`/admin/product/${productId}/category`, null, { params: { category_id: categoryId } });
+        return response.data;
+    },
+    assignCollection: async (productId, collectionId) => {
+        const response = await api.patch(`/admin/product/${productId}/collection`, null, { params: { collection_id: collectionId } });
         return response.data;
     },
 
@@ -190,5 +198,14 @@ export const adminService = {
         // paymentId is from Razorpay, amount in paise
         const response = await api.post('/admin/refund', null, { params: { payment_id: paymentId, amount } });
         return response.data;
-    }
+    },
+
+    deleteLookbookImage: async (imageId) => {
+        const response = await api.delete(`/admin/lookbook-image/${imageId}`);
+        return response.data;
+    },
+
 };
+
+export default adminService;
+export { adminService };

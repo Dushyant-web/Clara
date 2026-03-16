@@ -1,8 +1,24 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Instagram, Twitter, Facebook, ArrowRight } from 'lucide-react';
+import { categoryService } from '../services/categoryService';
 
 const Footer = () => {
+    const [categories, setCategories] = useState([]);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const data = await categoryService.getCategories();
+                const fetchedCats = Array.isArray(data) ? data : data.categories || [];
+                setCategories(fetchedCats.slice(0, 4)); // Only 4 categories max limit
+            } catch (err) {
+                console.error("Failed to load generic categories", err);
+            }
+        };
+        fetchCategories();
+    }, []);
+
     return (
         <footer className="bg-primary pt-24 pb-12 border-t border-secondary/5 transition-colors duration-500">
             <div className="container mx-auto px-6">
@@ -25,10 +41,13 @@ const Footer = () => {
                         <h4 className="text-xs uppercase tracking-[0.3em] font-semibold mb-8">Shop</h4>
                         <ul className="flex flex-col gap-4 text-gray-400 text-sm">
                             <li><Link to="/shop" className="hover:text-white transition-colors">All Products</Link></li>
-                            <li><Link to="/shop?cat=hoodies" className="hover:text-white transition-colors">Hoodies</Link></li>
-                            <li><Link to="/shop?cat=t-shirts" className="hover:text-white transition-colors">T-Shirts</Link></li>
-                            <li><Link to="/shop?cat=outerwear" className="hover:text-white transition-colors">Outerwear</Link></li>
-                            <li><Link to="/shop?cat=accessories" className="hover:text-white transition-colors">Accessories</Link></li>
+                            {categories.map((cat, idx) => (
+                                <li key={idx}>
+                                    <Link to={`/shop?cat=${cat.slug || cat.id}`} className="hover:text-white transition-colors capitalize">
+                                        {cat.name}
+                                    </Link>
+                                </li>
+                            ))}
                         </ul>
                     </div>
 
@@ -37,10 +56,10 @@ const Footer = () => {
                         <h4 className="text-xs uppercase tracking-[0.3em] font-semibold mb-8">Support</h4>
                         <ul className="flex flex-col gap-4 text-gray-400 text-sm">
                             <li><Link to="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
-                            <li><Link to="/shipping" className="hover:text-white transition-colors">Shipping & Returns</Link></li>
+                            <li><Link to="/shipping-returns" className="hover:text-white transition-colors">Shipping & Returns</Link></li>
                             <li><Link to="/faq" className="hover:text-white transition-colors">FAQ</Link></li>
-                            <li><Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
-                            <li><Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link></li>
+                            <li><Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+                            <li><Link to="/terms-of-service" className="hover:text-white transition-colors">Terms of Service</Link></li>
                         </ul>
                     </div>
 

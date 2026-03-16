@@ -1,6 +1,94 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '../services/api';
+
+const ImageCarousel = ({ images, fallbackImage, title }) => {
+    const [currentIndex, setCurrentIndex] = useState(0);
+
+    useEffect(() => {
+        if (!images || images.length <= 1) return;
+        
+        const interval = setInterval(() => {
+            setCurrentIndex((prev) => (prev + 1) % images.length);
+        }, 5000);
+        
+        return () => clearInterval(interval);
+    }, [images]);
+
+    const handleNext = (e) => {
+        e.stopPropagation();
+        if (images && images.length > 1) {
+            setCurrentIndex((prev) => (prev + 1) % images.length);
+        }
+    };
+
+    if (!images || images.length === 0) {
+        return (
+            <img
+                src={fallbackImage || 'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200'}
+                alt={title}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                    e.target.src = 'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200';
+                    e.target.onerror = null;
+                }}
+            />
+        );
+    }
+
+    return (
+        <div className="relative w-full h-full overflow-hidden group cursor-pointer bg-secondary/5" onClick={handleNext}>
+            <AnimatePresence>
+                <motion.img
+                    key={currentIndex}
+                    src={images[currentIndex].image_url}
+                    initial={{ opacity: 0, scale: 1.05 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 1.2, ease: [0.25, 1, 0.5, 1] }}
+                    alt={`${title} - view ${currentIndex + 1}`}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    onError={(e) => {
+                        e.target.src = fallbackImage || 'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200';
+                        e.target.onerror = null;
+                    }}
+                />
+            </AnimatePresence>
+            
+            {images.length > 1 && (
+                <>
+                    <div className="absolute inset-y-0 right-0 w-1/3 flex items-center justify-end px-6 md:px-12 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30">
+                        <div className="w-12 h-12 rounded-full border border-white/30 backdrop-blur-md bg-black/20 flex items-center justify-center text-white hover:bg-white hover:text-black transition-all duration-300">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                        </div>
+                    </div>
+                    <div className="absolute inset-y-0 left-0 w-1/3 flex items-center justify-start px-6 md:px-12 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30">
+                        <div 
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+                            }}
+                            className="w-12 h-12 rounded-full border border-white/30 backdrop-blur-md bg-black/20 flex items-center justify-center text-white hover:bg-white hover:text-black transition-all duration-300"
+                        >
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                        </div>
+                    </div>
+
+                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 z-40 bg-black/20 px-4 py-2 rounded-full backdrop-blur-md">
+                        {images.map((_, i) => (
+                            <div 
+                                key={i} 
+                                onClick={(e) => { e.stopPropagation(); setCurrentIndex(i); }}
+                                className={`h-1.5 rounded-full transition-all duration-700 cursor-pointer ${i === currentIndex ? 'bg-white w-8' : 'bg-white/40 w-2.5 hover:bg-white/80'}`} 
+                            />
+                        ))}
+                    </div>
+                </>
+            )}
+        </div>
+    );
+};
+
 
 const LookbookPage = () => {
     const [lookbooks, setLookbooks] = useState([]);
@@ -22,6 +110,7 @@ const LookbookPage = () => {
 
                             return {
                                 ...look,
+                                images: Array.isArray(images) ? images : [],
                                 image_url: images?.[0]?.image_url || look.image_url || null
                             };
                         } catch (e) {
@@ -97,30 +186,30 @@ const LookbookPage = () => {
                                         transition={{ duration: 1.2, ease: [0.33, 1, 0.68, 1] }}
                                         className="relative aspect-[3/4] md:aspect-[16/10] bg-secondary/5 border border-secondary/5"
                                     >
-                                        <img
-                                            src={look.image_url || look.image || 'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200'}
-                                            alt={look.title}
-                                            className="w-full h-full object-cover grayscale brightness-75 hover:grayscale-0 hover:brightness-100 transition-all duration-1000"
-                                            onError={(e) => {
-                                                e.target.src = 'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200';
-                                                e.target.onerror = null;
-                                            }}
+                                        <ImageCarousel 
+                                            images={look.images} 
+                                            title={look.title} 
+                                            fallbackImage={look.image_url || look.image}
                                         />
                                     </motion.div>
                                 </div>
 
                                 <div className="w-full lg:w-2/5 flex flex-col items-start lg:px-12">
-                                    <span className="text-[10px] uppercase tracking-[0.4em] text-gray-500 mb-6 block font-bold">Volume {idx + 1}</span>
+                                    <span className="text-[10px] uppercase tracking-[0.4em] text-gray-500 mb-6 block font-bold">
+                                        {look.season || `Season ${new Date().getFullYear()}`}
+                                    </span>
                                     <h2 className="text-4xl md:text-6xl font-serif tracking-tighter mb-8 uppercase leading-tight">
                                         {look.title}
                                     </h2>
-                                    <p className="text-gray-500 text-[10px] leading-relaxed mb-10 max-w-md uppercase tracking-widest font-bold">
-                                        {look.description || "Experimental textures meeting architectural structure. A study in contemporary silhouette."}
-                                    </p>
+                                    {look.description && (
+                                        <p className="text-gray-500 text-[10px] leading-relaxed mb-10 max-w-md uppercase tracking-widest font-bold">
+                                            {look.description}
+                                        </p>
+                                    )}
                                     <div className="h-px w-24 bg-secondary/20 mb-10" />
                                     <div className="flex gap-8 text-[10px] uppercase tracking-[0.3em] font-bold text-gray-500">
-                                        <span>Digital 35mm</span>
-                                        <span>Paris, France</span>
+                                        <span>{look.images?.length || 1} {look.images?.length === 1 ? 'Look' : 'Looks'}</span>
+                                        <span>Archive No. {String(idx + 1).padStart(3, '0')}</span>
                                     </div>
                                 </div>
                             </motion.section>

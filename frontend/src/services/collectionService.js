@@ -12,5 +12,23 @@ export const collectionService = {
     getCollectionImages: async (id) => {
         const response = await api.get(`/collections/${id}/images`);
         return response.data;
-    }
+    },
+    createCollection: async (collectionData) => {
+        const response = await api.post('/admin/collection', null, { params: collectionData });
+        return response.data;
+    },
+    deleteCollection: async (id) => {
+        const response = await api.delete(`/admin/collection/${id}`);
+        return response.data;
+    },
+    addCollectionImage: async (imageData) => {
+        const response = await api.post('/admin/collection-image', null, { params: imageData });
+        return response.data;
+    },
+
+    getCollection: async (slug) => {
+        const response = await api.get(`/collections/${slug}`);
+        return response.data;
+    },
 };
+

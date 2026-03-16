@@ -7,12 +7,37 @@ import { collectionService } from '../services/collectionService'
 const CollectionsPage = () => {
     const [collections, setCollections] = useState([])
     const [loading, setLoading] = useState(true)
+    const [imageIndexes, setImageIndexes] = useState({})
 
     useEffect(() => {
         const fetchCollections = async () => {
             try {
                 const data = await collectionService.getCollections()
-                setCollections(Array.isArray(data) ? data : (data.collections || []))
+
+                const baseCollections = Array.isArray(data) ? data : (data.collections || [])
+
+                // Fetch hero image for each collection
+                const collectionsWithImages = await Promise.all(
+                    baseCollections.map(async (col) => {
+                        try {
+                            const images = await collectionService.getCollectionImages(col.id)
+                        
+                            return {
+                                ...col,
+                                images: images && images.length > 0 ? images : (col.hero_image ? [{ image_url: col.hero_image }] : []),
+                                image: col.hero_image || images?.[0]?.image_url || null
+                            }
+                        } catch (err) {
+                            return {
+                                ...col,
+                                images: col.hero_image ? [{ image_url: col.hero_image }] : [],
+                                image: col.hero_image || null
+                            }
+                        }
+                    })
+                )
+
+                setCollections(collectionsWithImages)
             } catch (err) {
                 console.error('Failed to load collections', err)
             } finally {
@@ -67,16 +92,43 @@ const CollectionsPage = () => {
                                 viewport={{ once: true }}
                                 transition={{ duration: 0.8, delay: idx * 0.1 }}
                             >
-                                <Link to={`/shop?category=${collection.category || collection.name}`} className="group block">
+                                <Link to={`/collections/${collection.slug}`} className="group block">
                                     <div className="relative aspect-[4/5] overflow-hidden mb-8 border border-secondary/5 bg-secondary/5">
                                         <motion.img
                                             whileHover={{ scale: 1.05 }}
                                             transition={{ duration: 1.2, ease: [0.33, 1, 0.68, 1] }}
-                                            src={collection.image}
+                                            src={collection.images?.[imageIndexes[collection.id] || 0]?.image_url || collection.image}
                                             alt={collection.title || collection.name}
                                             className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
                                         />
                                         <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-700" />
+                                        {collection.images && collection.images.length > 1 && (
+                                            <>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.preventDefault()
+                                                        const current = imageIndexes[collection.id] || 0
+                                                        const prev = (current - 1 + collection.images.length) % collection.images.length
+                                                        setImageIndexes(prevState => ({ ...prevState, [collection.id]: prev }))
+                                                    }}
+                                                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 text-white w-8 h-8 flex items-center justify-center rounded-full"
+                                                >
+                                                    ‹
+                                                </button>
+
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.preventDefault()
+                                                        const current = imageIndexes[collection.id] || 0
+                                                        const next = (current + 1) % collection.images.length
+                                                        setImageIndexes(prevState => ({ ...prevState, [collection.id]: next }))
+                                                    }}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 text-white w-8 h-8 flex items-center justify-center rounded-full"
+                                                >
+                                                    ›
+                                                </button>
+                                            </>
+                                        )}
                                     </div>
 
                                     <div className="flex justify-between items-end">

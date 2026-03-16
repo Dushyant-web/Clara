@@ -13,7 +13,10 @@ import {
     Tag,
     Users,
     MessageCircle,
-    Activity
+    Activity,
+    Layers,
+    FolderGit2,
+    Image as ImageIcon
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -29,6 +32,9 @@ const AdminLayout = () => {
         { name: 'Promos', path: '/admin/promos', icon: Tag },
         { name: 'Newsletter', path: '/admin/newsletter', icon: Mail },
         { name: 'Analytics', path: '/admin/analytics', icon: Activity },
+        { name: 'Categories', path: '/admin/categories', icon: FolderGit2 },
+        { name: 'Collections', path: '/admin/collections', icon: Layers },
+        { name: 'Lookbooks', path: '/admin/lookbooks', icon: ImageIcon },
     ];
 
     return (

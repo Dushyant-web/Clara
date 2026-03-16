@@ -15,16 +15,26 @@ const CollectionPage = () => {
     useEffect(() => {
         const fetchCollectionData = async () => {
             try {
-                // Fetch collection details
-                const collections = await collectionService.getCollections();
-                const currentCollection = collections.find(c => c.slug === slug || c.id.toString() === slug);
-                setCollection(currentCollection);
+                setLoading(true);
 
-                // Fetch collection products
-                const productData = await collectionService.getCollectionProducts(slug);
-                setProducts(productData);
+                // Get all collections
+                const data = await collectionService.getCollections();
+                const baseCollections = Array.isArray(data) ? data : (data.collections || []);
+
+                // Find current collection by slug
+                const currentCollection = baseCollections.find(c => c.slug === slug);
+                setCollection(currentCollection || null);
+
+                // Fetch products in this collection
+                if (currentCollection) {
+                    const productData = await collectionService.getCollectionProducts(currentCollection.slug);
+                    setProducts(productData || []);
+                } else {
+                    setProducts([]);
+                }
+
             } catch (err) {
-                console.error('Failed to load collection data', err);
+                console.error('Failed to load collection', err);
             } finally {
                 setLoading(false);
             }

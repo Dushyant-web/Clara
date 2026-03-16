@@ -18,6 +18,11 @@ import LookbookPage from './pages/LookbookPage';
 import CollectionsPage from './pages/CollectionsPage';
 import CollectionPage from './pages/CollectionPage';
 import AboutPage from './pages/AboutPage';
+import ContactPage from './pages/ContactPage';
+import ShippingReturnsPage from './pages/ShippingReturnsPage';
+import FaqPage from './pages/FaqPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import AccountPage from './pages/AccountPage';
@@ -37,6 +42,9 @@ import AdminNewsletter from './admin/AdminNewsletter';
 import AdminPromos from './admin/AdminPromos';
 import AdminAnalytics from './admin/AdminAnalytics';
 import AdminSettings from './admin/AdminSettings';
+import AdminCategories from './admin/AdminCategories';
+import AdminCollections from './admin/AdminCollections';
+import AdminLookbooks from './admin/AdminLookbooks';
 
 // Contexts
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -67,6 +75,11 @@ function App() {
                     <Route path="/collections/:slug" element={<CollectionPage />} />
                     <Route path="/lookbook" element={<LookbookPage />} />
                     <Route path="/about" element={<AboutPage />} />
+                    <Route path="/contact" element={<ContactPage />} />
+                    <Route path="/shipping-returns" element={<ShippingReturnsPage />} />
+                    <Route path="/faq" element={<FaqPage />} />
+                    <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                    <Route path="/terms-of-service" element={<TermsOfServicePage />} />
                     <Route path="/products/:id" element={<ProductPage />} />
                     <Route path="/cart" element={<CartPage />} />
                     <Route path="/login" element={<LoginPage />} />
@@ -89,6 +102,9 @@ function App() {
                       <Route path="newsletter" element={<AdminNewsletter />} />
                       <Route path="promos" element={<AdminPromos />} />
                       <Route path="analytics" element={<AdminAnalytics />} />
+                      <Route path="categories" element={<AdminCategories />} />
+                      <Route path="collections" element={<AdminCollections />} />
+                      <Route path="lookbooks" element={<AdminLookbooks />} />
                       <Route path="settings" element={<AdminSettings />} />
                     </Route>
                   </Routes>
