@@ -11,6 +11,7 @@ from app.models.order_item import OrderItem
 from app.models.product_variant import ProductVariant
 from app.models.inventory_reservation import InventoryReservation
 from app.schemas.checkout_schema import PaymentCreateRequest, PaymentConfirmRequest
+from app.services.shiprocket_service import create_shipment
 
 from fastapi import Header
 
@@ -143,6 +144,13 @@ def confirm_payment(request: PaymentConfirmRequest, db: Session = Depends(get_db
         # Clear cart upon successful payment
         db.query(CartItem).filter(CartItem.user_id == order.user_id).delete()
 
+        # Create shipment in Shiprocket after successful payment
+        try:
+            create_shipment(order, db)
+        except Exception as e:
+            # Do not break payment flow if shipping fails
+            print("Shiprocket shipment creation failed:", str(e))
+
     db.commit()
 
     return {
@@ -225,6 +233,12 @@ async def razorpay_webhook(request: Request, db: Session = Depends(get_db)):
 
         # Clear cart upon successful payment
         db.query(CartItem).filter(CartItem.user_id == order.user_id).delete()
+
+        # Create shipment in Shiprocket after webhook payment confirmation
+        try:
+            create_shipment(order, db)
+        except Exception as e:
+            print("Shiprocket shipment creation failed:", str(e))
 
     db.commit()
 
