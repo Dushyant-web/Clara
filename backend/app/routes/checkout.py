@@ -31,7 +31,7 @@ def ensure_reservation_index(db: Session):
 
 
 @router.post("/checkout")
-def checkout(user_id: int, promo_code: str | None = None, idempotency_key: str | None = None, db: Session = Depends(get_db)):
+def checkout(user_id: int, address_id: int, promo_code: str | None = None, idempotency_key: str | None = None, db: Session = Depends(get_db)):
     ensure_reservation_index(db)
     # --- Cleanup expired inventory reservations using expires_at ---
     now = datetime.utcnow()
@@ -123,7 +123,8 @@ def checkout(user_id: int, promo_code: str | None = None, idempotency_key: str |
 
     order = Order(
         user_id=user_id,
-        total_amount=order_amount
+        total_amount=order_amount,
+        shipping_address_id=address_id
     )
 
     db.add(order)
