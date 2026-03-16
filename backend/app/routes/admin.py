@@ -1107,3 +1107,59 @@ def get_unassigned_products(db: Session = Depends(get_db)):
     products = db.query(Product).filter(Product.category_id == None).all()
 
     return products
+
+# ----------- REORDER LOOKBOOK IMAGES -----------
+
+@router.patch("/lookbook-images/reorder")
+def reorder_lookbook_images(images: list[dict], db: Session = Depends(get_db)):
+    """
+    images format:
+    [
+        {"image_id": 1, "position": 0},
+        {"image_id": 2, "position": 1}
+    ]
+    """
+
+    for img in images:
+        image = db.query(LookbookImage).filter(
+            LookbookImage.id == img["image_id"]
+        ).first()
+
+        if image:
+            image.position = img["position"]
+
+    db.commit()
+
+    return {"message": "Lookbook image order updated"}
+
+# ----------- DELETE LOOKBOOK IMAGE -----------
+
+@router.delete("/lookbook-image/{image_id}")
+def delete_lookbook_image(image_id: int, db: Session = Depends(get_db)):
+
+    image = db.query(LookbookImage).filter(
+        LookbookImage.id == image_id
+    ).first()
+
+    if not image:
+        raise HTTPException(status_code=404, detail="Lookbook image not found")
+
+    db.delete(image)
+    db.commit()
+
+    return {
+        "message": "Lookbook image deleted",
+        "image_id": image_id
+    }
+
+@router.get("/lookbook/{lookbook_id}/images")
+def get_lookbook_images(lookbook_id: int, db: Session = Depends(get_db)):
+
+    images = (
+        db.query(LookbookImage)
+        .filter(LookbookImage.lookbook_id == lookbook_id)
+        .order_by(LookbookImage.position.asc())
+        .all()
+    )
+
+    return images
