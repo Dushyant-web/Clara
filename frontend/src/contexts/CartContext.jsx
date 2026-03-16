@@ -95,6 +95,15 @@ export const CartProvider = ({ children }) => {
             console.error('Failed to resolve variant details', error);
         }
 
+        const uniqueKey = `${product.id}-${finalVariantId || 'default'}`;
+
+        // Pre-check for removal logic to prevent negative/zero quantities
+        const existingItem = cartItems.find(i => i.uniqueKey === uniqueKey);
+        if (existingItem && existingItem.quantity + quantity <= 0) {
+            removeFromCart(existingItem.itemId || existingItem.id, uniqueKey);
+            return;
+        }
+
         // Create the variant-specific item object
         const activeItem = {
             ...product,
@@ -105,7 +114,7 @@ export const CartProvider = ({ children }) => {
             price: variantDetails?.price || product.price,
             image: variantDetails?.image_url || variantDetails?.image || variantDetails?.images?.main || product.variant_image || product.main_image || product.image || 'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200',
             variantImage: variantDetails?.image_url || variantDetails?.image || variantDetails?.images?.main || product.variant_image || product.main_image || product.image || null,
-            uniqueKey: `${product.id}-${finalVariantId || 'default'}`
+            uniqueKey: uniqueKey
         };
 
         // If user logged in, sync with backend
@@ -121,12 +130,19 @@ export const CartProvider = ({ children }) => {
             setCartItems(prev => {
                 const existing = prev.find(i => i.uniqueKey === activeItem.uniqueKey);
                 if (existing) {
+                    // Fallback to strict validation to prevent < 1
+                    if (existing.quantity + quantity <= 0) {
+                        return prev.filter(i => i.uniqueKey !== activeItem.uniqueKey);
+                    }
                     return prev.map(i => i.uniqueKey === activeItem.uniqueKey
                         ? { ...i, quantity: i.quantity + quantity }
                         : i
                     );
                 }
-                return [...prev, { ...activeItem, quantity }];
+                if (quantity > 0) {
+                    return [...prev, { ...activeItem, quantity }];
+                }
+                return prev;
             });
         }
         setIsCartOpen(true);
