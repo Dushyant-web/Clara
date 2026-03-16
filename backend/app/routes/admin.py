@@ -1163,3 +1163,12 @@ def get_lookbook_images(lookbook_id: int, db: Session = Depends(get_db)):
     )
 
     return images
+
+from app.services.shiprocket_service import get_shiprocket_token
+
+@router.get("/shiprocket/test")
+def test_shiprocket():
+
+    token = get_shiprocket_token()
+
+    return {"token": token}
