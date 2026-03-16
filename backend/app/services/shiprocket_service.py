@@ -16,4 +16,9 @@ def get_shiprocket_token():
 
     data = response.json()
 
+    print("SHIPROCKET RESPONSE:", data)
+
+    if "token" not in data:
+        raise Exception(f"Shiprocket auth failed: {data}")
+
     return data["token"]
