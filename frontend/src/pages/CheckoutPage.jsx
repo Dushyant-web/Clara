@@ -238,11 +238,21 @@ const CheckoutPage = () => {
                 }
 
                 // 1. Create Checkout / Order with unique idempotency key
+                if (!selectedAddress) {
+                    alert("Please select or save a shipping address before placing the order.");
+                    setIsProcessing(false);
+                    return;
+                }
                 const idempotencyKey = (typeof crypto.randomUUID === 'function')
                     ? crypto.randomUUID()
                     : Math.random().toString(36).substring(2) + Date.now().toString(36);
 
-                const checkoutResponse = await orderService.createCheckout(user.id, idempotencyKey, discount > 0 ? promoCode : null)
+                const checkoutResponse = await orderService.createCheckout(
+                    user.id,
+                    selectedAddress,
+                    idempotencyKey,
+                    discount > 0 ? promoCode : null
+                )
                 if (checkoutResponse?.total !== undefined) {
                     setServerTotal(checkoutResponse.total)
                 }

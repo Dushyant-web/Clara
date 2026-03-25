@@ -32,7 +32,9 @@ import CheckoutPage from './pages/CheckoutPage';
 import OrderConfirmationPage from './pages/OrderConfirmationPage';
 import OrderTrackingPage from './pages/OrderTrackingPage';
 import AddressPage from './pages/AddressPage';
+import AdminLoginPage from './pages/AdminLoginPage';
 import AdminLayout from './admin/AdminLayout';
+
 import AdminDashboard from './admin/AdminDashboard';
 import AdminInventory from './admin/AdminInventory';
 import AdminOrders from './admin/AdminOrders';
@@ -93,7 +95,9 @@ function App() {
                     <Route path="/account/addresses" element={<AddressPage />} />
 
                     {/* Admin Routes */}
-                    <Route path="/admin" element={<AdminLayout />}>
+                        <Route path="/admin/login" element={<AdminLoginPage />} />
+                        <Route path="/admin" element={<AdminLayout />}>
+
                       <Route index element={<AdminDashboard />} />
                       <Route path="products" element={<AdminInventory />} />
                       <Route path="orders" element={<AdminOrders />} />

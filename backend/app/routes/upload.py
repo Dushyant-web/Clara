@@ -4,7 +4,11 @@ import cloudinary
 import cloudinary.uploader
 import os
 
+from app.utils.admin_auth import admin_required
+from fastapi import Depends
+
 router = APIRouter()
+
 
 # Cloudinary config (set these in environment variables)
 cloudinary.config(
@@ -14,8 +18,9 @@ cloudinary.config(
 )
 
 
-@router.post("/upload/image")
+@router.post("/upload/image", dependencies=[Depends(admin_required)])
 async def upload_image(file: UploadFile = File(...)):
+
     result = cloudinary.uploader.upload(file.file, resource_type="image")
 
     return {
@@ -24,8 +29,9 @@ async def upload_image(file: UploadFile = File(...)):
     }
 
 
-@router.post("/upload/video")
+@router.post("/upload/video", dependencies=[Depends(admin_required)])
 async def upload_video(file: UploadFile = File(...)):
+
     result = cloudinary.uploader.upload(file.file, resource_type="video")
 
     return {

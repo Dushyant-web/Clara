@@ -12,11 +12,15 @@ from sqlalchemy.exc import IntegrityError
 
 
 
+from app.utils.admin_auth import admin_required
+
 router = APIRouter()
 
+
 # Create collection (admin)
-@router.post("/admin/collection")
+@router.post("/admin/collection", dependencies=[Depends(admin_required)])
 def create_collection(name: str, slug: str, description: str = "", db: Session = Depends(get_db)):
+
 
     collection = Collection(
         name=name,
@@ -76,8 +80,9 @@ def get_collection_products(slug: str, db: Session = Depends(get_db)):
     return products
 
 
-@router.delete("/admin/collection/{collection_id}")
+@router.delete("/admin/collection/{collection_id}", dependencies=[Depends(admin_required)])
 def delete_collection(collection_id: int, db: Session = Depends(get_db)):
+
 
     collection = db.query(Collection).filter(Collection.id == collection_id).first()
 

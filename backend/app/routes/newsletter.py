@@ -4,7 +4,10 @@ from sqlalchemy.orm import Session
 from app.database.db import get_db
 from app.models.newsletter import NewsletterSubscriber, Newsletter
 
+from app.utils.admin_auth import admin_required
+
 router = APIRouter()
+
 
 @router.post("/newsletter/subscribe")
 def subscribe(email: str, db: Session = Depends(get_db)):
@@ -24,8 +27,9 @@ def subscribe(email: str, db: Session = Depends(get_db)):
     return {"message": "Subscribed successfully"}
 
 
-@router.post("/admin/newsletter")
+@router.post("/admin/newsletter", dependencies=[Depends(admin_required)])
 def create_newsletter(title: str, content: str, db: Session = Depends(get_db)):
+
 
     news = Newsletter(
         title=title,
@@ -38,8 +42,9 @@ def create_newsletter(title: str, content: str, db: Session = Depends(get_db)):
 
     return news
 
-@router.post("/admin/newsletter/send")
+@router.post("/admin/newsletter/send", dependencies=[Depends(admin_required)])
 def send_newsletter(newsletter_id: int, db: Session = Depends(get_db)):
+
 
     newsletter = db.query(Newsletter).filter(
         Newsletter.id == newsletter_id

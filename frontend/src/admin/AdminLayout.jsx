@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link, useLocation, Outlet } from 'react-router-dom';
+import { Link, useLocation, Outlet, Navigate, useNavigate } from 'react-router-dom';
+
 import {
     LayoutDashboard,
     Box,
@@ -22,6 +22,20 @@ import { motion } from 'framer-motion';
 
 const AdminLayout = () => {
     const location = useLocation();
+    const navigate = useNavigate();
+
+    const adminPassword = sessionStorage.getItem('admin_password');
+
+    if (!adminPassword) {
+        return <Navigate to="/admin/login" replace />;
+    }
+
+    const handleLogout = (e) => {
+        e.preventDefault();
+        sessionStorage.removeItem('admin_password');
+        navigate('/');
+    };
+
 
     const menuItems = [
         { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
@@ -42,9 +56,20 @@ const AdminLayout = () => {
             {/* Sidebar */}
             <aside className="w-64 border-r border-white/5 flex flex-col z-20 bg-black/50 backdrop-blur-xl">
                 <div className="p-8">
-                    <Link to="/" className="text-xl font-bold tracking-tighter flex items-center gap-2">
-                        <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                        GAURK<span className="opacity-40 text-xs tracking-widest ml-1 uppercase">Admin</span>
+                    <Link to="/" className="flex items-center gap-3 group transition-all mb-4">
+                        <div className="w-8 h-8 relative overflow-hidden rounded-full border border-white/10 group-hover:scale-110 transition-transform duration-500">
+                            <img
+                                src="/assets/logo/gk_logo.png"
+                                alt="GAURK Icon"
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-xl font-serif font-bold tracking-tighter leading-none">
+                                GAURK
+                            </span>
+                            <span className="opacity-40 text-[8px] tracking-[0.3em] uppercase mt-1">Admin</span>
+                        </div>
                     </Link>
                 </div>
 
@@ -75,10 +100,14 @@ const AdminLayout = () => {
                         <Settings size={16} />
                         Settings
                     </Link>
-                    <Link to="/" className="w-full flex items-center gap-3 px-4 py-3 text-[10px] uppercase tracking-[0.2em] font-bold text-red-500/70 hover:text-red-500 transition-all">
+                    <button 
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-[10px] uppercase tracking-[0.2em] font-bold text-red-500/70 hover:text-red-500 transition-all text-left"
+                    >
                         <LogOut size={16} />
                         Exit Admin
-                    </Link>
+                    </button>
+
                 </div>
             </aside>
 

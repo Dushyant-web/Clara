@@ -21,7 +21,9 @@ import os
 
 
 
-router = APIRouter(prefix="/admin")
+from app.utils.admin_auth import admin_required
+
+router = APIRouter(prefix="/admin", dependencies=[Depends(admin_required)])
 
 @router.post("/product")
 def create_product(

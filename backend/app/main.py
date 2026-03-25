@@ -1,4 +1,9 @@
 from fastapi import FastAPI
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
 from app.routes import auth
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -41,7 +46,10 @@ origins = [
     "http://127.0.0.1:5174",
     "http://127.0.0.1:5175",
     "https://clara-test-v1.netlify.app",
-]
+    "https://gaurk.shop",
+    "https://www.gaurk.shop",
+],
+
 
 app.add_middleware(
     CORSMiddleware,

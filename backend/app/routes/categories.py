@@ -5,7 +5,10 @@ from app.database.db import get_db
 from app.models.categories import Category
 from app.models.product import Product
 
+from app.utils.admin_auth import admin_required
+
 router = APIRouter()
+
 
 # Pydantic schema for category creation
 class CategoryCreate(BaseModel):
@@ -113,8 +116,9 @@ def get_products(
         "pages": (total + limit - 1) // limit
     }
 
-@router.post("/admin/category")
+@router.post("/admin/category", dependencies=[Depends(admin_required)])
 def create_category(data: CategoryCreate, db: Session = Depends(get_db)):
+
     existing = db.query(Category).filter(Category.slug == data.slug).first()
     if existing:
         return existing   # just return existing instead of failing
@@ -129,8 +133,9 @@ def create_category(data: CategoryCreate, db: Session = Depends(get_db)):
 
 
 # Delete category (admin)
-@router.delete("/admin/category/{category_id}")
+@router.delete("/admin/category/{category_id}", dependencies=[Depends(admin_required)])
 def delete_category(category_id: int, db: Session = Depends(get_db)):
+
 
     category = db.query(Category).filter(Category.id == category_id).first()
 

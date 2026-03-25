@@ -5,11 +5,15 @@ from app.database.db import get_db
 from app.models.lookbook import Lookbook
 from app.models.lookbook import LookbookImage
 
+from app.utils.admin_auth import admin_required
+
 router = APIRouter()
 
+
 # create lookbook (admin)
-@router.post("/admin/lookbook")
+@router.post("/admin/lookbook", dependencies=[Depends(admin_required)])
 def create_lookbook(
+
     title: str,
     description: str = "",
     image: str = "",
@@ -58,8 +62,9 @@ def get_lookbook_images(lookbook_id: int, db: Session = Depends(get_db)):
 
     return images
 
-@router.delete("/admin/lookbook-image/{image_id}")
+@router.delete("/admin/lookbook-image/{image_id}", dependencies=[Depends(admin_required)])
 def delete_lookbook_image(image_id: int, db: Session = Depends(get_db)):
+
 
     image = db.query(LookbookImage).filter(LookbookImage.id == image_id).first()
 

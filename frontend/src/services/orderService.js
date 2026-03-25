@@ -9,8 +9,8 @@ export const orderService = {
         const response = await api.get(`/orders/${orderId}`);
         return response.data;
     },
-    createCheckout: async (userId, idempotencyKey = null, promoCode = null) => {
-        let url = `/checkout?user_id=${userId}`;
+    createCheckout: async (userId, addressId, idempotencyKey = null, promoCode = null) => {
+        let url = `/checkout?user_id=${userId}&address_id=${addressId}`;
         if (idempotencyKey) url += `&idempotency_key=${idempotencyKey}`;
         if (promoCode) url += `&promo_code=${promoCode}`;
 

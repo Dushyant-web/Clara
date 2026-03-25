@@ -25,7 +25,18 @@ const Footer = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 mb-20">
                     {/* Brand Info */}
                     <div className="lg:col-span-1">
-                            GAURK
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="w-8 h-8 relative overflow-hidden rounded-full border border-secondary/10">
+                                <img
+                                    src="/assets/logo/gk_logo.png"
+                                    alt="GAURK Icon"
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+                            <span className="text-xl font-serif font-bold tracking-tighter brand-blue">
+                                GAURK
+                            </span>
+                        </div>
                         <p className="text-gray-400 text-sm leading-relaxed max-w-xs mb-8">
                             Luxury minimal crafted for the bold. Minimalist designs, high-end quality, and cinematic aesthetics.
                         </p>

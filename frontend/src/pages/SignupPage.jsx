@@ -89,6 +89,16 @@ const SignupPage = () => {
                             exit={{ opacity: 0, y: -20 }}
                             className="space-y-10"
                         >
+                            <div className="flex justify-center mb-12">
+                                <Link to="/" className="w-16 h-16 relative overflow-hidden rounded-full border border-secondary/10 hover:scale-110 transition-transform duration-500">
+                                    <img
+                                        src="/assets/logo/gk_logo.png"
+                                        alt="GAURK Icon"
+                                        className="w-full h-full object-cover"
+                                    />
+                                </Link>
+                            </div>
+
                             <div className="space-y-4 text-center">
                                 <h2 className="text-4xl font-serif tracking-tighter uppercase text-secondary">Join GAURK</h2>
                                 <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Create an account for exclusive access.</p>

@@ -87,6 +87,16 @@ const LoginPage = () => {
                             exit={{ opacity: 0, y: -20 }}
                             className="space-y-12"
                         >
+                            <div className="flex justify-center mb-12">
+                                <Link to="/" className="w-16 h-16 relative overflow-hidden rounded-full border border-secondary/10 hover:scale-110 transition-transform duration-500">
+                                    <img
+                                        src="/assets/logo/gk_logo.png"
+                                        alt="GAURK Icon"
+                                        className="w-full h-full object-cover"
+                                    />
+                                </Link>
+                            </div>
+
                             <div className="text-center space-y-4">
                                 <p className="text-[10px] tracking-[0.5em] font-bold opacity-50 uppercase text-secondary">WELCOME BACK</p>
                                 <h1 className="text-4xl font-serif text-secondary tracking-tighter uppercase">IDENTITY</h1>
