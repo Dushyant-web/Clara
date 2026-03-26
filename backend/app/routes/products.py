@@ -16,14 +16,19 @@ router = APIRouter()
 def get_products(
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=500),
+    status: str = Query("active"),  # Default to active for public
     db: Session = Depends(get_db)
 ):
 
     offset = (page - 1) * limit
 
+    query = db.query(Product, Category.name.label("category")).outerjoin(Category, Product.category_id == Category.id)
+    
+    if status and status != "all":
+        query = query.filter(Product.status == status)
+
     results = (
-        db.query(Product, Category.name.label("category"))
-        .outerjoin(Category, Product.category_id == Category.id)
+        query
         .offset(offset)
         .limit(limit)
         .all()
@@ -125,6 +130,7 @@ def get_related_products(product_id: int, db: Session = Depends(get_db)):
         db.query(Product)
         .filter(Product.category_id == product.category_id)
         .filter(Product.id != product_id)
+        .filter(Product.status == "active")
         .limit(4)
         .all()
     )
@@ -184,6 +190,7 @@ def get_trending_products(
 
     products = (
         db.query(Product)
+        .filter(Product.status == "active")
         .order_by(func.random())
         .limit(limit)
         .all()
@@ -209,6 +216,7 @@ def search_products(q: str, db: Session = Depends(get_db)):
 
     products = (
         db.query(Product)
+        .filter(Product.status == "active")
         .filter(
             or_(
                 Product.name.ilike(f"%{q}%"),

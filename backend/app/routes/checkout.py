@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from app.database.db import get_db
 from app.models.cart_item import CartItem
 from app.models.product_variant import ProductVariant
+from app.models.product import Product
 from app.models.inventory_reservation import InventoryReservation
 from app.models.order import Order
 from app.models.order_item import OrderItem
@@ -77,10 +78,13 @@ def checkout(user_id: int, address_id: int, promo_code: str | None = None, idemp
     total = 0
 
     for item in cart_items:
-
         variant = db.query(ProductVariant).filter(
             ProductVariant.id == item.variant_id
         ).with_for_update().first()
+
+        product = db.query(Product).filter(Product.id == variant.product_id).first()
+        if not product or product.status != "active":
+            raise HTTPException(status_code=403, detail=f"Item {product.name} is no longer available")
 
         # Calculate reserved quantity that has not expired
         reserved_total = db.query(

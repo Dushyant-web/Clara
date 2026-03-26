@@ -75,7 +75,10 @@ def get_collection_products(slug: str, db: Session = Depends(get_db)):
     if not collection:
         return {"error": "Collection not found"}
 
-    products = db.query(Product).filter(Product.collection_id == collection.id).all()
+    products = db.query(Product).filter(
+        Product.collection_id == collection.id,
+        Product.status == "active"
+    ).all()
 
     return products
 

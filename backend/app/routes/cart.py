@@ -22,6 +22,10 @@ def add_to_cart(data: dict, db: Session = Depends(get_db)):
     if not variant:
         raise HTTPException(status_code=404, detail="Variant not found")
 
+    product = db.query(Product).filter(Product.id == variant.product_id).first()
+    if not product or product.status != "active":
+        raise HTTPException(status_code=403, detail="Product is currently unavailable")
+
     if quantity > variant.stock:
         raise HTTPException(status_code=400, detail="Not enough inventory")
 
@@ -60,7 +64,7 @@ def get_cart(user_id: int, db: Session = Depends(get_db)):
             continue
             
         product = db.query(Product).filter(Product.id == variant.product_id).first()
-        if not product:
+        if not product or product.status != "active":
             continue
 
         # Standardize image fallback (Prioritize Variant Image)

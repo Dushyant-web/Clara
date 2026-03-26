@@ -235,6 +235,9 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
     db.query(ProductImage).filter(ProductImage.product_id == product_id).delete(synchronize_session=False)
     db.query(ProductVariant).filter(ProductVariant.product_id == product_id).delete(synchronize_session=False)
 
+    # Finally delete the product
+    db.query(Product).filter(Product.id == product_id).delete(synchronize_session=False)
+
     db.commit()
     return {"message": "product deleted"}
 

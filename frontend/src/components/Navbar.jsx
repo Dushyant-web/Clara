@@ -44,13 +44,26 @@ const Navbar = () => {
             >
                 <div className="container mx-auto px-6 grid grid-cols-3 items-center">
                     {/* Left: Mobile Menu & Desktop Links */}
-                    <div className="flex items-center gap-8">
+                    <div className="flex items-center gap-4 md:gap-8">
                         <button
                             className="lg:hidden text-secondary"
                             onClick={() => setIsMobileMenuOpen(true)}
                         >
                             <Menu size={24} />
                         </button>
+
+                        {/* Mobile Logo: Only visible on small screens */}
+                        <div className="lg:hidden">
+                            <Link to="/" className="flex items-center group transition-all">
+                                <div className="w-8 h-8 relative overflow-hidden rounded-full border border-secondary/10">
+                                    <img
+                                        src="/assets/logo/gk_logo.png"
+                                        alt="GAURK Icon"
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                            </Link>
+                        </div>
 
                         <div className="hidden lg:flex gap-8 items-center">
                             {navLinks.map((link) => (
@@ -65,11 +78,11 @@ const Navbar = () => {
                         </div>
                     </div>
 
-                    {/* Center: Logo */}
+                    {/* Center: Logo (Desktop Only) */}
                     <div className="flex items-center justify-center">
                         <Link
                             to="/"
-                            className="flex items-center gap-2 md:gap-3 group transition-all"
+                            className="hidden lg:flex items-center gap-2 md:gap-3 group transition-all"
                         >
                             <div className="w-8 h-8 md:w-10 md:h-10 relative overflow-hidden rounded-full border border-secondary/10 group-hover:scale-110 transition-transform duration-500">
                                 <img

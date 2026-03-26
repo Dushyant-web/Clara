@@ -52,7 +52,7 @@ const AdminInventory = () => {
     const fetchProducts = async () => {
         setLoading(true);
         try {
-            const data = await productService.getProducts(1, 100);
+            const data = await productService.getProducts({ status: 'all' });
             setProducts(data.products || []);
         } catch (err) {
             console.error('Failed to load products', err);
