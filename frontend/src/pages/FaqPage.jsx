@@ -43,7 +43,7 @@ const FaqPage = () => {
                     <div className="border-b border-secondary/10 pb-8">
                         <h3 className="text-lg font-serif mb-4 uppercase tracking-wide">Can I change or cancel my order?</h3>
                         <p className="text-sm text-secondary/60 leading-relaxed">
-                            We process orders rapidly to ensure fast delivery. If you need to modify or cancel your order, please contact Gaurkclothing@gmail.com immediately. Once dispatched, an order cannot be modified.
+                            We process orders rapidly to ensure fast delivery. If you need to modify or cancel your order, please contact gaurkclothing@gmail.com immediately. Once dispatched, an order cannot be modified.
                         </p>
                     </div>
 

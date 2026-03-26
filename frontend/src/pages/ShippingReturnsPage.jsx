@@ -25,7 +25,7 @@ const ShippingReturnsPage = () => {
                         <div className="space-y-4">
                             <p>We maintain a rigorous standard of quality. If your purchase does not meet your expectations, we accept returns and exchanges within 14 days of delivery.</p>
                             <p>To be eligible for a return, the garment must be unworn, unwashed, and in its original condition, with all tags intact. Any items returned that are damaged or altered will not be accepted and will be sent back to the customer.</p>
-                            <p>To initiate a return, please contact our client services at <strong>Gaurkclothing@gmail.com</strong> with your order number. We will provide detailed instructions and a return shipping label.</p>
+                            <p>To initiate a return, please contact our client services at <strong>gaurkclothing@gmail.com</strong> with your order number. We will provide detailed instructions and a return shipping label.</p>
                         </div>
                     </section>
 

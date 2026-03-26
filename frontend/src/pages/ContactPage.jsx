@@ -16,14 +16,19 @@ const ContactPage = () => {
                         <div className="space-y-10 text-sm">
                             <div>
                                 <p className="text-secondary/40 uppercase tracking-[0.2em] text-[10px] mb-2 font-bold">Email</p>
-                                <a href="mailto:Gaurkclothing@gmail.com" className="text-lg hover:text-gray-400 transition-colors">
-                                    Gaurkclothing@gmail.com
+                                <a href="mailto:gaurkclothing@gmail.com" className="text-lg hover:text-gray-400 transition-colors">
+                                    gaurkclothing@gmail.com
                                 </a>
                             </div>
                             <div>
-                                <p className="text-secondary/40 uppercase tracking-[0.2em] text-[10px] mb-2 font-bold">Phone</p>
-                                <a href="tel:+918130610047" className="text-lg hover:text-gray-400 transition-colors">
-                                    +91 81306 10047
+                                <p className="text-secondary/40 uppercase tracking-[0.2em] text-[10px] mb-2 font-bold">WhatsApp</p>
+                                <a 
+                                    href="https://wa.me/919217960147" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="text-lg hover:text-gray-400 transition-colors"
+                                >
+                                    +91 92179 60147
                                 </a>
                             </div>
                             <div>

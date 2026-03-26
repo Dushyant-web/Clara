@@ -36,7 +36,7 @@ const PrivacyPolicyPage = () => {
 
                     <section>
                         <h2 className="text-xs uppercase tracking-[0.3em] text-white mb-6 font-bold">4. Data Security</h2>
-                        <p>We have put in place appropriate security measures to prevent your personal data from being accidentally lost, used or accessed in an unauthorised way, altered or disclosed. For inquiries regarding our strict data protocols, please contact Gaurkclothing@gmail.com.</p>
+                        <p>We have put in place appropriate security measures to prevent your personal data from being accidentally lost, used or accessed in an unauthorised way, altered or disclosed. For inquiries regarding our strict data protocols, please contact gaurkclothing@gmail.com.</p>
                     </section>
                 </motion.div>
             </div>

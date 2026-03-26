@@ -35,7 +35,7 @@ const TermsOfServicePage = () => {
 
                     <section>
                         <h2 className="text-xs uppercase tracking-[0.3em] text-white mb-6 font-bold">5. Contact</h2>
-                        <p>If you have any questions about these Terms, please contact us at Gaurkclothing@gmail.com.</p>
+                        <p>If you have any questions about these Terms, please contact us at gaurkclothing@gmail.com.</p>
                     </section>
                 </motion.div>
             </div>
