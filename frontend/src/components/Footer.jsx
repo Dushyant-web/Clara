@@ -37,9 +37,12 @@ const Footer = () => {
                                 GAURK
                             </span>
                         </div>
-                        <p className="text-gray-400 text-sm leading-relaxed max-w-xs mb-8">
+                        <p className="text-gray-400 text-sm leading-relaxed max-w-xs mb-4">
                             Luxury minimal crafted for the bold. Minimalist designs, high-end quality, and cinematic aesthetics.
                         </p>
+                        <div className="text-gray-500 text-[10px] uppercase tracking-widest leading-relaxed mb-8 max-w-[200px]">
+                            7 ft road, shop no- 08, near venus comapny, sarurpur, faridabad, haryana 121004
+                        </div>
                         <div className="flex gap-4">
                             <a href="#" className="hover:text-grayAccent transition-colors"><Instagram size={20} /></a>
                             <a href="#" className="hover:text-grayAccent transition-colors"><Twitter size={20} /></a>
@@ -122,7 +125,7 @@ const Footer = () => {
                 </div>
 
                 <div className="flex flex-col md:flex-row justify-between items-center gap-6 pt-12 border-t border-white/5">
-                        © 2026 GAURK LUXURY MINIMAL. ALL RIGHTS RESERVED.
+                    © 2026 GAURK LUXURY MINIMAL. ALL RIGHTS RESERVED.
                     <div className="flex items-center gap-6">
                         <span className="text-[10px] uppercase tracking-widest text-gray-500 font-medium">Payment Methods</span>
                         <div className="flex gap-3 opacity-40 grayscale contrast-125">
