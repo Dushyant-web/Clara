@@ -25,6 +25,13 @@ from app.utils.admin_auth import admin_required
 
 router = APIRouter(prefix="/admin", dependencies=[Depends(admin_required)])
 
+@router.post("/verify-password")
+def verify_admin_password(password: dict, db: Session = Depends(get_db)):
+    # This route is actually covered by the router-level dependencies=[Depends(admin_required)]
+    # but we can make it more explicit or just use it to return a success message.
+    # Since the middleware already checked the X-Admin-Password header, we just return success.
+    return {"valid": True, "message": "Authenticated"}
+
 @router.post("/product")
 def create_product(
     name: str,

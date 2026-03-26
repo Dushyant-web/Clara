@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Lock } from 'lucide-react';
+import api from '../services/api';
 
 const AdminLoginPage = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [lockedOutUntil, setLockedOutUntil] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -21,7 +23,7 @@ const AdminLoginPage = () => {
     }
   }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (lockedOutUntil && Date.now() < lockedOutUntil) {
@@ -30,12 +32,24 @@ const AdminLoginPage = () => {
       return;
     }
 
-    if (password === 'ganesk') {
+    setIsLoading(true);
+    setError('');
+
+    try {
+      // We send the password in the header as expected by the backend admin_required dependency
+      // The endpoint itself just returns success if the header is valid
+      await api.post('/admin/verify-password', {}, {
+        headers: {
+          'X-Admin-Password': password
+        }
+      });
+
+      // If we reach here, the password is correct
       sessionStorage.setItem('admin_password', password);
       localStorage.removeItem('admin_login_attempts');
       localStorage.removeItem('admin_lockout_until');
       navigate('/admin');
-    } else {
+    } catch (err) {
       const attempts = parseInt(localStorage.getItem('admin_login_attempts') || '0') + 1;
       localStorage.setItem('admin_login_attempts', attempts.toString());
 
@@ -47,6 +61,8 @@ const AdminLoginPage = () => {
       } else {
         setError(`Invalid admin password. ${4 - attempts} attempts remaining.`);
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
