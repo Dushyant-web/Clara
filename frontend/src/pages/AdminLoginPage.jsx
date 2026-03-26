@@ -6,15 +6,47 @@ import { Lock } from 'lucide-react';
 const AdminLoginPage = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [lockedOutUntil, setLockedOutUntil] = useState(null);
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    const lockout = localStorage.getItem('admin_lockout_until');
+    if (lockout) {
+      if (Date.now() < parseInt(lockout)) {
+        setLockedOutUntil(parseInt(lockout));
+      } else {
+        localStorage.removeItem('admin_lockout_until');
+        localStorage.removeItem('admin_login_attempts');
+      }
+    }
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (lockedOutUntil && Date.now() < lockedOutUntil) {
+      const remainingHours = Math.ceil((lockedOutUntil - Date.now()) / (1000 * 60 * 60));
+      setError(`YOU CAN'T ENTER PASSWORD FOR ${remainingHours} MORE HOURS.`);
+      return;
+    }
+
     if (password === 'ganesk') {
       sessionStorage.setItem('admin_password', password);
+      localStorage.removeItem('admin_login_attempts');
+      localStorage.removeItem('admin_lockout_until');
       navigate('/admin');
     } else {
-      setError('Invalid admin password');
+      const attempts = parseInt(localStorage.getItem('admin_login_attempts') || '0') + 1;
+      localStorage.setItem('admin_login_attempts', attempts.toString());
+
+      if (attempts >= 4) {
+        const lockoutTime = Date.now() + 48 * 60 * 60 * 1000;
+        localStorage.setItem('admin_lockout_until', lockoutTime.toString());
+        setLockedOutUntil(lockoutTime);
+        setError("YOU CAN'T ENTER PASSWORD FOR 48 HOURS");
+      } else {
+        setError(`Invalid admin password. ${4 - attempts} attempts remaining.`);
+      }
     }
   };
 

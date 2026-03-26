@@ -157,15 +157,21 @@ const Navbar = () => {
                             </button>
                         </div>
                         <div className="flex flex-col gap-8">
-                            {navLinks.map((link) => (
-                                <Link
+                            {navLinks.map((link, idx) => (
+                                <motion.div
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: idx * 0.1 }}
                                     key={link.name}
-                                    to={link.path}
-                                    onClick={() => setIsMobileMenuOpen(false)}
-                                    className="text-2xl font-serif uppercase tracking-widest hover:pl-4 transition-all text-secondary"
                                 >
-                                    {link.name}
-                                </Link>
+                                    <Link
+                                        to={link.path}
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        className="text-3xl font-serif uppercase tracking-tighter hover:pl-4 transition-all text-secondary block"
+                                    >
+                                        {link.name}
+                                    </Link>
+                                </motion.div>
                             ))}
                             <div className="h-px bg-secondary/10 my-4" />
                             <Link to={user ? "/account" : "/login"} onClick={() => setIsMobileMenuOpen(false)} className="text-sm uppercase tracking-widest flex items-center gap-2 text-secondary">

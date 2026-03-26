@@ -3,13 +3,41 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { Trash2, Plus, Minus, ArrowRight, ShoppingBag } from 'lucide-react'
 import { useCart } from '../contexts/CartContext'
+import { useAuth } from '../contexts/AuthContext'
+import { orderService } from '../services/orderService'
 
 const CartPage = () => {
     const { cartItems, removeFromCart, addToCart, cartTotal } = useCart()
+    const { user } = useAuth()
+    const [promoCode, setPromoCode] = React.useState('')
+    const [discount, setDiscount] = React.useState(0)
+    const [applyingPromo, setApplyingPromo] = React.useState(false)
 
     const subtotal = cartTotal
     const shipping = subtotal > 500 ? 0 : 25
-    const total = subtotal + shipping
+    const total = subtotal + shipping - discount
+
+    const handleApplyPromo = async () => {
+        if (!promoCode.trim()) return
+        if (!user) {
+            alert('Please login to apply promo codes.')
+            return
+        }
+        setApplyingPromo(true)
+        try {
+            const result = await orderService.applyPromo(promoCode, user.id)
+            if (result.discount) {
+                setDiscount(result.discount)
+                alert(`Promo applied! You saved ₹${result.discount}`)
+            }
+        } catch (error) {
+            console.error('Promo error:', error)
+            const msg = error.response?.data?.detail || 'Failed to apply promo code.'
+            alert(msg)
+        } finally {
+            setApplyingPromo(false)
+        }
+    }
 
     if (cartItems.length === 0) {
         return (
@@ -139,6 +167,12 @@ const CartPage = () => {
                                     <span className="opacity-50 font-bold">Shipping</span>
                                     <span className="font-bold">{shipping === 0 ? 'FREE' : `₹${shipping.toFixed(2)}`}</span>
                                 </div>
+                                {discount > 0 && (
+                                    <div className="flex justify-between text-[10px] uppercase tracking-[0.2em] text-green-500">
+                                        <span className="font-bold">Discount</span>
+                                        <span className="font-bold">-₹{discount.toFixed(2)}</span>
+                                    </div>
+                                )}
                                 {shipping > 0 && (
                                     <p className="text-[9px] text-gray-400 uppercase tracking-widest leading-relaxed font-bold">Spend ₹{(500 - subtotal).toFixed(2)} more for free delivery.</p>
                                 )}
@@ -150,9 +184,17 @@ const CartPage = () => {
                                     <input
                                         type="text"
                                         placeholder="PROMO CODE"
-                                        className="flex-grow bg-transparent border-b border-secondary/10 py-2 text-[10px] font-bold tracking-[0.2em] focus:outline-none focus:border-secondary transition-all text-secondary placeholder:text-gray-500"
+                                        value={promoCode}
+                                        onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                                        className="flex-grow bg-transparent border-b border-secondary/10 py-2 text-[10px] font-bold tracking-[0.2em] focus:outline-none focus:border-secondary transition-all text-secondary placeholder:text-gray-500 uppercase"
                                     />
-                                    <button className="text-[9px] font-black uppercase tracking-[0.2em] hover:opacity-50 transition-opacity">Apply</button>
+                                    <button 
+                                        onClick={handleApplyPromo}
+                                        disabled={applyingPromo || !promoCode}
+                                        className="text-[9px] font-black uppercase tracking-[0.2em] hover:opacity-50 transition-opacity disabled:opacity-20"
+                                    >
+                                        {applyingPromo ? '...' : 'Apply'}
+                                    </button>
                                 </div>
                             </div>
 

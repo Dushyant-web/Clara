@@ -147,11 +147,11 @@ const AdminLookbooks = () => {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white/5 border border-white/10 p-12 max-w-4xl"
+                    className="bg-white/5 border border-white/10 p-6 md:p-12 max-w-4xl"
                 >
                     <h2 className="text-xl font-black uppercase tracking-tighter mb-12">Campaign Parameters</h2>
                     <form onSubmit={handleCreate} className="space-y-8">
-                        <div className="grid grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase tracking-widest font-black text-gray-500">Campaign Title</label>
                                 <input
@@ -228,7 +228,7 @@ const AdminLookbooks = () => {
                                     <img src={lb.image} alt={lb.title} className="w-full h-full object-cover grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" />
                                 </div>
                             )}
-                            <div className="p-8 flex-1 flex flex-col justify-between">
+                            <div className="p-6 md:p-8 flex-1 flex flex-col justify-between">
                                 <div>
                                     <div className="flex justify-between items-start mb-4">
                                         <div>
@@ -236,8 +236,9 @@ const AdminLookbooks = () => {
                                             <p className="text-[10px] text-gray-500 uppercase tracking-widest">{lb.season}</p>
                                         </div>
                                         <button 
-                                            onClick={() => handleDelete(lb.id)}
-                                            className="text-gray-500 hover:text-red-500 transition-colors p-2 bg-black/50 rounded-full"
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); handleDelete(lb.id); }}
+                                            className="text-gray-500 hover:text-red-500 transition-colors p-2 bg-black/50 rounded-full shrink-0"
                                         >
                                             <Trash2 size={16} />
                                         </button>
@@ -290,7 +291,9 @@ const AdminLookbooks = () => {
 
                                                                 {/* Delete button on hover */}
                                                                 <button
-                                                                    onClick={async () => {
+                                                                    type="button"
+                                                                    onClick={async (e) => {
+                                                                        e.stopPropagation();
                                                                         if (!window.confirm('Delete this image?')) return
 
                                                                         const imageId = img.id || img.image_id || img.imageId
@@ -389,17 +392,17 @@ const AdminLookbooks = () => {
         {/* SSENSE-style preview panel */}
         {previewImage && (
             <div
-                className="fixed inset-0 bg-black z-50 flex"
+                className="fixed inset-0 bg-black z-50 flex flex-col md:flex-row"
                 onClick={() => setPreviewImage(null)}
             >
-                <div className="w-1/2 h-full flex items-center justify-center border-r border-white/10">
+                <div className="w-full md:w-1/2 h-1/2 md:h-full flex items-center justify-center border-b md:border-b-0 md:border-r border-white/10">
                     <img
                         src={previewImage}
-                        className="max-h-[90vh] max-w-[90%] object-contain"
+                        className="max-h-[90%] max-w-[90%] object-contain"
                     />
                 </div>
 
-                <div className="w-1/2 p-10 overflow-y-auto">
+                <div className="w-full md:w-1/2 p-6 md:p-10 overflow-y-auto">
                     <div className="text-[10px] uppercase tracking-widest text-gray-500 mb-6">
                         Live Layout Preview
                     </div>

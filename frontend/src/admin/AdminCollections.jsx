@@ -132,7 +132,7 @@ const AdminCollections = () => {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white/5 border border-white/10 p-12 max-w-4xl"
+                    className="bg-white/5 border border-white/10 p-6 md:p-12 max-w-4xl"
                 >
                     <h2 className="text-xl font-black uppercase tracking-tighter mb-12">New Collection Parameters</h2>
                     <form onSubmit={handleCreate} className="space-y-8">
@@ -188,12 +188,13 @@ const AdminCollections = () => {
                     {/* Collections Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {collections.map((coll) => (
-                            <div key={coll.id} className="bg-white/5 border border-white/5 p-8 flex flex-col justify-between group hover:border-white/10 transition-colors">
+                            <div key={coll.id} className="bg-white/5 border border-white/5 p-6 md:p-8 flex flex-col justify-between group hover:border-white/10 transition-colors">
                                 <div className="mb-8">
                                     <div className="flex justify-between items-start mb-4">
                                         <h3 className="text-xl uppercase tracking-tighter font-black">{coll.name}</h3>
                                         <button 
-                                            onClick={() => handleDelete(coll.id)}
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); handleDelete(coll.id); }}
                                             className="text-gray-500 hover:text-red-500 transition-colors p-2"
                                         >
                                             <Trash2 size={16} />

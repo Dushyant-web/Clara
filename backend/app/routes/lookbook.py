@@ -75,3 +75,18 @@ def delete_lookbook_image(image_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Lookbook image deleted", "image_id": image_id}
+    
+@router.delete("/admin/lookbook/{id}", dependencies=[Depends(admin_required)])
+def delete_lookbook(id: int, db: Session = Depends(get_db)):
+    lookbook = db.query(Lookbook).filter(Lookbook.id == id).first()
+    
+    if not lookbook:
+        return {"error": "Lookbook not found"}
+        
+    # Delete associated images first
+    db.query(LookbookImage).filter(LookbookImage.lookbook_id == id).delete(synchronize_session=False)
+    
+    db.delete(lookbook)
+    db.commit()
+    
+    return {"message": "Lookbook deleted", "id": id}

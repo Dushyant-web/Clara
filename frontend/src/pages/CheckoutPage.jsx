@@ -627,7 +627,7 @@ const CheckoutPage = () => {
                                         <button
                                             onClick={handleApplyPromo}
                                             disabled={applyingPromo || !promoCode}
-                                            className="px-4 py-2 border border-secondary text-[10px] font-bold uppercase tracking-widest hover:bg-secondary hover:text-primary transition-all disabled:opacity-20"
+                                            className="px-6 py-3 border border-secondary text-[10px] font-black uppercase tracking-widest hover:bg-secondary hover:text-primary transition-all disabled:opacity-20 flex-shrink-0"
                                         >
                                             {applyingPromo ? '...' : 'Apply'}
                                         </button>

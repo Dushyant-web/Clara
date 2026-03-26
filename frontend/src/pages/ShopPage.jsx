@@ -264,7 +264,7 @@ useEffect(() => {
                 </div>
 
                 {/* Product Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-8 gap-y-12 md:gap-y-16">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8 gap-y-12 md:gap-y-16">
                     {loading ? (
                         [...Array(8)].map((_, i) => (
                             <div key={i} className="animate-pulse space-y-4">
@@ -437,16 +437,18 @@ useEffect(() => {
                                                 {size}
                                             </button>
                                         ))}
-                                    </div>
                                 </div>
                             </div>
-
-                            <button
-                                onClick={() => setIsFilterOpen(false)}
-                                className="w-full mt-16 bg-secondary text-primary py-4 text-xs font-bold uppercase tracking-widest transition-colors hover:bg-gray-200"
-                            >
-                                Apply Filters
-                            </button>
+                        </div>
+                        
+                        <div className="sticky bottom-0 pt-12 pb-6 bg-primary mt-auto">
+                                <button
+                                    onClick={() => setIsFilterOpen(false)}
+                                    className="w-full bg-secondary text-primary py-4 text-xs font-bold uppercase tracking-widest transition-colors hover:bg-gray-200 shadow-[0_-20px_40px_-15px_rgba(0,0,0,0.1)]"
+                                >
+                                    Apply Filters
+                                </button>
+                            </div>
                         </motion.div>
                     </>
                 )}

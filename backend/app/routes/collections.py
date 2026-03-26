@@ -94,6 +94,10 @@ def delete_collection(collection_id: int, db: Session = Depends(get_db)):
         {"collection_id": None}
     )
 
+    # Delete collection images
+    from app.models.collection import CollectionImage
+    db.query(CollectionImage).filter(CollectionImage.collection_id == collection_id).delete(synchronize_session=False)
+
     db.delete(collection)
     db.commit()
 

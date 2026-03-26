@@ -108,7 +108,7 @@ const Footer = () => {
                                 type="email"
                                 name="email"
                                 placeholder="YOUR EMAIL"
-                                className="w-full bg-transparent border-b border-secondary/20 py-3 text-sm focus:outline-none focus:border-secondary transition-all uppercase tracking-widest text-secondary"
+                                className="w-full bg-transparent border-b border-secondary/20 py-3 pr-10 text-sm focus:outline-none focus:border-secondary transition-all uppercase tracking-widest text-secondary placeholder:text-secondary/20"
                                 required
                             />
                             <button
