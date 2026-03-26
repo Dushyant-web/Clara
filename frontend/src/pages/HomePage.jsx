@@ -105,31 +105,6 @@ const HomePage = () => {
                 </motion.div>
             </section>
 
-            {/* Philosophy Section */}
-            <section className="py-32 bg-primary">
-                <div className="container mx-auto px-6 text-secondary">
-                    <div className="max-w-4xl mx-auto text-center">
-                        <motion.span
-                            initial={{ opacity: 0 }}
-                            whileInView={{ opacity: 1 }}
-                            viewport={{ once: true }}
-                            className="text-xs uppercase tracking-[0.4em] text-gray-500 mb-8 block font-bold"
-                        >
-                            Our Philosophy
-                        </motion.span>
-                        <motion.h2
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.8 }}
-                            className="text-3xl md:text-5xl font-serif leading-tight mb-12"
-                        >
-                            "We believe in the beauty of simplicity and the power of detail. Our mission is to provide timeless pieces that transcend seasons."
-                        </motion.h2>
-                        <div className="h-px w-24 bg-secondary/20 mx-auto" />
-                    </div>
-                </div>
-            </section>
 
             {/* Featured Collection */}
             <section className="py-24 bg-primary overflow-hidden">
