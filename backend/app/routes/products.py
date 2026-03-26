@@ -45,7 +45,8 @@ def get_products(
             "price": product.price,
             "category": category,
             "main_image": product.main_image,
-            "hover_image": product.hover_image
+            "hover_image": product.hover_image,
+            "is_active": product.status == "active"
         })
 
     return {
@@ -107,6 +108,7 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
         "main_image": product.main_image,
         "hover_image": product.hover_image,
         "category_id": product.category_id,
+        "is_active": product.status == "active",
         "variants": variant_data
     }
     return product_data

@@ -201,6 +201,7 @@ def update_product(
     price: float = None,
     main_image: str = None,
     hover_image: str = None,
+    is_active: bool = None,
     db: Session = Depends(get_db)
 ):
     product = db.query(Product).filter(Product.id == product_id).first()
@@ -213,6 +214,9 @@ def update_product(
     if price is not None: product.price = price
     if main_image is not None: product.main_image = main_image
     if hover_image is not None: product.hover_image = hover_image
+    
+    if is_active is not None:
+        product.status = "active" if is_active else "inactive"
 
     db.commit()
     return {"message": "product updated"}
