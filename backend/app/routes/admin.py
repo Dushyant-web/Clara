@@ -26,10 +26,8 @@ from app.utils.admin_auth import admin_required
 router = APIRouter(prefix="/admin", dependencies=[Depends(admin_required)])
 
 @router.post("/verify-password")
-def verify_admin_password(password: dict, db: Session = Depends(get_db)):
-    # This route is actually covered by the router-level dependencies=[Depends(admin_required)]
-    # but we can make it more explicit or just use it to return a success message.
-    # Since the middleware already checked the X-Admin-Password header, we just return success.
+def verify_admin_password(db: Session = Depends(get_db)):
+    # This route is covered by router-level admin_required dependency.
     return {"valid": True, "message": "Authenticated"}
 
 @router.post("/product")
@@ -221,9 +219,31 @@ def update_product(
 
 @router.delete("/product/{product_id}")
 def delete_product(product_id: int, db: Session = Depends(get_db)):
-    db.query(Product).filter(Product.id == product_id).delete()
+    from app.models.product_variant import ProductVariant
+    from app.models.product_image import ProductImage
+    from app.models.variant_image import VariantImage
+
+    # Delete related data first
+    variants = db.query(ProductVariant).filter(ProductVariant.product_id == product_id).all()
+    for v in variants:
+        db.query(VariantImage).filter(VariantImage.variant_id == v.id).delete(synchronize_session=False)
+
+    db.query(ProductImage).filter(ProductImage.product_id == product_id).delete(synchronize_session=False)
+    db.query(ProductVariant).filter(ProductVariant.product_id == product_id).delete(synchronize_session=False)
+
     db.commit()
     return {"message": "product deleted"}
+
+@router.delete("/variant/{variant_id}")
+def delete_variant(variant_id: int, db: Session = Depends(get_db)):
+    from app.models.product_variant import ProductVariant
+    from app.models.variant_image import VariantImage
+
+    db.query(VariantImage).filter(VariantImage.variant_id == variant_id).delete(synchronize_session=False)
+    db.query(ProductVariant).filter(ProductVariant.id == variant_id).delete(synchronize_session=False)
+    
+    db.commit()
+    return {"message": "variant deleted"}
 
 @router.put("/variant-full/{variant_id}")
 def update_variant_full(

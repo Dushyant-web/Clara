@@ -326,6 +326,8 @@ const AdminInventory = () => {
     const removeVariant = async (index) => {
         const variant = formData.variants[index];
 
+        if (!window.confirm("REMOVE THIS VARIANT FROM INVENTORY?")) return;
+
         try {
             if (variant?.id) {
                 await adminService.deleteVariant(variant.id);
@@ -438,8 +440,28 @@ const AdminInventory = () => {
                                     </td>
                                     <td className="p-6 text-right">
                                         <div className="flex justify-end gap-3">
-                                            <button onClick={() => handleOpenModal(p)} className="p-2 border border-white/5 hover:border-white transition-all"><Edit2 size={14} /></button>
-                                            <button onClick={() => adminService.deleteProduct(p.id).then(fetchProducts)} className="p-2 border border-white/5 hover:border-red-500 text-red-500/70 hover:text-red-500 transition-all"><Trash2 size={14} /></button>
+                                            <button 
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleOpenModal(p);
+                                                }} 
+                                                className="p-2 border border-white/5 hover:border-white transition-all"
+                                            >
+                                                <Edit2 size={14} />
+                                            </button>
+                                            <button 
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (window.confirm(`PERMANENTLY ARCHIVE "${p.name?.toUpperCase()}"? THIS CANNOT BE UNDONE.`)) {
+                                                        adminService.deleteProduct(p.id).then(fetchProducts);
+                                                    }
+                                                }} 
+                                                className="p-2 border border-white/5 hover:border-red-500 text-red-500/70 hover:text-red-500 transition-all"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
