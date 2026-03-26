@@ -80,9 +80,9 @@ def ai_chat(data: dict = Body(...), db: Session = Depends(get_db)):
         }
 
     # --- Intent 5: Human Contact / Support ---
-    if any(word in msg for word in ["human", "person", "talk to someone", "support", "agent"]):
+    if any(word in msg for word in ["human", "person", "talk to someone", "support", "agent", "contact", "email", "whatsapp"]):
         return {
-            "reply": "While I am an AI, I can certainly flag your request for our human representatives. Would you like me to notify an Elite Concierge specialist to contact you via email?"
+            "reply": "You can reach our Elite Concierge directly via email at gaurkclothing@gmail.com or via WhatsApp at +91 92179 60147 for immediate assistance."
         }
 
     # --- Default Fallback ---
