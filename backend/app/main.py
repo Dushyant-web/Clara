@@ -46,9 +46,11 @@ origins = [
     "http://127.0.0.1:5174",
     "http://127.0.0.1:5175",
     "https://clara-test-v1.netlify.app",
+    "https://gaurk.netlify.app",
     "https://gaurk.shop",
     "https://www.gaurk.shop",
-],
+]
+
 
 
 app.add_middleware(
