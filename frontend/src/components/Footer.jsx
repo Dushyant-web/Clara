@@ -41,7 +41,7 @@ const Footer = () => {
                             Luxury minimal crafted for the bold. Minimalist designs, high-end quality, and cinematic aesthetics.
                         </p>
                         <div className="text-gray-500 text-[10px] uppercase tracking-widest leading-relaxed mb-8 max-w-[200px]">
-                            7 ft road, shop no- 08, near venus comapny, sarurpur, faridabad, haryana 121004
+                            FARIDABAD, HARYANA
                         </div>
                         <div className="flex gap-4">
                             <a href="#" className="hover:text-grayAccent transition-colors"><Instagram size={20} /></a>

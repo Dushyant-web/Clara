@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 
 const ContactPage = () => {
     return (
-        <div className="pt-32 pb-24 min-h-screen bg-primary text-secondary">
+        <div className="pt-24 md:pt-32 pb-16 md:pb-24 min-h-screen bg-primary text-secondary">
             <div className="container mx-auto px-6 max-w-4xl">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
                     <h1 className="text-5xl md:text-7xl font-serif tracking-tighter uppercase mb-6">Contact Us</h1>
@@ -33,7 +33,7 @@ const ContactPage = () => {
                             </div>
                             <div>
                                 <p className="text-secondary/40 uppercase tracking-[0.2em] text-[10px] mb-2 font-bold">Hours</p>
-                                <p className="text-white">Monday - Friday<br />10:00 AM - 6:00 PM IST</p>
+                                <p className="text-lg hover:text-gray-400 transition-colors">24-48 Hours</p>
                             </div>
                         </div>
                     </div>

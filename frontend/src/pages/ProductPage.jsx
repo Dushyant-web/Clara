@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useParams, Link } from 'react-router-dom'
-import { Heart, ShoppingBag, ArrowLeft, Star, Share2, Info, Truck, RotateCcw, ChevronLeft, ChevronRight, ChevronDown, Loader2 } from 'lucide-react'
+import { Heart, ShoppingBag, ArrowLeft, Star, Share2, Info, Truck, RotateCcw, ChevronLeft, ChevronRight, ChevronDown, Loader2, X } from 'lucide-react'
 import { productService } from '../services/productService'
 import { reviewService } from '../services/reviewService'
 import { useCart } from '../contexts/CartContext'
@@ -25,6 +25,7 @@ const ProductPage = () => {
     const [reviewFilter, setReviewFilter] = useState('all') // all | 5 | 4 | 3 | 2 | 1
     const [showPhotosOnly, setShowPhotosOnly] = useState(false)
     const [submittingReview, setSubmittingReview] = useState(false)
+    const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false)
 
     // detect if current user already reviewed this product
     const userReview = reviews.find(r => r.user_id === user?.id)
@@ -181,12 +182,12 @@ const ProductPage = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
                     {/* Left: Image Gallery */}
                     <div className="lg:col-span-7 grid grid-cols-1 md:grid-cols-12 gap-4">
-                        <div className="md:col-span-2 order-2 md:order-1 flex md:flex-col gap-4">
+                        <div className="md:col-span-2 order-2 md:order-1 flex md:flex-col gap-4 overflow-x-auto pb-2 md:pb-0 [&::-webkit-scrollbar]:hidden">
                             {(variantImages.length ? variantImages : product.images).filter(Boolean).map((img, idx) => (
                                 <button
                                     key={idx}
                                     onClick={() => setActiveImage(img)}
-                                    className={`aspect-[3/4] border ${activeImage === img ? 'border-secondary' : 'border-secondary/10'} overflow-hidden transition-all duration-300 bg-secondary/5`}
+                                    className={`shrink-0 w-16 md:w-full aspect-[3/4] border ${activeImage === img ? 'border-secondary' : 'border-secondary/10'} overflow-hidden transition-all duration-300 bg-secondary/5`}
                                 >
                                     <img src={img} className="w-full h-full object-cover" alt="" />
                                 </button>
@@ -301,15 +302,15 @@ const ProductPage = () => {
                         <div className="mb-10">
                             <div className="flex justify-between items-center mb-4">
                                 <span className="text-[10px] uppercase tracking-widest font-bold">Select Size</span>
-                                <button className="text-[10px] uppercase tracking-widest text-gray-500 underline underline-offset-4 font-bold">Size Guide</button>
+                                <button onClick={() => setIsSizeGuideOpen(true)} className="text-[10px] uppercase tracking-widest text-gray-500 underline underline-offset-4 font-bold hover:text-secondary transition-colors">Size Guide</button>
                             </div>
-                            <div className="grid grid-cols-5 gap-3">
+                            <div className="flex flex-wrap gap-3">
                                 {sizeAvailability.map(({ size, isAvailable, variantId }) => (
                                     <button
                                         key={size}
                                         disabled={!isAvailable}
                                         onClick={() => isAvailable && setSelectedSize(size)}
-                                        className={`h-12 border flex items-center justify-center text-xs transition-all relative overflow-hidden ${selectedSize === size
+                                        className={`h-12 flex-1 min-w-[3rem] border flex items-center justify-center text-xs transition-all relative overflow-hidden ${selectedSize === size
                                             ? 'bg-secondary text-primary border-secondary font-bold'
                                             : isAvailable
                                                 ? 'border-secondary/10 hover:border-secondary text-secondary'
@@ -841,6 +842,68 @@ const ProductPage = () => {
                     </div>
                 )}
             </div>
+
+            {/* Size Guide Modal */}
+            <AnimatePresence>
+                {isSizeGuideOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/80 backdrop-blur-sm"
+                        onClick={() => setIsSizeGuideOpen(false)}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-primary border border-secondary/10 p-4 md:p-8 max-w-2xl w-full text-secondary shadow-2xl relative"
+                        >
+                            <button
+                                onClick={() => setIsSizeGuideOpen(false)}
+                                className="absolute top-4 right-4 md:top-6 md:right-6 text-secondary/50 hover:text-secondary transition-colors"
+                            >
+                                <X size={24} strokeWidth={1.5} />
+                            </button>
+
+                            <h3 className="text-2xl font-serif tracking-tight uppercase mb-2">Size Guide <span className="text-sm tracking-widest text-secondary/50">(Oversized Fit)</span></h3>
+                            <p className="text-[10px] uppercase tracking-widest text-secondary/50 mb-8 pb-4 border-b border-secondary/10">All measurements are in inches</p>
+
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-sm">
+                                    <thead>
+                                        <tr className="border-b border-secondary/20">
+                                            <th className="py-4 font-normal text-secondary/50 uppercase tracking-widest text-[10px]">Size</th>
+                                            <th className="py-4 font-normal text-secondary/50 uppercase tracking-widest text-[10px]">Chest</th>
+                                            <th className="py-4 font-normal text-secondary/50 uppercase tracking-widest text-[10px]">Length</th>
+                                            <th className="py-4 font-normal text-secondary/50 uppercase tracking-widest text-[10px]">Shoulder</th>
+                                            <th className="py-4 font-normal text-secondary/50 uppercase tracking-widest text-[10px]">Sleeve</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {[
+                                            { size: 'S', chest: '42', length: '27.5', shoulder: '21.5', sleeve: '8.8' },
+                                            { size: 'M', chest: '44', length: '28', shoulder: '22.5', sleeve: '9' },
+                                            { size: 'L', chest: '46', length: '28.5', shoulder: '23.5', sleeve: '9.2' },
+                                            { size: 'XL', chest: '48', length: '29', shoulder: '24.5', sleeve: '9.4' },
+                                            { size: 'XXL', chest: '50', length: '29.5', shoulder: '25.5', sleeve: '9.6' }
+                                        ].map((row, idx) => (
+                                            <tr key={idx} className="border-b border-secondary/5 hover:bg-secondary/5 transition-colors">
+                                                <td className="py-4 font-bold">{row.size}</td>
+                                                <td className="py-4 font-mono text-secondary/80">{row.chest}</td>
+                                                <td className="py-4 font-mono text-secondary/80">{row.length}</td>
+                                                <td className="py-4 font-mono text-secondary/80">{row.shoulder}</td>
+                                                <td className="py-4 font-mono text-secondary/80">{row.sleeve}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }

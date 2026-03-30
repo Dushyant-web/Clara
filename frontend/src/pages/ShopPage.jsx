@@ -370,7 +370,7 @@ useEffect(() => {
                             animate={{ x: 0 }}
                             exit={{ x: '100%' }}
                             transition={{ type: 'tween', duration: 0.5, ease: [0.43, 0.13, 0.23, 0.96] }}
-                            className="fixed top-0 right-0 h-full w-full max-w-sm bg-primary z-[70] p-12 overflow-y-auto"
+                            className="fixed top-0 right-0 h-full w-full max-w-sm bg-primary z-[70] p-6 md:p-12 overflow-y-auto"
                         >
                             <div className="flex justify-between items-center mb-12 text-secondary">
                                 <h2 className="text-2xl font-serif tracking-tighter uppercase">Filters</h2>

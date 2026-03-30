@@ -459,34 +459,6 @@ const CheckoutPage = () => {
                                                 className="w-full bg-transparent pl-8 py-4 text-xs font-bold focus:outline-none transition-all text-secondary"
                                             />
                                         </div>
-                                        <div className="grid grid-cols-2 gap-6">
-                                            <select
-                                                required
-                                                value={shippingData.city}
-                                                onChange={(e) => setShippingData({ ...shippingData, city: e.target.value })}
-                                                className="bg-transparent border-b border-secondary/20 py-4 text-xs font-bold focus:outline-none focus:border-secondary transition-all text-secondary"
-                                            >
-                                                <option value="">Select City</option>
-                                                {shippingData.city && !cityOptions.includes(shippingData.city) && (
-                                                    <option value={shippingData.city}>{shippingData.city}</option>
-                                                )}
-                                                {cityOptions.map((city) => (
-                                                    <option key={city} value={city}>{city}</option>
-                                                ))}
-                                            </select>
-
-                                            <select
-                                                required
-                                                value={shippingData.state}
-                                                onChange={(e) => setShippingData({ ...shippingData, state: e.target.value })}
-                                                className="bg-transparent border-b border-secondary/20 py-4 text-xs font-bold focus:outline-none focus:border-secondary transition-all text-secondary"
-                                            >
-                                                <option value="">Select State</option>
-                                                {indianStates.map((st) => (
-                                                    <option key={st} value={st}>{st}</option>
-                                                ))}
-                                            </select>
-                                        </div>
                                         <input
                                             type="text"
                                             placeholder="Pincode"
@@ -501,6 +473,24 @@ const CheckoutPage = () => {
                                             }}
                                             className="bg-transparent border-b border-secondary/20 py-4 text-xs font-bold focus:outline-none focus:border-secondary transition-all text-secondary"
                                         />
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <input
+                                                type="text"
+                                                placeholder="State"
+                                                required
+                                                disabled
+                                                value={shippingData.state}
+                                                className="bg-transparent border-b border-secondary/20 py-4 text-xs font-bold transition-all text-secondary opacity-50 cursor-not-allowed uppercase"
+                                            />
+                                            <input
+                                                type="text"
+                                                placeholder="City"
+                                                required
+                                                disabled
+                                                value={shippingData.city}
+                                                className="bg-transparent border-b border-secondary/20 py-4 text-xs font-bold transition-all text-secondary opacity-50 cursor-not-allowed uppercase"
+                                            />
+                                        </div>
                                         <div className="md:col-span-2 pt-4">
                                             <button
                                                 type="button"
