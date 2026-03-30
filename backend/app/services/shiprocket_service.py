@@ -79,9 +79,9 @@ def create_shipment(order, db: Session):
     payload = {
         "order_id": f"CLARA_{order.id}",
         "order_date": str(order.created_at.date()),
-        "pickup_location": "Primary",
+        "pickup_location": "GANESH",
 
-        "billing_first_name": billing_first_name,
+        "billing_customer_name": billing_first_name,
         "billing_last_name": billing_last_name,
         "billing_address": address.address_line,
         "billing_city": address.city,
