@@ -6,7 +6,7 @@ export const orderService = {
         return response.data;
     },
     getOrder: async (orderId) => {
-        const response = await api.get(`/orders/${orderId}`);
+        const response = await api.get(`/order/${orderId}`);
         return response.data;
     },
     createCheckout: async (userId, addressId, idempotencyKey = null, promoCode = null) => {
