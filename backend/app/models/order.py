@@ -25,4 +25,8 @@ class Order(Base):
     # Shipping address reference (required for logistics / Shiprocket)
     shipping_address_id = Column(Integer, ForeignKey("addresses.id"))
 
+    # Shiprocket tracking integrations
+    shiprocket_order_id = Column(String(255), nullable=True)
+    shiprocket_shipment_id = Column(String(255), nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())

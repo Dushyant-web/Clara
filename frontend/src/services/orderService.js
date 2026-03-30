@@ -45,6 +45,10 @@ export const orderService = {
         const response = await api.get(`/payment/status/${orderId}`);
         return response.data;
     },
+    getShiprocketTracking: async (orderId) => {
+        const response = await api.get(`/orders/${orderId}/tracking`);
+        return response.data;
+    },
     reserveStock: async (data) => {
         const response = await api.post('/reserve', data);
         return response.data;

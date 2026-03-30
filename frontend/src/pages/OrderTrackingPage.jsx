@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { orderService } from '../services/orderService';
-import { motion } from 'framer-motion';
-import { Package, Truck, CheckCircle2, ChevronLeft, MapPin, Calendar, Clock, ArrowLeft } from 'lucide-react';
+import { Package, Truck, CheckCircle2, MapPin, Calendar, Clock, ArrowLeft, ExternalLink } from 'lucide-react';
 
 const OrderTrackingPage = () => {
     const { id } = useParams();
     const [order, setOrder] = useState(null);
+    const [trackingData, setTrackingData] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -17,7 +17,7 @@ const OrderTrackingPage = () => {
                 if (data.status !== 'delivered') {
                     try {
                         const paymentStatus = await orderService.getPaymentStatus(id);
-                        if (paymentStatus.status === 'captured' || paymentStatus.status === 'confirmed') {
+                        if (paymentStatus.status === 'captured' || paymentStatus.status === 'confirmed' || paymentStatus.status === 'paid') {
                             data.status = 'confirmed';
                         }
                     } catch (e) {
@@ -25,6 +25,27 @@ const OrderTrackingPage = () => {
                     }
                 }
                 setOrder(data);
+
+                // Fetch real-time Shiprocket tracking
+                try {
+                    const trackingResponse = await orderService.getShiprocketTracking(id);
+                    if (trackingResponse && trackingResponse.tracking_data) {
+                        setTrackingData(trackingResponse.tracking_data);
+                        
+                        // Update order status based on live shipment status
+                        const shipStatus = trackingResponse.tracking_data.shipment_track?.[0]?.current_status?.toUpperCase();
+                        
+                        if (shipStatus === 'DELIVERED') {
+                            data.status = 'delivered';
+                        } else if (shipStatus === 'PICKED UP' || shipStatus === 'IN TRANSIT' || shipStatus === 'OUT FOR DELIVERY') {
+                            data.status = 'shipped';
+                        }
+                        setOrder({...data});
+                    }
+                } catch (e) {
+                    console.warn('Shiprocket tracking fetch failed', e);
+                }
+
             } catch (error) {
                 console.error('Failed to fetch order', error);
             } finally {
@@ -59,11 +80,48 @@ const OrderTrackingPage = () => {
         </div>
     );
 
+    // Parse Live Tracking Data
+    const liveShipment = trackingData?.shipment_track?.[0] || {};
+    const hasLiveTracking = trackingData?.error == null && trackingData?.shipment_track?.length > 0;
+    
+    // Parse the activities list from top to bottom
+    const activities = trackingData?.shipment_track_activities || [];
+    const latestActivity = activities?.[0]; // shiprocket returns latest first usually
+
+    // Dynamic timeline states driven by live data when possible
     const statuses = [
-        { id: 'placed', name: 'ORDER PLACED', icon: Package, done: true, date: new Date(order.created_at).toLocaleDateString(), time: new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) },
-        { id: 'confirmed', name: 'PAYMENT CONFIRMED', icon: CheckCircle2, done: order.status === 'confirmed' || order.status === 'shipped' || order.status === 'delivered', date: new Date(order.created_at).toLocaleDateString(), time: new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) },
-        { id: 'shipped', name: 'OUT FOR DELIVERY', icon: Truck, done: order.status === 'shipped' || order.status === 'delivered', date: '-- / -- / --', time: '--:--' },
-        { id: 'delivered', name: 'DELIVERED', icon: CheckCircle2, done: order.status === 'delivered', date: '-- / -- / --', time: '--:--' },
+        { 
+            id: 'placed', 
+            name: 'ORDER PLACED', 
+            icon: Package, 
+            done: true, 
+            date: new Date(order.created_at).toLocaleDateString(), 
+            time: new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+        },
+        { 
+            id: 'confirmed', 
+            name: 'PAYMENT CONFIRMED', 
+            icon: CheckCircle2, 
+            done: order.status === 'confirmed' || order.status === 'shipped' || order.status === 'delivered', 
+            date: order.status !== 'pending' ? new Date(order.created_at).toLocaleDateString() : '-- / -- / --', 
+            time: order.status !== 'pending' ? new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--' 
+        },
+        { 
+            id: 'shipped', 
+            name: 'DISPATCHED', 
+            icon: Truck, 
+            done: order.status === 'shipped' || order.status === 'delivered', 
+            date: hasLiveTracking && liveShipment.pickup_date ? liveShipment.pickup_date.split(' ')[0] : '-- / -- / --', 
+            time: hasLiveTracking && liveShipment.pickup_date ? liveShipment.pickup_date.split(' ')[1] : '--:--' 
+        },
+        { 
+            id: 'delivered', 
+            name: 'DELIVERED', 
+            icon: CheckCircle2, 
+            done: order.status === 'delivered', 
+            date: hasLiveTracking && liveShipment.delivered_date ? liveShipment.delivered_date.split(' ')[0] : '-- / -- / --', 
+            time: hasLiveTracking && liveShipment.delivered_date ? liveShipment.delivered_date.split(' ')[1] : '--:--' 
+        },
     ];
 
     return (
@@ -81,7 +139,9 @@ const OrderTrackingPage = () => {
                         </div>
                         <div className="md:text-right">
                             <p className="text-[10px] font-bold opacity-30 uppercase mb-1">CURRENT STATUS</p>
-                            <p className="text-xs font-bold tracking-[0.2em] uppercase text-secondary border-b border-secondary/20 pb-1">{order.status}</p>
+                            <p className="text-xs font-bold tracking-[0.2em] uppercase text-secondary border-b border-secondary/20 pb-1">
+                                {liveShipment.current_status || order.status}
+                            </p>
                         </div>
                     </div>
                 </header>
@@ -89,6 +149,30 @@ const OrderTrackingPage = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                     {/* Tracking Timeline */}
                     <div className="lg:col-span-8 space-y-12">
+                        
+                        {/* Live Activity Feed highlight if available */}
+                        {hasLiveTracking && (
+                            <div className="bg-secondary/5 p-6 border border-secondary/10 flex items-start gap-4 mb-4">
+                                <Truck size={20} className="shrink-0 mt-1" />
+                                <div>
+                                    <h4 className="text-xs font-bold tracking-widest uppercase mb-1">Live Shipment Updates</h4>
+                                    <p className="text-[10px] tracking-widest text-gray-500 font-bold uppercase mb-3">
+                                        Via {liveShipment.courier_name} • AWB: {liveShipment.awb_code}
+                                    </p>
+                                    
+                                    {latestActivity ? (
+                                        <div className="text-xs font-serif italic text-secondary border-l-2 border-secondary/20 pl-4 py-1">
+                                            "{latestActivity.activity}" 
+                                            {latestActivity.location && <span className="opacity-50 text-[10px] ml-2 block mt-1 not-italic tracking-widest uppercase">— {latestActivity.location}</span>}
+                                        </div>
+                                    ) : (
+                                        <p className="text-xs font-serif italic opacity-50">Waiting for carrier scans...</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+
                         {statuses.map((status, idx) => (
                             <div key={idx} className={`flex gap-8 relative ${status.done ? 'opacity-100' : 'opacity-30'}`}>
                                 {idx !== statuses.length - 1 && (
@@ -126,7 +210,7 @@ const OrderTrackingPage = () => {
                                             <div className="w-20 aspect-[3/4] bg-secondary/10 shrink-0 overflow-hidden">
                                                 <img 
                                                     src={item.image || 'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200'} 
-                                                    className="w-full h-full object-cover" 
+                                                    className="w-full h-full object-cover shadow-sm" 
                                                     alt={item.name} 
                                                 />
                                             </div>
@@ -139,7 +223,7 @@ const OrderTrackingPage = () => {
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-sm font-serif">₹{item.item_total}</p>
+                                                <p className="text-sm font-serif">₹{item.price * item.quantity}</p>
                                             </div>
                                         </div>
                                     ))}
@@ -156,8 +240,10 @@ const OrderTrackingPage = () => {
                                 <div>
                                     <p className="text-[10px] font-bold opacity-30 uppercase mb-2 tracking-widest">Shipping Address</p>
                                     <div className="flex gap-3 text-secondary/70">
-                                        <MapPin size={14} className="shrink-0 mt-1" />
-                                        <p className="text-xs leading-relaxed uppercase tracking-widest font-bold">{order.shipping_address || 'Address awaiting carrier confirmation...'}</p>
+                                        <MapPin size={14} className="shrink-0 mt-1 opacity-50" />
+                                        <p className="text-xs leading-relaxed uppercase tracking-widest font-bold">
+                                            {hasLiveTracking && liveShipment.delivered_to ? liveShipment.delivered_to : 'Address confirmed.'}
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="pt-6 border-t border-secondary/10">
@@ -173,7 +259,19 @@ const OrderTrackingPage = () => {
                         >
                             Download Invoice
                         </button>
-                        <button className="w-full py-5 border border-secondary/10 bg-secondary/5 text-secondary text-[10px] font-black uppercase tracking-[0.4em] hover:bg-secondary hover:text-primary transition-all">
+                        
+                        {hasLiveTracking && liveShipment.track_url && (
+                             <a 
+                                href={liveShipment.track_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="w-full flex items-center justify-center gap-3 py-5 border border-secondary/10 bg-secondary/5 text-secondary text-[10px] font-black uppercase tracking-[0.4em] hover:bg-secondary hover:text-primary transition-all mb-4"
+                            >
+                                Track on Carrier <ExternalLink size={12}/>
+                            </a>
+                        )}
+
+                        <button className="w-full py-5 border border-secondary/10 bg-transparent text-secondary text-[10px] font-black uppercase tracking-[0.4em] hover:opacity-50 transition-all">
                             Contact Concierge
                         </button>
                     </div>

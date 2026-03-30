@@ -66,6 +66,11 @@ def create_shipment(order, db: Session):
         Address.id == order.shipping_address_id
     ).first()
 
+    # Get User email
+    from app.models.user import User
+    user = db.query(User).filter(User.id == order.user_id).first()
+    customer_email = user.email if user else "customer@email.com"
+
     # Split name into first and last (Shiprocket requires both)
     name_parts = (address.name or "Customer").strip().split(" ", 1)
     billing_first_name = name_parts[0]
@@ -83,7 +88,7 @@ def create_shipment(order, db: Session):
         "billing_pincode": address.postal_code,
         "billing_state": address.state,
         "billing_country": address.country,
-        "billing_email": "customer@email.com",
+        "billing_email": customer_email,
         "billing_phone": address.phone,
 
         "shipping_is_billing": True,
@@ -109,4 +114,21 @@ def create_shipment(order, db: Session):
 
     print("Shiprocket response:", data)
 
+    return data
+
+
+def get_shiprocket_tracking(shipment_id: str):
+    token = get_shiprocket_token()
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+
+    response = requests.get(
+        f"{BASE_URL}/courier/track/shipment/{shipment_id}",
+        headers=headers
+    )
+
+    data = response.json()
     return data

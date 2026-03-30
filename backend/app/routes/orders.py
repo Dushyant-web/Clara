@@ -10,6 +10,7 @@ from app.models.product import Product
 from app.models.product_image import ProductImage
 from app.models.variant_image import VariantImage
 from app.models.address import Address
+from app.services.shiprocket_service import get_shiprocket_tracking
 
 router = APIRouter()
 
@@ -162,3 +163,28 @@ def delete_unpaid_orders(user_id: int, db: Session = Depends(get_db)):
     
     db.commit()
     return {"message": "Unpaid orders cleared"}
+
+
+@router.get("/orders/{order_id}/tracking")
+def get_order_tracking(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+        
+    if not order.shiprocket_shipment_id:
+        return {
+            "status": 0, 
+            "message": "Order processing. Shipment not generated yet.",
+            "tracking_data": None
+        }
+
+    try:
+        return get_shiprocket_tracking(order.shiprocket_shipment_id)
+    except Exception as e:
+        print("Shiprocket tracking fetch failed:", str(e))
+        return {
+            "status": 0, 
+            "message": "Tracking currently unavailable.",
+            "error": str(e)
+        }

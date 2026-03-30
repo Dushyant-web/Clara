@@ -146,7 +146,10 @@ def confirm_payment(request: PaymentConfirmRequest, db: Session = Depends(get_db
 
         # Create shipment in Shiprocket after successful payment
         try:
-            create_shipment(order, db)
+            ship_data = create_shipment(order, db)
+            if ship_data and "order_id" in ship_data and "shipment_id" in ship_data:
+                order.shiprocket_order_id = str(ship_data["order_id"])
+                order.shiprocket_shipment_id = str(ship_data["shipment_id"])
         except Exception as e:
             # Do not break payment flow if shipping fails
             print("Shiprocket shipment creation failed:", str(e))
@@ -236,7 +239,10 @@ async def razorpay_webhook(request: Request, db: Session = Depends(get_db)):
 
         # Create shipment in Shiprocket after webhook payment confirmation
         try:
-            create_shipment(order, db)
+            ship_data = create_shipment(order, db)
+            if ship_data and "order_id" in ship_data and "shipment_id" in ship_data:
+                order.shiprocket_order_id = str(ship_data["order_id"])
+                order.shiprocket_shipment_id = str(ship_data["shipment_id"])
         except Exception as e:
             print("Shiprocket shipment creation failed:", str(e))
 
