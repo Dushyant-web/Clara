@@ -77,7 +77,7 @@ def create_shipment(order, db: Session):
     billing_last_name = name_parts[1] if len(name_parts) > 1 else "Customer"
 
     payload = {
-        "order_id": f"CLARA_{order.id}",
+        "order_id": f"GAURK_{order.id}",
         "order_date": str(order.created_at.date()),
         "pickup_location": "GANESH",
 

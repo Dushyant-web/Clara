@@ -68,6 +68,12 @@ const CheckoutPage = () => {
     const [promoCode, setPromoCode] = useState('')
     const [cityOptions, setCityOptions] = useState([])
     const [savedAddresses, setSavedAddresses] = useState([])
+    const [deliveryOptions, setDeliveryOptions] = useState([
+        { id: 'express', name: 'Express Global', days: '3-5 Business Days', price: 25.00 },
+        { id: 'standard', name: 'Standard Economy', days: '7-14 Business Days', price: 0.00 }
+    ])
+    const [selectedDeliveryId, setSelectedDeliveryId] = useState('express')
+    const [loadingRates, setLoadingRates] = useState(false)
     const [selectedAddress, setSelectedAddress] = useState("")
     const [savingAddress, setSavingAddress] = useState(false)
     const [discount, setDiscount] = useState(0)
@@ -83,6 +89,45 @@ const CheckoutPage = () => {
             navigate('/cart')
         }
     }, [cartItems, navigate, isProcessing])
+
+    useEffect(() => {
+        const fetchRates = async () => {
+            if (shippingData.pincode && shippingData.pincode.length === 6) {
+                setLoadingRates(true);
+                try {
+                    const response = await orderService.getShippingRates({
+                        pincode: shippingData.pincode,
+                        city: shippingData.city,
+                        state: shippingData.state,
+                        weight: 0.5 
+                    });
+
+                    if (response && response.length > 0) {
+                        setDeliveryOptions(response.map(rate => ({
+                            id: rate.id || rate.courier_name,
+                            name: rate.name || rate.courier_name || 'Courier',
+                            days: rate.days || rate.estimated_delivery_days ? `${rate.estimated_delivery_days} Business Days` : '3-5 Business Days',
+                            price: parseFloat(rate.price || rate.rate || 0)
+                        })));
+                        setSelectedDeliveryId(response[0].id || response[0].courier_name);
+                    }
+                } catch (error) {
+                    console.log('Dynamic shipping rates not available yet, using fallback.');
+                    setDeliveryOptions([
+                        { id: 'express', name: 'Express Global', days: '3-5 Business Days', price: 25.00 },
+                        { id: 'standard', name: 'Standard Economy', days: '7-14 Business Days', price: 0.00 }
+                    ]);
+                    setSelectedDeliveryId('express');
+                } finally {
+                    setLoadingRates(false);
+                }
+            }
+        };
+
+        if (step === 2) {
+            fetchRates();
+        }
+    }, [step, shippingData.pincode, shippingData.city, shippingData.state]);
 
     useEffect(() => {
         const fetchAddresses = async () => {
@@ -101,9 +146,11 @@ const CheckoutPage = () => {
     }, [user])
 
     const subtotal = cartTotal
+    const selectedDeliveryOption = deliveryOptions.find(o => o.id === selectedDeliveryId) || deliveryOptions[0]
+    const shippingCost = selectedDeliveryOption ? selectedDeliveryOption.price : (subtotal > 500 ? 0 : 25.00)
     const total = serverTotal !== null
         ? serverTotal
-        : (subtotal > 500 ? subtotal : subtotal + 25) - discount
+        : (subtotal + shippingCost) - discount
 
     const handleApplyPromo = async () => {
         if (!promoCode.trim() || !user) return
@@ -507,28 +554,42 @@ const CheckoutPage = () => {
 
                                 {step === 2 && (
                                     <div className="space-y-4">
-                                        <label className="bg-secondary/5 border border-secondary/10 p-6 flex justify-between items-center cursor-pointer hover:border-secondary transition-all">
-                                            <div className="flex items-center gap-6">
-                                                <Truck size={24} className="text-gray-500" />
-                                                <div>
-                                                    <p className="text-xs font-bold">Express Global</p>
-                                                    <p className="text-[10px] text-gray-500 mt-1 font-bold">3-5 Business Days</p>
-                                                </div>
-                                            </div>
-                                            <span className="text-xs font-bold">₹25.00</span>
-                                            <input type="radio" name="delivery" defaultChecked className="hidden" />
-                                        </label>
-                                        <label className="bg-secondary/5 border border-secondary/10 p-6 flex justify-between items-center cursor-pointer hover:border-secondary transition-all opacity-50">
-                                            <div className="flex items-center gap-6">
-                                                <Truck size={24} className="text-gray-500" />
-                                                <div>
-                                                    <p className="text-xs font-bold">Standard Economy</p>
-                                                    <p className="text-[10px] text-gray-500 mt-1 font-bold">7-14 Business Days</p>
-                                                </div>
-                                            </div>
-                                            <span className="text-xs font-bold">FREE</span>
-                                            <input type="radio" name="delivery" className="hidden" />
-                                        </label>
+                                        {loadingRates ? (
+                                             <div className="flex justify-center items-center py-10">
+                                                  <Loader2 size={24} className="animate-spin text-secondary opacity-50" />
+                                                  <span className="ml-3 text-xs tracking-widest uppercase font-bold text-gray-400">Fetching Live Rates...</span>
+                                             </div>
+                                        ) : (
+                                            deliveryOptions.map(option => (
+                                                <label 
+                                                    key={option.id}
+                                                    className={`bg-secondary/5 border p-6 flex justify-between items-center cursor-pointer transition-all ${
+                                                        selectedDeliveryId === option.id 
+                                                            ? 'border-secondary' 
+                                                            : 'border-secondary/10 hover:border-secondary/50 opacity-50'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center gap-6">
+                                                        <Truck size={24} className={selectedDeliveryId === option.id ? "text-secondary" : "text-gray-500"} />
+                                                        <div>
+                                                            <p className="text-xs font-bold">{option.name}</p>
+                                                            <p className="text-[10px] text-gray-500 mt-1 font-bold">{option.days}</p>
+                                                        </div>
+                                                    </div>
+                                                    <span className="text-xs font-bold">
+                                                        {option.price === 0 ? 'FREE' : `₹${option.price.toFixed(2)}`}
+                                                    </span>
+                                                    <input 
+                                                        type="radio" 
+                                                        name="delivery"
+                                                        value={option.id}
+                                                        checked={selectedDeliveryId === option.id}
+                                                        onChange={() => setSelectedDeliveryId(option.id)}
+                                                        className="hidden" 
+                                                    />
+                                                </label>
+                                            ))
+                                        )}
                                     </div>
                                 )}
 
@@ -632,7 +693,7 @@ const CheckoutPage = () => {
                                 </div>
                                 <div className="flex justify-between text-[10px] tracking-widest text-gray-400 transition-all font-bold">
                                     <span>Shipping</span>
-                                    <span>{subtotal > 500 ? 'FREE' : '₹25.00'}</span>
+                                    <span>{shippingCost === 0 ? 'FREE' : `₹${shippingCost.toFixed(2)}`}</span>
                                 </div>
                                 {discount > 0 && (
                                     <div className="flex justify-between text-[10px] tracking-widest text-green-500 transition-all font-bold">

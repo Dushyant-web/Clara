@@ -56,6 +56,14 @@ export const orderService = {
 
     deleteUnpaidOrders(userId) {
         return api.delete(`/orders/unpaid/${userId}`)
+    },
+    getShippingRates: async (payload) => {
+        try {
+            const response = await api.post('/shipping/rates', payload);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
     }
 
 };
