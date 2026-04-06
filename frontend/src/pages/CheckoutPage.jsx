@@ -69,10 +69,10 @@ const CheckoutPage = () => {
     const [cityOptions, setCityOptions] = useState([])
     const [savedAddresses, setSavedAddresses] = useState([])
     const [deliveryOptions, setDeliveryOptions] = useState([
-        { id: 'express', name: 'Express Global', days: '3-5 Business Days', price: 25.00 },
-        { id: 'standard', name: 'Standard Economy', days: '7-14 Business Days', price: 0.00 }
+        { id: 'prepaid', name: 'Standard Delivery', days: '3-5 Business Days', price: 60.00 },
+        { id: 'cod', name: 'Cash on Delivery', days: '3-5 Business Days', price: 60.00, isCod: true }
     ])
-    const [selectedDeliveryId, setSelectedDeliveryId] = useState('express')
+    const [selectedDeliveryId, setSelectedDeliveryId] = useState('prepaid')
     const [loadingRates, setLoadingRates] = useState(false)
     const [selectedAddress, setSelectedAddress] = useState("")
     const [savingAddress, setSavingAddress] = useState(false)
@@ -114,10 +114,10 @@ const CheckoutPage = () => {
                 } catch (error) {
                     console.log('Dynamic shipping rates not available yet, using fallback.');
                     setDeliveryOptions([
-                        { id: 'express', name: 'Express Global', days: '3-5 Business Days', price: 25.00 },
-                        { id: 'standard', name: 'Standard Economy', days: '7-14 Business Days', price: 0.00 }
+                        { id: 'prepaid', name: 'Standard Delivery', days: '3-5 Business Days', price: 60.00 },
+                        { id: 'cod', name: 'Cash on Delivery', days: '3-5 Business Days', price: 60.00, isCod: true }
                     ]);
-                    setSelectedDeliveryId('express');
+                    setSelectedDeliveryId('prepaid');
                 } finally {
                     setLoadingRates(false);
                 }
@@ -147,7 +147,7 @@ const CheckoutPage = () => {
 
     const subtotal = cartTotal
     const selectedDeliveryOption = deliveryOptions.find(o => o.id === selectedDeliveryId) || deliveryOptions[0]
-    const shippingCost = selectedDeliveryOption ? selectedDeliveryOption.price : (subtotal > 500 ? 0 : 25.00)
+    const shippingCost = selectedDeliveryOption ? selectedDeliveryOption.price : 60.00
     const total = serverTotal !== null
         ? serverTotal
         : (subtotal + shippingCost) - discount
@@ -307,6 +307,14 @@ const CheckoutPage = () => {
                 if (!checkoutResponse || !checkoutResponse.order_id) {
                     throw new Error(checkoutResponse?.message || 'Failed to create order on server');
                 }
+
+                // If COD is selected, bypass razorpay
+                if (selectedDeliveryId === 'cod') {
+                    clearCart()
+                    navigate(`/order-confirmation?order_id=${checkoutResponse.order_id}`)
+                    return
+                }
+
                 // 2. Initiate Payment
                 const paymentResponse = await orderService.initiatePayment(
                     checkoutResponse.order_id,
@@ -577,7 +585,7 @@ const CheckoutPage = () => {
                                                         </div>
                                                     </div>
                                                     <span className="text-xs font-bold">
-                                                        {option.price === 0 ? 'FREE' : `₹${option.price.toFixed(2)}`}
+                                                        {option.isCod ? 'Pay on Delivery' : (option.price === 0 ? 'FREE' : `₹${option.price.toFixed(2)}`)}
                                                     </span>
                                                     <input 
                                                         type="radio" 
@@ -602,7 +610,9 @@ const CheckoutPage = () => {
                                     >
                                         <div className="text-center">
                                             <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em] font-bold mb-2">Checkout Method</p>
-                                            <p className="text-xs font-bold tracking-widest text-secondary">Pay securely via Razorpay</p>
+                                            <p className="text-xs font-bold tracking-widest text-secondary">
+                                                {selectedDeliveryId === 'cod' ? 'Cash on Delivery' : 'Pay securely via Razorpay'}
+                                            </p>
                                         </div>
 
                                         <div className="pt-12 pb-16 text-center space-y-6">
@@ -610,18 +620,24 @@ const CheckoutPage = () => {
                                                 <ShoppingBag className="text-secondary/60" size={40} />
                                             </div>
                                             <div className="space-y-2">
-                                                <p className="text-base font-serif italic text-secondary">Secured by Razorpay</p>
-                                                <p className="text-[10px] text-gray-400 uppercase tracking-[0.3em] font-bold">Standard Secure Checkout</p>
+                                                <p className="text-base font-serif italic text-secondary">
+                                                    {selectedDeliveryId === 'cod' ? 'Pay upon receipt' : 'Secured by Razorpay'}
+                                                </p>
+                                                <p className="text-[10px] text-gray-400 uppercase tracking-[0.3em] font-bold">
+                                                    {selectedDeliveryId === 'cod' ? 'Confirm your order' : 'Standard Secure Checkout'}
+                                                </p>
                                             </div>
-                                            <div className="pt-8 border-t border-secondary/5 max-w-xs mx-auto">
-                                                <div className="flex justify-center gap-6 opacity-40 grayscale hover:grayscale-0 transition-all duration-500">
-                                                    <img src="https://img.icons8.com/color/48/visa.png" className="h-4" alt="Visa" />
-                                                    <img src="https://img.icons8.com/color/48/mastercard.png" className="h-6" alt="Mastercard" />
-                                                    <img src="https://img.icons8.com/color/48/google-pay.png" className="h-6" alt="GPay" />
-                                                    <img src="https://img.icons8.com/color/48/phonepe.png" className="h-6" alt="PhonePe" />
+                                            {selectedDeliveryId !== 'cod' && (
+                                                <div className="pt-8 border-t border-secondary/5 max-w-xs mx-auto">
+                                                    <div className="flex justify-center gap-6 opacity-40 grayscale hover:grayscale-0 transition-all duration-500">
+                                                        <img src="https://img.icons8.com/color/48/visa.png" className="h-4" alt="Visa" />
+                                                        <img src="https://img.icons8.com/color/48/mastercard.png" className="h-6" alt="Mastercard" />
+                                                        <img src="https://img.icons8.com/color/48/google-pay.png" className="h-6" alt="GPay" />
+                                                        <img src="https://img.icons8.com/color/48/phonepe.png" className="h-6" alt="PhonePe" />
+                                                    </div>
+                                                    <p className="text-[8px] text-gray-400 mt-6 uppercase tracking-widest font-bold">All major cards & UPI supported</p>
                                                 </div>
-                                                <p className="text-[8px] text-gray-400 mt-6 uppercase tracking-widest font-bold">All major cards & UPI supported</p>
-                                            </div>
+                                            )}
                                         </div>
                                     </motion.div>
                                 )}

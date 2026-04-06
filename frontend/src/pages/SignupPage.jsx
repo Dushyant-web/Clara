@@ -21,6 +21,19 @@ const SignupPage = () => {
     const [loading, setLoading] = useState(false)
     const navigate = useNavigate()
 
+    // Safely destroys the active RecaptchaVerifier and wipes the DOM container.
+    // Simply calling .clear() can fail silently leaving a stale widget in the
+    // DOM, which causes "reCAPTCHA has already been rendered in this element"
+    // on the next attempt. Manually clearing innerHTML guarantees a clean slate.
+    const destroyRecaptcha = () => {
+        if (window.recaptchaVerifier) {
+            try { window.recaptchaVerifier.clear() } catch (_) {}
+            window.recaptchaVerifier = null
+        }
+        const el = document.getElementById('recaptcha-container')
+        if (el) el.innerHTML = ''
+    }
+
     const handleInfoSubmit = async (e) => {
         e.preventDefault()
         if (!formData.name || !formData.email || !formData.phone) {
@@ -29,25 +42,42 @@ const SignupPage = () => {
 
         setLoading(true)
         try {
-            if (!window.recaptchaVerifier) {
-                window.recaptchaVerifier = new RecaptchaVerifier(
-                    auth,
-                    "recaptcha-container",
-                    { size: "invisible" }
-                )
-                await window.recaptchaVerifier.render()
+            // Strip spaces and non-digit characters.
+            // E.g. "81306 10047" → "8130610047" so the full phone is "+918130610047".
+            const cleanPhone = formData.phone.replace(/\D/g, '')
+            if (cleanPhone.length !== 10) {
+                showAlert('Enter a valid 10-digit phone number', 'error')
+                setLoading(false)
+                return
             }
 
-            const appVerifier = window.recaptchaVerifier
-            const fullPhone = "+91" + formData.phone
-            const result = await signInWithPhoneNumber(auth, fullPhone, appVerifier)
+            // Destroy any previous verifier + wipe the container DOM node.
+            destroyRecaptcha()
+
+            window.recaptchaVerifier = new RecaptchaVerifier(
+                auth,
+                'recaptcha-container',
+                { size: 'invisible' }
+            )
+            await window.recaptchaVerifier.render()
+
+            const fullPhone = '+91' + cleanPhone
+            const result = await signInWithPhoneNumber(auth, fullPhone, window.recaptchaVerifier)
 
             setConfirmationResult(result)
-            showAlert('OTP sent to ' + formData.phone, 'success')
+            showAlert('OTP sent to +91' + cleanPhone, 'success')
             setStep('otp')
         } catch (error) {
-            console.error(error)
-            showAlert('Failed to send OTP', 'error')
+            console.error('OTP send error:', error.code, error.message)
+            destroyRecaptcha()
+            const msg = {
+                'auth/invalid-phone-number': 'Invalid phone number. Enter a valid 10-digit number.',
+                'auth/too-many-requests': 'Too many attempts. Wait a few minutes and try again.',
+                'auth/quota-exceeded': 'SMS quota exceeded. Try again later.',
+                'auth/invalid-app-credential': 'reCAPTCHA failed. Refresh the page and try again.',
+                'auth/captcha-check-failed': 'reCAPTCHA check failed. Refresh the page and try again.',
+            }[error.code] || 'Failed to send OTP. Try again.'
+            showAlert(msg, 'error')
         } finally {
             setLoading(false)
         }
