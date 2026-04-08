@@ -172,6 +172,17 @@ def confirm_cod_payment(order_id: int, db: Session = Depends(get_db)):
 
     order.status = "confirmed"
 
+    # Create a Payment record for COD so payment status/admin views work
+    existing_payment = db.query(Payment).filter(Payment.order_id == order_id).first()
+    if not existing_payment:
+        cod_payment = Payment(
+            order_id=order.id,
+            provider="cod",
+            status="cod_pending",  # Will be collected on delivery
+            amount=order.total_amount
+        )
+        db.add(cod_payment)
+
     # Deduct stock for purchased variants
     items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
     for item in items:
@@ -208,7 +219,11 @@ def payment_status(order_id: int, db: Session = Depends(get_db)):
     payment = db.query(Payment).filter(Payment.order_id == order_id).first()
 
     if not payment:
-        return {"error": "Payment not found"}
+        # Check if order exists and is a COD order (confirmed without payment record)
+        order = db.query(Order).filter(Order.id == order_id).first()
+        if order and order.status == "confirmed":
+            return {"order_id": order_id, "status": "cod_pending", "provider": "cod"}
+        raise HTTPException(status_code=404, detail="Payment not found")
 
     return {
         "order_id": order_id,
