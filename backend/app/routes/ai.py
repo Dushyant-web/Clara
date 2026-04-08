@@ -1,10 +1,62 @@
-from fastapi import APIRouter, Depends, Body
+import os
+from fastapi import APIRouter, Depends, Body, HTTPException
 from sqlalchemy.orm import Session
+from openai import OpenAI
 
 from app.database.db import get_db
 from app.models.product import Product
 
 router = APIRouter()
+
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
+
+# NVIDIA NIM uses an OpenAI-compatible endpoint
+nvidia_client = OpenAI(
+    base_url="https://integrate.api.nvidia.com/v1",
+    api_key=NVIDIA_API_KEY
+) if NVIDIA_API_KEY else None
+
+
+def get_product_context(db: Session, message: str) -> str:
+    """Fetch relevant products from DB and inject them as context."""
+    msg = message.lower()
+    products = db.query(Product).filter(
+        Product.status == "active",
+        (
+            Product.name.ilike(f"%{msg}%") |
+            Product.description.ilike(f"%{msg}%")
+        )
+    ).limit(5).all()
+
+    if not products:
+        # Fallback: return a few active products for general context
+        products = db.query(Product).filter(Product.status == "active").limit(5).all()
+
+    if not products:
+        return "No products currently available."
+
+    lines = []
+    for p in products:
+        lines.append(f"- {p.name}: {p.description or 'Luxury fashion piece'}")
+    return "\n".join(lines)
+
+
+SYSTEM_PROMPT = """You are the Elite Concierge for GAURK, an exclusive luxury fashion brand based in India.
+You assist customers in a warm, sophisticated, and concise manner.
+
+Your responsibilities:
+- Help customers discover products from our catalog
+- Answer questions about shipping (3-5 business days, free above ₹500), returns (30-day window), and sizing
+- Provide styling advice aligned with the GAURK luxury aesthetic
+- Direct complex issues to: gaurkclothing@gmail.com or WhatsApp +91 92179 60147
+
+Guidelines:
+- Keep responses short (2-4 sentences max) and elegant
+- Never make up prices or product details not provided to you
+- If asked about products, reference only what is in the catalog context provided
+- Respond in English only
+- Do not reveal you are an AI model or mention NVIDIA/LLaMA
+"""
 
 
 @router.post("/ai/chat")
@@ -12,80 +64,53 @@ def ai_chat(data: dict = Body(...), db: Session = Depends(get_db)):
     message = data.get("message", "").strip()
     if not message:
         return {"reply": "How may I assist your selection today?"}
-    
+
+    # If NVIDIA key not configured, fall back to rule-based
+    if not nvidia_client:
+        return _rule_based_fallback(message, db)
+
+    try:
+        product_context = get_product_context(db, message)
+
+        user_message = f"""Customer message: {message}
+
+Current GAURK catalog context:
+{product_context}"""
+
+        response = nvidia_client.chat.completions.create(
+            model="meta/llama-3.1-8b-instruct",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_message}
+            ],
+            temperature=0.6,
+            max_tokens=200,
+        )
+
+        reply = response.choices[0].message.content.strip()
+        return {"reply": reply}
+
+    except Exception as e:
+        # Graceful fallback if NVIDIA API fails
+        print(f"NVIDIA API error: {e}")
+        return _rule_based_fallback(message, db)
+
+
+def _rule_based_fallback(message: str, db: Session) -> dict:
+    """Original keyword-based fallback when AI is unavailable."""
     msg = message.lower()
-    
-    # --- Intent 1: Greetings ---
+
     greetings = ["hi", "hello", "hey", "greetings", "good morning", "good evening"]
     if any(word == msg or msg.startswith(word + " ") for word in greetings):
-        return {
-            "reply": "Welcome to the Elite Concierge. I am here to assist you in discovering our finest collections and ensuring a seamless experience. How may I serve you?"
-        }
+        return {"reply": "Welcome to the Elite Concierge. How may I serve you today?"}
 
-    # --- Intent 2: Shipping & Returns ---
     if any(word in msg for word in ["shipping", "delivery", "track", "arrive", "time"]):
-        return {
-            "reply": "We offer complimentary express shipping on all orders above ₹500. Standard delivery typically takes 3-5 business days. You can track your pieces in real-time through the 'Account' section once they are dispatched."
-        }
-    
+        return {"reply": "We offer complimentary express shipping on all orders above ₹500. Standard delivery takes 3-5 business days. Track your order in the 'Account' section."}
+
     if any(word in msg for word in ["return", "exchange", "refund", "change"]):
-        return {
-            "reply": "Our return policy is as effortless as our aesthetic. We offer a 30-day complimentary return and exchange window for all unworn pieces in their original packaging."
-        }
+        return {"reply": "We offer a 30-day complimentary return and exchange window for all unworn pieces in their original packaging."}
 
-    # --- Intent 3: Product Discovery / Search ---
-    # Define primary keywords for database lookup
-    search_terms = {
-        "hoodie": ["hoodie", "hoodies", "oversized hoodie"],
-        "tee": ["tee", "t-shirt", "shirt", "top"],
-        "jacket": ["jacket", "outerwear", "coat"],
-        "pant": ["pant", "trouser", "bottom", "trackpant"],
-        "suit": ["suit", "blazer", "formal"]
-    }
+    if any(word in msg for word in ["human", "person", "support", "agent", "contact", "email", "whatsapp"]):
+        return {"reply": "You can reach our Elite Concierge at gaurkclothing@gmail.com or WhatsApp +91 92179 60147."}
 
-    found_category = None
-    for category, keywords in search_terms.items():
-        if any(kw in msg for kw in keywords):
-            found_category = category
-            break
-
-    if found_category or "collection" in msg or "show" in msg or "look" in msg:
-        query_word = found_category if found_category else ""
-        products = db.query(Product).filter(
-            (Product.name.ilike(f"%{query_word}%")) | 
-            (Product.description.ilike(f"%{msg}%"))
-        ).limit(3).all()
-
-        if products:
-            product_list = [p.name for p in products]
-            return {
-                "reply": f"I have curated a selection of our finest {found_category if found_category else 'pieces'} for you. Our {product_list[0]} is a particularly distinguished choice.",
-                "products": product_list,
-                "action": "view_collection"
-            }
-        else:
-            return {
-                "reply": "Our latest collection is currently being curated. However, I recommend exploring our 'Best Sellers' for our most coveted silhouettes."
-            }
-
-    # --- Intent 4: Styling Advice & Luxury Context ---
-    if any(word in msg for word in ["elegant", "evening", "party", "formal", "wedding"]):
-        return {
-            "reply": "For distinguished evening affairs, I suggest pieces with structured silhouettes and premium fabrics. Our 'Midnight' series offers the perfect balance of modern luxury and timeless grace."
-        }
-    
-    if any(word in msg for word in ["material", "fabric", "cotton", "quality", "made"]):
-        return {
-            "reply": "We source only the highest grade sustainable materials globally. From premium heavy-weight cotton to ethically sourced blends, every piece is crafted to endure the test of time and trend."
-        }
-
-    # --- Intent 5: Human Contact / Support ---
-    if any(word in msg for word in ["human", "person", "talk to someone", "support", "agent", "contact", "email", "whatsapp"]):
-        return {
-            "reply": "You can reach our Elite Concierge directly via email at gaurkclothing@gmail.com or via WhatsApp at +91 92179 60147 for immediate assistance."
-        }
-
-    # --- Default Fallback ---
-    return {
-        "reply": "I am here to ensure your experience exceeds expectations. Could you tell me more about the specific style or service you are seeking?"
-    }
+    return {"reply": "I am here to assist you. Could you tell me more about what you are looking for?"}
