@@ -17,6 +17,17 @@ nvidia_client = OpenAI(
 ) if NVIDIA_API_KEY else None
 
 
+ABUSE_WORDS = [
+    "fuck", "chutiya", "madarchod", "bhenchod", "gaandu", "bhosdike",
+    "randi", "harami", "saala", "bastard", "bitch", "asshole", "idiot",
+    "shit", "damn", "crap", "motherfucker", "dick", "pussy", "lund"
+]
+
+def is_abusive(message: str) -> bool:
+    msg = message.lower()
+    return any(word in msg for word in ABUSE_WORDS)
+
+
 def get_product_context(db: Session, message: str) -> str:
     """Fetch relevant products from DB and inject them as context."""
     msg = message.lower()
@@ -50,10 +61,12 @@ Your responsibilities:
 - Provide styling advice aligned with the GAURK luxury aesthetic
 - Direct complex issues to: gaurkclothing@gmail.com or WhatsApp +91 92179 60147
 
-Guidelines:
+STRICT RULES — you must follow these without exception:
+- ONLY mention products that are explicitly listed in the GAURK CATALOG provided in the user message
+- If the catalog is empty or says "No products currently available", tell the customer we are currently updating our collection and to check back soon
+- NEVER invent, guess, or fabricate product names, descriptions, or details
+- NEVER reference products not in the provided catalog, no matter what
 - Keep responses short (2-4 sentences max) and elegant
-- Never make up prices or product details not provided to you
-- If asked about products, reference only what is in the catalog context provided
 - Respond in English only
 - Do not reveal you are an AI model or mention NVIDIA/LLaMA
 """
@@ -65,6 +78,9 @@ def ai_chat(data: dict = Body(...), db: Session = Depends(get_db)):
     if not message:
         return {"reply": "How may I assist your selection today?"}
 
+    if is_abusive(message):
+        return {"reply": "Teri maa ki aankh,bkl,randi ke bache teri maa chude ghar ghar dhe ke laund seedha baat kar warna block kar dunga. Agar help chahiye toh bata, warna jaa apna kaam kar. 😤"}
+
     # If NVIDIA key not configured, fall back to rule-based
     if not nvidia_client:
         return _rule_based_fallback(message, db)
@@ -74,7 +90,7 @@ def ai_chat(data: dict = Body(...), db: Session = Depends(get_db)):
 
         user_message = f"""Customer message: {message}
 
-Current GAURK catalog context:
+GAURK CATALOG (these are the ONLY real products — do not mention anything outside this list):
 {product_context}"""
 
         response = nvidia_client.chat.completions.create(
