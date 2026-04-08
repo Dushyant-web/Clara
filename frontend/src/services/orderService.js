@@ -29,6 +29,10 @@ export const orderService = {
         const response = await api.post('/payment/confirm', { payment_id: paymentId, transaction_id: transactionId });
         return response.data;
     },
+    confirmCodPayment: async (orderId) => {
+        const response = await api.post(`/payment/cod-confirm?order_id=${orderId}`);
+        return response.data;
+    },
     getInvoice: async (orderId) => {
         const response = await api.get(`/invoice/${orderId}`, { responseType: 'blob' });
         return response.data;

@@ -160,6 +160,48 @@ def confirm_payment(request: PaymentConfirmRequest, db: Session = Depends(get_db
         "message": "payment confirmed"
     }
 
+@router.post("/payment/cod-confirm")
+def confirm_cod_payment(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    if order.status not in ["pending"]:
+        return {"message": "Order already processed"}
+
+    order.status = "confirmed"
+
+    # Deduct stock for purchased variants
+    items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
+    for item in items:
+        variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
+        if variant:
+            variant.stock -= item.quantity
+
+    # Clear inventory reservations for this order's variants
+    variant_ids = [item.variant_id for item in items]
+    db.query(InventoryReservation).filter(
+        InventoryReservation.variant_id.in_(variant_ids)
+    ).delete(synchronize_session=False)
+
+    # Clear cart
+    db.query(CartItem).filter(CartItem.user_id == order.user_id).delete()
+
+    # Create shipment in Shiprocket
+    try:
+        ship_data = create_shipment(order, db)
+        if ship_data and "order_id" in ship_data and "shipment_id" in ship_data:
+            order.shiprocket_order_id = str(ship_data["order_id"])
+            order.shiprocket_shipment_id = str(ship_data["shipment_id"])
+    except Exception as e:
+        print("Shiprocket shipment creation failed:", str(e))
+
+    db.commit()
+
+    return {"message": "COD order confirmed", "order_id": order_id}
+
+
 @router.get("/payment/status/{order_id}")
 def payment_status(order_id: int, db: Session = Depends(get_db)):
 

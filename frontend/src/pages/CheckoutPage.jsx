@@ -310,6 +310,7 @@ const CheckoutPage = () => {
 
                 // If COD is selected, bypass razorpay
                 if (selectedDeliveryId === 'cod') {
+                    await orderService.confirmCodPayment(checkoutResponse.order_id)
                     clearCart()
                     navigate(`/order-confirmation?order_id=${checkoutResponse.order_id}`)
                     return
