@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://clara-xpfh.onrender.com',
+  baseURL: import.meta.env.VITE_API_URL || 'https://clara-xpfh.onrender.com',
 });
 
 // Add a request interceptor to include the Bearer token in all requests

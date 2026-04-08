@@ -13,7 +13,7 @@ class Order(Base):
 
     # Order lifecycle status
     # pending → order created, payment not completed
-    # paid → payment confirmed
+    # confirmed → payment received
     # processing → order being prepared/packed
     # shipped → courier picked up
     # delivered → order delivered to customer
@@ -21,6 +21,9 @@ class Order(Base):
     status = Column(String, default="pending", index=True)
 
     total_amount = Column(Numeric(10, 2))
+
+    # Promo code applied to this order (if any)
+    promo_code = Column(String(100), nullable=True)
 
     # Shipping address reference (required for logistics / Shiprocket)
     shipping_address_id = Column(Integer, ForeignKey("addresses.id"))

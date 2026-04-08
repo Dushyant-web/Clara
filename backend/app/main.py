@@ -29,6 +29,7 @@ from app.routes import wishlist
 
 from app.database.db import engine
 from app.database.db import Base
+import app.models  # noqa: F401 — ensures all models are registered before create_all
 from app.routes.variants import router as variants_router
 
 

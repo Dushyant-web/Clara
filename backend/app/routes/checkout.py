@@ -16,6 +16,31 @@ from app.models.payment import Payment
 
 router = APIRouter()
 
+
+@router.post("/shipping/rates")
+def get_shipping_rates(pincode: str | None = None):
+    """
+    Returns available shipping options.
+    Hardcoded tiers — extend with Shiprocket rate API if needed.
+    """
+    return {
+        "rates": [
+            {
+                "id": "standard",
+                "label": "Standard Delivery",
+                "description": "3-5 Business Days",
+                "price": 60
+            },
+            {
+                "id": "express",
+                "label": "Express Delivery",
+                "description": "1-2 Business Days",
+                "price": 150
+            }
+        ]
+    }
+
+
 # Ensure index exists for fast reservation expiry cleanup
 from sqlalchemy import text
 from sqlalchemy import func
@@ -112,18 +137,15 @@ def checkout(user_id: int, address_id: int, promo_code: str | None = None, idemp
 
     order_amount = total
     if promo_code:
-        try:
-            from app.routes.promo import apply_promo
-            from app.schemas.checkout_schema import PromoApplyRequest
-            
-            # Validation only (order not created yet)
-            promo_result = apply_promo(
-                PromoApplyRequest(code=promo_code, user_id=user_id),
-                db
-            )
-            order_amount = promo_result["final_amount"]
-        except Exception:
-            pass
+        from app.routes.promo import apply_promo
+        from app.schemas.checkout_schema import PromoApplyRequest
+
+        # Validation only (order not created yet) — raises HTTPException if invalid
+        promo_result = apply_promo(
+            PromoApplyRequest(code=promo_code, user_id=user_id),
+            db
+        )
+        order_amount = promo_result["final_amount"]
 
     order = Order(
         user_id=user_id,

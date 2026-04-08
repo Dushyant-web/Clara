@@ -35,8 +35,8 @@ def generate_invoice(order_id: int, db: Session = Depends(get_db)):
     try:
         logo = ImageReader("assets/clara_logo.png")
         pdf.drawImage(logo, 50, 780, width=60, height=60, mask='auto')
-    except:
-        pass
+    except (FileNotFoundError, OSError):
+        pass  # Logo image missing — skip, invoice still valid
 
     pdf.setFont("Helvetica-Bold", 20)
     pdf.drawString(120, 805, "CLARA")
@@ -128,8 +128,8 @@ def generate_invoice(order_id: int, db: Session = Depends(get_db)):
         pdf.drawImage(qr, 50, 100, width=100, height=100, mask='auto')
         pdf.setFont("Helvetica", 9)
         pdf.drawString(50, 90, "Scan for payment reference")
-    except:
-        pass
+    except (FileNotFoundError, OSError):
+        pass  # QR image missing — skip silently
 
     pdf.save()
 

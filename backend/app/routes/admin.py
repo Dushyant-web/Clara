@@ -525,7 +525,7 @@ def delete_review(review_id: int, db: Session = Depends(get_db)):
 def reply_to_review(
     review_id: int,
     reply: str,
-    admin_id: int = 1,
+    admin_id: int | None = None,
     db: Session = Depends(get_db)
 ):
     """
@@ -960,22 +960,27 @@ def review_timeline(db: Session = Depends(get_db)):
 @router.patch("/orders/{order_id}/status")
 def update_order_status(order_id: int, status: str, db: Session = Depends(get_db)):
 
-    allowed_status = [
-        "pending",
-        "paid",
-        "processing",
-        "shipped",
-        "delivered",
-        "cancelled"
-    ]
-
-    if status not in allowed_status:
-        return {"error": "Invalid order status"}
+    # Valid forward transitions only
+    valid_transitions = {
+        "pending":    ["confirmed", "cancelled"],
+        "confirmed":  ["processing", "cancelled"],
+        "processing": ["shipped", "cancelled"],
+        "shipped":    ["delivered", "cancelled"],
+        "delivered":  [],
+        "cancelled":  [],
+    }
 
     order = db.query(Order).filter(Order.id == order_id).first()
 
     if not order:
-        return {"error": "Order not found"}
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    allowed_next = valid_transitions.get(order.status, [])
+    if status not in allowed_next:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot transition order from '{order.status}' to '{status}'. Allowed: {allowed_next}"
+        )
 
     order.status = status
     db.commit()

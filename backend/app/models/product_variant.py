@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, UniqueConstraint
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, UniqueConstraint, Numeric
 from app.database.db import Base
 from datetime import datetime
 
@@ -20,7 +20,7 @@ class ProductVariant(Base):
     sku = Column(String)
     image_url = Column(String)
 
-    price = Column(Integer)
+    price = Column(Numeric(10, 2))
 
     stock = Column(Integer)
     created_at = Column(DateTime, default=datetime.utcnow)

@@ -343,11 +343,6 @@ const CheckoutPage = () => {
 
                     rzpKey = (rzpKey || "").trim();
 
-                    console.log("RAZORPAY DEBUG:", {
-                        key_preview: rzpKey ? `${rzpKey.slice(0, 8)}...${rzpKey.slice(-6)}` : "MISSING",
-                        order_id: paymentResponse.razorpay_order_id
-                    });
-
                     const options = {
                         key: rzpKey,
                         name: "GAURK.",

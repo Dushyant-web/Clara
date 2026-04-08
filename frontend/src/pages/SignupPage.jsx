@@ -2,8 +2,8 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, User, Mail, Phone, ChevronRight } from 'lucide-react'
-import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth"
-import { auth } from "../firebase"
+import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth"
+import "../firebase" // ensure Firebase app is initialized
 import { useNotifications } from '../contexts/NotificationContext'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -21,17 +21,16 @@ const SignupPage = () => {
     const [loading, setLoading] = useState(false)
     const navigate = useNavigate()
 
-    // Safely destroys the active RecaptchaVerifier and wipes the DOM container.
-    // Simply calling .clear() can fail silently leaving a stale widget in the
-    // DOM, which causes "reCAPTCHA has already been rendered in this element"
-    // on the next attempt. Manually clearing innerHTML guarantees a clean slate.
+    // Safely destroys the active RecaptchaVerifier.
+    // We let Firebase manage the DOM to avoid interfering with its internal
+    // fallback mechanisms (like automatically triggering reCAPTCHA v2).
     const destroyRecaptcha = () => {
         if (window.recaptchaVerifier) {
             try { window.recaptchaVerifier.clear() } catch (_) {}
             window.recaptchaVerifier = null
         }
-        const el = document.getElementById('recaptcha-container')
-        if (el) el.innerHTML = ''
+        const container = document.getElementById('recaptcha-container')
+        if (container) container.innerHTML = ''
     }
 
     const handleInfoSubmit = async (e) => {
@@ -54,15 +53,15 @@ const SignupPage = () => {
             // Destroy any previous verifier + wipe the container DOM node.
             destroyRecaptcha()
 
+            const firebaseAuth = getAuth()
             window.recaptchaVerifier = new RecaptchaVerifier(
-                auth,
                 'recaptcha-container',
-                { size: 'invisible' }
+                { size: 'invisible' },
+                firebaseAuth
             )
-            await window.recaptchaVerifier.render()
 
             const fullPhone = '+91' + cleanPhone
-            const result = await signInWithPhoneNumber(auth, fullPhone, window.recaptchaVerifier)
+            const result = await signInWithPhoneNumber(firebaseAuth, fullPhone, window.recaptchaVerifier)
 
             setConfirmationResult(result)
             showAlert('OTP sent to +91' + cleanPhone, 'success')
@@ -197,24 +196,46 @@ const SignupPage = () => {
                                 <p className="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed">We've sent a 6-digit code to <br /><span className="text-secondary font-bold">{formData.phone}</span></p>
                             </div>
 
-                            <div className="grid grid-cols-6 gap-3">
-                                {otp.map((_, idx) => (
-                                    <input
-                                        key={idx}
-                                        type="text"
-                                        maxLength={1}
-                                        value={otp[idx]}
-                                        onChange={(e) => {
-                                            const newOtp = [...otp]
-                                            newOtp[idx] = e.target.value
-                                            setOtp(newOtp)
-                                            if (e.target.value && idx < 5) {
-                                                e.target.nextSibling?.focus()
-                                            }
-                                        }}
-                                        className="aspect-square bg-secondary/5 border border-secondary/10 text-center text-xl font-serif text-secondary focus:outline-none focus:border-secondary transition-all"
-                                    />
-                                ))}
+                                <div className="grid grid-cols-6 gap-3">
+                                    {otp.map((_, idx) => (
+                                        <input
+                                            key={idx}
+                                            type="text"
+                                            inputMode="numeric"
+                                            pattern="[0-9]*"
+                                            maxLength={1}
+                                            value={otp[idx]}
+                                            onChange={(e) => {
+                                                const val = e.target.value.replace(/\D/g, '')
+                                                const newOtp = [...otp]
+                                                newOtp[idx] = val.slice(-1)
+                                                setOtp(newOtp)
+                                                if (val && idx < 5) {
+                                                    e.target.nextSibling?.focus()
+                                                }
+                                            }}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Backspace' && !otp[idx] && idx > 0) {
+                                                    e.target.previousSibling?.focus()
+                                                }
+                                            }}
+                                            onPaste={(e) => {
+                                                e.preventDefault()
+                                                const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+                                                if (pastedData) {
+                                                    const newOtp = [...otp]
+                                                    for (let i = 0; i < pastedData.length; i++) {
+                                                        newOtp[i] = pastedData[i]
+                                                    }
+                                                    setOtp(newOtp)
+                                                    const inputs = e.target.parentElement.querySelectorAll('input')
+                                                    const focusIdx = Math.min(pastedData.length, 5)
+                                                    inputs[focusIdx]?.focus()
+                                                }
+                                            }}
+                                            className="aspect-square bg-secondary/5 border border-secondary/10 text-center text-xl font-serif text-secondary focus:outline-none focus:border-secondary transition-all"
+                                        />
+                                    ))}
                             </div>
 
                             <div className="space-y-6">
