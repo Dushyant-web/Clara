@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, ChevronRight } from 'lucide-react'
 import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth"
@@ -31,7 +31,7 @@ const LoginPage = () => {
 
         setResendCooldown(30)
         try {
-            const result = await confirmationResult.confirm(otp.join("")).catch(() => {
+            await confirmationResult.confirm(otp.join("")).catch(() => {
                 // Silently ignore confirm error; we just want to resend
             })
             // Re-send by calling the phone submit again with the same number
@@ -59,7 +59,11 @@ const LoginPage = () => {
     // fallback mechanisms (like automatically triggering reCAPTCHA v2).
     const destroyRecaptcha = () => {
         if (window.recaptchaVerifier) {
-            try { window.recaptchaVerifier.clear() } catch (_) {}
+            try {
+                window.recaptchaVerifier.clear()
+            } catch {
+                // Ignore clear errors
+            }
             window.recaptchaVerifier = null
         }
         const container = document.getElementById('recaptcha-container')

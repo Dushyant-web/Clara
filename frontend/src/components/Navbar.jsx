@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { Search, ShoppingBag, Heart, User, Menu, X, Bell } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,7 +14,6 @@ const Navbar = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
-    const location = useLocation();
     const { user } = useAuth();
     const { cartCount, setIsCartOpen } = useCart();
     const { notifications } = useNotifications();

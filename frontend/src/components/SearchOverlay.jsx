@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { Search, X, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { productService } from '../services/productService';
@@ -74,7 +74,7 @@ const SearchOverlay = ({ isOpen, onClose }) => {
         }, 350);
 
         return () => clearTimeout(debounceRef.current);
-    }, [query]);
+    }, [query, navigate]);
 
     return (
         <AnimatePresence>

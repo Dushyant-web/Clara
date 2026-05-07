@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Image as ImageIcon, Link } from 'lucide-react';
-import { motion } from 'framer-motion';
+
 import { collectionService } from '../services/collectionService';
 import { productService } from '../services/productService';
 import { adminService } from '../services/adminService';
@@ -31,7 +31,7 @@ const AdminCollections = () => {
                     try {
                         const images = await collectionService.getCollectionImages(c.id);
                         return { ...c, images };
-                    } catch (e) {
+                    } catch (_e) {
                         return { ...c, images: [] };
                     }
                 })

@@ -8,9 +8,9 @@ import {
     AlertCircle,
     Calendar,
     Percent,
-    Infinity
+    Infinity as InfinityIcon
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { adminService } from '../services/adminService';
 
 const AdminPromos = () => {
@@ -132,7 +132,7 @@ const AdminPromos = () => {
 
                             <div className="space-y-2 mb-8">
                                 <div className="flex items-center gap-2 text-[8px] uppercase tracking-widest text-gray-500">
-                                    <Infinity size={10} />
+                                    <InfinityIcon size={10} />
                                     <span>LIMIT: {p.usage_limit || 'UNLIMITED'}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-[8px] uppercase tracking-widest text-gray-500">

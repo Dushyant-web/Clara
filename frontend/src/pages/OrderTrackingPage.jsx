@@ -20,7 +20,7 @@ const OrderTrackingPage = () => {
                         if (paymentStatus.status === 'captured' || paymentStatus.status === 'confirmed' || paymentStatus.status === 'paid') {
                             data.status = 'confirmed';
                         }
-                    } catch (e) {
+                    } catch (_e) {
                         console.warn('Real-time payment status check failed, using order data status.');
                     }
                 }
@@ -42,7 +42,7 @@ const OrderTrackingPage = () => {
                         }
                         setOrder({...data});
                     }
-                } catch (e) {
+                } catch (_e) {
                     console.warn('Shiprocket tracking fetch failed', e);
                 }
 

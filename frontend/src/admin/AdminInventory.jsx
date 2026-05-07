@@ -12,7 +12,7 @@ import {
     Loader2,
     Save
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { productService } from '../services/productService';
 import { adminService } from '../services/adminService';
 
@@ -54,7 +54,7 @@ const AdminInventory = () => {
         try {
             const data = await productService.getProducts({ status: 'all' });
             setProducts(data.products || []);
-        } catch (err) {
+        } catch (_err) {
             console.error('Failed to load products', err);
         } finally {
             setLoading(false);
@@ -65,7 +65,7 @@ const AdminInventory = () => {
         try {
             const data = await adminService.getCategories();
             setCategories(data || []);
-        } catch (err) {
+        } catch (_err) {
             console.error('Failed to load categories', err);
         }
     };
@@ -90,7 +90,7 @@ const AdminInventory = () => {
                         image_url: img.image_url
                     }));
 
-                } catch (e) {
+                } catch (_e) {
                     console.error("Failed to load product images", e);
                 }
 
@@ -126,7 +126,7 @@ const AdminInventory = () => {
                     }),
                     images: productImages
                 });
-            } catch (err) {
+            } catch (_err) {
                 console.error('Failed to fetch full product details', err);
             } finally {
                 setLoading(false);
@@ -210,7 +210,7 @@ const AdminInventory = () => {
                 });
             }
 
-        } catch (err) {
+        } catch (_err) {
             alert('UPLOAD FAILED.');
         } finally {
             setIsSubmitting(false);
@@ -274,7 +274,7 @@ const AdminInventory = () => {
                 // remove existing images first to avoid duplication
                 try {
                     await adminService.deleteVariantImages(v.id);
-                } catch (e) {
+                } catch (_e) {
                     console.warn("No previous images to delete");
                 }
 
@@ -306,7 +306,7 @@ const AdminInventory = () => {
             alert('ARCHIVE SYNCHRONIZED.');
             setIsModalOpen(false);
             fetchProducts();
-        } catch (err) {
+        } catch (_err) {
             console.error('Submission failed', err);
             alert('CRITICAL FAILURE: DATA NOT PERSISTED.');
         } finally {
@@ -337,7 +337,7 @@ const AdminInventory = () => {
                 ...prev,
                 variants: prev.variants.filter((_, i) => i !== index)
             }));
-        } catch (err) {
+        } catch (_err) {
             console.error("Variant delete failed", err);
             alert("FAILED TO DELETE VARIANT");
         }
@@ -421,7 +421,7 @@ const AdminInventory = () => {
                                                         try {
                                                             await adminService.updateProduct(p.id, { is_active: !active });
                                                             fetchProducts();
-                                                        } catch (e) {
+                                                        } catch (_e) {
                                                             console.error("Status toggle failed", e);
                                                         }
                                                     }}
@@ -1018,7 +1018,7 @@ const AdminInventory = () => {
 
                                             setNewCategoryName('');
                                             setIsCategoryModalOpen(false);
-                                        } catch (err) {
+                                        } catch (_err) {
                                             alert('FAILED TO CREATE CATEGORY');
                                         }
                                     }}

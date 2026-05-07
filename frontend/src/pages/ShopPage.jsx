@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import { Filter, X, ChevronDown } from 'lucide-react'
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import { productService } from '../services/productService'
 import { categoryService } from '../services/categoryService'
+import SEO from '../components/SEO'
 
 const ShopPage = () => {
     const [searchParams, setSearchParams] = useSearchParams()
@@ -48,7 +49,7 @@ const [totalProducts, setTotalProducts] = useState(0)
         } else {
             navigate(`/shop/page/${page}?${params.toString()}`, { replace: true })
         }
-    }, [page])
+    }, [page, navigate, searchParams])
 
 
     useEffect(() => {
@@ -177,6 +178,21 @@ useEffect(() => {
 
     return (
         <div className="pt-32 pb-24 min-h-screen bg-primary transition-colors duration-500">
+            <SEO
+                title="Shop All — Luxury Streetwear & Designer Fashion | GAURK"
+                description="Browse the complete GAURK collection — premium hoodies, designer t-shirts, exclusive limited-edition pieces. Free prepaid delivery across India, 7-day returns."
+                canonical="https://gaurk.shop/shop"
+                image="https://gaurk.shop/assets/logo/gk_logo.png"
+                jsonLd={{
+                    "@context": "https://schema.org",
+                    "@type": "CollectionPage",
+                    "name": "GAURK — Shop All",
+                    "url": "https://gaurk.shop/shop",
+                    "description": "Complete collection of GAURK luxury streetwear and designer fashion.",
+                    "isPartOf": { "@id": "https://gaurk.shop/#website" },
+                    "inLanguage": "en-IN"
+                }}
+            />
             <div className="container mx-auto px-6 text-secondary">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-8">
                     <div>

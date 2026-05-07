@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import api from '../services/api';
 
 const ImageCarousel = ({ images, fallbackImage, title }) => {
@@ -113,14 +113,14 @@ const LookbookPage = () => {
                                 images: Array.isArray(images) ? images : [],
                                 image_url: images?.[0]?.image_url || look.image_url || null
                             };
-                        } catch (e) {
+                        } catch (_e) {
                             return look;
                         }
                     })
                 );
 
                 setLookbooks(lookbooksWithImages);
-            } catch (err) {
+            } catch (_err) {
                 console.error('Failed to load lookbooks', err);
             } finally {
                 setIsLoading(false);

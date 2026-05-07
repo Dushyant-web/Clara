@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Star,
     Trash2,
@@ -12,7 +12,7 @@ import {
     ShieldAlert,
     CheckCircle2
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { adminService } from '../services/adminService';
 
 const AdminReviews = () => {
@@ -30,11 +30,7 @@ const AdminReviews = () => {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [productBreakdown, setProductBreakdown] = useState(null);
 
-    useEffect(() => {
-        fetchData();
-    }, [ratingFilter]);
-
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             const rating = ratingFilter === 'All' ? null : parseInt(ratingFilter);
@@ -57,7 +53,11 @@ const AdminReviews = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [ratingFilter]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     // --- Load Product Analytics ---
     const loadProductAnalytics = async (productId) => {

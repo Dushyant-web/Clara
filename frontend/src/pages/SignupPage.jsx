@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, User, Mail, Phone, ChevronRight } from 'lucide-react'
 import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth"
@@ -58,7 +58,11 @@ const SignupPage = () => {
     // fallback mechanisms (like automatically triggering reCAPTCHA v2).
     const destroyRecaptcha = () => {
         if (window.recaptchaVerifier) {
-            try { window.recaptchaVerifier.clear() } catch (_) {}
+            try {
+                window.recaptchaVerifier.clear()
+            } catch {
+                // Ignore clear errors
+            }
             window.recaptchaVerifier = null
         }
         const container = document.getElementById('recaptcha-container')

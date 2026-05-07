@@ -8,7 +8,7 @@ import {
     CheckCircle2,
     Clock
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { newsletterService } from '../services/newsletterService';
 
 const AdminNewsletter = () => {

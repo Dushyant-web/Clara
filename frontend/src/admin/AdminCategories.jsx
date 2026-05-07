@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, FolderGit2, Link } from 'lucide-react';
-import { motion } from 'framer-motion';
+
 import { categoryService } from '../services/categoryService';
 import { productService } from '../services/productService';
 import { adminService } from '../services/adminService';

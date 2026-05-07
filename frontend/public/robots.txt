@@ -1,0 +1,78 @@
+# GAURK — robots.txt
+# https://gaurk.shop
+
+User-agent: *
+Allow: /
+
+# Block private/sensitive routes from indexing
+Disallow: /account
+Disallow: /account/*
+Disallow: /checkout
+Disallow: /cart
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /login
+Disallow: /signup
+Disallow: /order-confirmation
+Disallow: /order-tracking
+Disallow: /notifications
+Disallow: /api/
+Disallow: /*?*token=
+Disallow: /*?*session=
+
+# Allow major search engines and AI crawlers explicitly
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+# AI crawlers — allow them so AI Overviews / ChatGPT / Gemini / Perplexity can cite GAURK
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: FacebookExternalHit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+# Block aggressive scrapers
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+# Sitemap
+Sitemap: https://gaurk.shop/sitemap.xml

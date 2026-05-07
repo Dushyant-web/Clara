@@ -1,9 +1,10 @@
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { useScroll, useTransform } from 'framer-motion'
 import { ArrowRight, ChevronDown } from 'lucide-react'
 import { useRef, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import { productService } from '../services/productService'
+import SEO from '../components/SEO'
 
 const HomePage = () => {
     const containerRef = useRef(null)
@@ -34,6 +35,22 @@ const HomePage = () => {
 
     return (
         <div ref={containerRef} className="relative w-full">
+            <SEO
+                title="GAURK — Luxury Streetwear & Designer Fashion in India | gaurk.shop"
+                description="GAURK is India's emerging luxury streetwear and designer fashion brand. Shop exclusive premium clothing, hoodies, t-shirts, and limited-edition pieces. Free prepaid delivery, 7-day returns, COD available across India."
+                canonical="https://gaurk.shop/"
+                image="https://gaurk.shop/assets/logo/gk_logo.png"
+                jsonLd={{
+                    "@context": "https://schema.org",
+                    "@type": "WebPage",
+                    "name": "GAURK — Luxury Streetwear & Designer Fashion in India",
+                    "url": "https://gaurk.shop/",
+                    "description": "India's emerging luxury streetwear brand. Premium clothing, designer hoodies, exclusive limited editions.",
+                    "isPartOf": { "@id": "https://gaurk.shop/#website" },
+                    "about": { "@id": "https://gaurk.shop/#organization" },
+                    "inLanguage": "en-IN"
+                }}
+            />
             {/* Hero Section */}
             <section className="relative h-screen w-full overflow-hidden flex items-center justify-center">
                 <motion.div

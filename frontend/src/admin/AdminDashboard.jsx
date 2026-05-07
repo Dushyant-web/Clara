@@ -17,9 +17,9 @@ const AdminDashboard = () => {
         revenue: '0.00',
         activeUsers: 0
     });
-    const [graphData, setGraphData] = useState([]);
-    const [recentOrders, setRecentOrders] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [graphData] = useState([]);
+    const [recentOrders] = useState([]);
+    const [_loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -104,7 +104,7 @@ const AdminDashboard = () => {
                 <div className="bg-white/5 border border-white/5 p-8 flex flex-col">
                     <h3 className="text-xs uppercase tracking-widest font-black mb-12">Recent Activity</h3>
                     <div className="space-y-8 flex-1">
-                        {recentOrders.map((order, i) => (
+                        {recentOrders.map((order) => (
                             <div key={order.id} className="flex gap-4 items-start pb-4 border-b border-white/5 last:border-0">
                                 <div className={`w-1 h-1 rounded-full mt-2 ${order.status === 'delivered' ? 'bg-green-500' : 'bg-white'}`} />
                                 <div>

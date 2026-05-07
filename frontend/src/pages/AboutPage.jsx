@@ -1,9 +1,24 @@
 import React from 'react'
-import { motion } from 'framer-motion'
+import SEO from '../components/SEO'
 
 const AboutPage = () => {
     return (
         <div className="pt-32 pb-24 bg-primary min-h-screen text-secondary transition-colors duration-500">
+            <SEO
+                title="About GAURK — India's Emerging Luxury Streetwear Brand"
+                description="Learn about GAURK — India's emerging luxury streetwear and designer fashion brand. Our story, philosophy, and commitment to redefining Indian luxury fashion."
+                canonical="https://gaurk.shop/about"
+                image="https://gaurk.shop/assets/logo/gk_logo.png"
+                jsonLd={{
+                    "@context": "https://schema.org",
+                    "@type": "AboutPage",
+                    "name": "About GAURK",
+                    "url": "https://gaurk.shop/about",
+                    "description": "About GAURK — India's emerging luxury streetwear and designer fashion brand.",
+                    "mainEntity": { "@id": "https://gaurk.shop/#organization" },
+                    "isPartOf": { "@id": "https://gaurk.shop/#website" }
+                }}
+            />
             <div className="container mx-auto px-6">
                 {/* Hero Section */}
                 <div className="max-w-4xl mb-32">

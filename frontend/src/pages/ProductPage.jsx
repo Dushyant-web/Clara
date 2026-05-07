@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import { useParams, Link } from 'react-router-dom'
 import { Heart, ShoppingBag, ArrowLeft, Star, Share2, Info, Truck, RotateCcw, ChevronLeft, ChevronRight, ChevronDown, Loader2, X } from 'lucide-react'
 import { productService } from '../services/productService'
@@ -7,6 +7,7 @@ import { reviewService } from '../services/reviewService'
 import { useCart } from '../contexts/CartContext'
 import { useAuth } from '../contexts/AuthContext'
 import ProductCard from '../components/ProductCard'
+import SEO from '../components/SEO'
 
 const ProductPage = () => {
     const { id } = useParams()
@@ -122,11 +123,6 @@ const ProductPage = () => {
         (selectedSize ? v.size === selectedSize : true)
     );
 
-    // Find a representative variant for the selected color (for images)
-    const colorVariant = product?.variants?.find(v =>
-        selectedColor ? v.color === selectedColor : true
-    );
-
     // Auto select first color when product loads
     useEffect(() => {
         if (!product?.variants || selectedColor) return;
@@ -135,7 +131,7 @@ const ProductPage = () => {
         if (firstColor) {
             setSelectedColor(firstColor);
         }
-    }, [product]);
+    }, [product, selectedColor]);
 
     // Auto select first available size when color changes
     useEffect(() => {
@@ -195,8 +191,94 @@ const ProductPage = () => {
     if (loading) return <div className="h-screen flex items-center justify-center bg-primary"><p className="text-[10px] tracking-[0.5em] animate-pulse text-secondary">LOADING...</p></div>
     if (!product) return <div className="h-screen flex items-center justify-center bg-primary text-secondary uppercase tracking-widest">Product not found.</div>
 
+    const productPrice = selectedVariant?.price ?? product.price
+    const productImage = activeImage || product.main_image || 'https://gaurk.shop/assets/logo/gk_logo.png'
+    const productUrl = `https://gaurk.shop/product/${product.id}`
+    const productSchema = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": product.name,
+        "image": productImage,
+        "description": product.description || `${product.name} — premium luxury piece from GAURK, India's emerging streetwear and designer fashion brand.`,
+        "sku": selectedVariant?.sku || `GAURK-${product.id}`,
+        "mpn": `GAURK-${product.id}`,
+        "brand": {
+            "@type": "Brand",
+            "name": "GAURK"
+        },
+        "manufacturer": {
+            "@type": "Organization",
+            "name": "GAURK",
+            "url": "https://gaurk.shop"
+        },
+        "offers": {
+            "@type": "Offer",
+            "url": productUrl,
+            "priceCurrency": "INR",
+            "price": productPrice,
+            "priceValidUntil": new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+            "availability": (selectedVariant?.stock ?? 1) > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+            "itemCondition": "https://schema.org/NewCondition",
+            "seller": {
+                "@type": "Organization",
+                "name": "GAURK",
+                "url": "https://gaurk.shop"
+            },
+            "shippingDetails": {
+                "@type": "OfferShippingDetails",
+                "shippingRate": {
+                    "@type": "MonetaryAmount",
+                    "value": "0",
+                    "currency": "INR"
+                },
+                "shippingDestination": {
+                    "@type": "DefinedRegion",
+                    "addressCountry": "IN"
+                },
+                "deliveryTime": {
+                    "@type": "ShippingDeliveryTime",
+                    "businessDays": {
+                        "@type": "OpeningHoursSpecification",
+                        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+                    },
+                    "transitTime": {
+                        "@type": "QuantitativeValue",
+                        "minValue": 3,
+                        "maxValue": 5,
+                        "unitCode": "DAY"
+                    }
+                }
+            },
+            "hasMerchantReturnPolicy": {
+                "@type": "MerchantReturnPolicy",
+                "applicableCountry": "IN",
+                "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+                "merchantReturnDays": 7,
+                "returnMethod": "https://schema.org/ReturnByMail",
+                "returnFees": "https://schema.org/FreeReturn"
+            }
+        },
+        ...(reviewStats?.average_rating && reviewStats?.total_reviews ? {
+            "aggregateRating": {
+                "@type": "AggregateRating",
+                "ratingValue": reviewStats.average_rating,
+                "reviewCount": reviewStats.total_reviews,
+                "bestRating": 5,
+                "worstRating": 1
+            }
+        } : {})
+    }
+
     return (
         <div className="pt-32 pb-24 bg-primary min-h-screen transition-colors duration-500">
+            <SEO
+                title={`${product.name} — GAURK Luxury Streetwear`}
+                description={`${product.description ? product.description.slice(0, 155) : `Shop ${product.name} from GAURK — premium Indian luxury streetwear. ₹${productPrice}. Free prepaid delivery, 7-day returns.`}`}
+                canonical={productUrl}
+                image={productImage}
+                type="product"
+                jsonLd={productSchema}
+            />
             <div className="container mx-auto px-6 text-secondary">
                 {/* Breadcrumbs */}
                 <Link to="/shop" className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-gray-500 hover:text-secondary transition-colors mb-12 font-bold">
@@ -324,7 +406,7 @@ const ProductPage = () => {
                                 <button onClick={() => setIsSizeGuideOpen(true)} className="text-[10px] uppercase tracking-widest text-gray-500 underline underline-offset-4 font-bold hover:text-secondary transition-colors">Size Guide</button>
                             </div>
                             <div className="flex flex-wrap gap-3">
-                                {sizeAvailability.map(({ size, isAvailable, variantId }) => (
+                                {sizeAvailability.map(({ size, isAvailable }) => (
                                     <button
                                         key={size}
                                         disabled={!isAvailable}
@@ -695,7 +777,7 @@ const ProductPage = () => {
                             // This IIFE is just to scope the variable for clarity
                             // In actual code, you might want to move this declaration above the return statement
                             // but per instruction, we place it here above the filtered rendering.
-                            // eslint-disable-next-line
+                             
                             const filteredReviews = reviews
                                 .filter(r => reviewFilter === 'all' ? true : r.rating === parseInt(reviewFilter))
                                 .filter(r => showPhotosOnly ? ((r.images?.length > 0) || (r.videos?.length > 0)) : true)

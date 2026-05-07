@@ -1,9 +1,62 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+
+import SEO from '../components/SEO';
 
 const FaqPage = () => {
     return (
         <div className="pt-32 pb-24 min-h-screen bg-primary text-secondary">
+            <SEO
+                title="FAQ — Shipping, Returns, Sizing | GAURK"
+                description="Frequently asked questions about GAURK orders, shipping (3-5 business days), 7-day returns, sizing, and Cash on Delivery across India."
+                canonical="https://gaurk.shop/faq"
+                image="https://gaurk.shop/assets/logo/gk_logo.png"
+                jsonLd={{
+                    "@context": "https://schema.org",
+                    "@type": "FAQPage",
+                    "mainEntity": [
+                        {
+                            "@type": "Question",
+                            "name": "What is GAURK?",
+                            "acceptedAnswer": {
+                                "@type": "Answer",
+                                "text": "GAURK is an emerging Indian luxury streetwear and designer fashion brand offering exclusive premium clothing, designer hoodies, t-shirts, and limited-edition pieces."
+                            }
+                        },
+                        {
+                            "@type": "Question",
+                            "name": "How long does delivery take?",
+                            "acceptedAnswer": {
+                                "@type": "Answer",
+                                "text": "Standard delivery takes 3-5 business days across India. Free prepaid shipping on all orders."
+                            }
+                        },
+                        {
+                            "@type": "Question",
+                            "name": "What is the return policy?",
+                            "acceptedAnswer": {
+                                "@type": "Answer",
+                                "text": "GAURK offers a 7-day return and exchange window for unworn pieces in their original packaging."
+                            }
+                        },
+                        {
+                            "@type": "Question",
+                            "name": "Is Cash on Delivery available?",
+                            "acceptedAnswer": {
+                                "@type": "Answer",
+                                "text": "Yes, COD is available across India with a ₹99 handling fee. Prepaid orders receive free shipping."
+                            }
+                        },
+                        {
+                            "@type": "Question",
+                            "name": "Where is GAURK based?",
+                            "acceptedAnswer": {
+                                "@type": "Answer",
+                                "text": "GAURK is based in India and ships pan-India. Visit gaurk.shop or contact gaurkclothing@gmail.com / WhatsApp +91 92179 60147."
+                            }
+                        }
+                    ]
+                }}
+            />
             <div className="container mx-auto px-6 max-w-4xl">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
                     <h1 className="text-5xl md:text-7xl font-serif tracking-tighter uppercase mb-6">FAQ</h1>

@@ -37,7 +37,7 @@ from app.routes.variants import router as variants_router
 
 
 
-app = FastAPI(title="NAME API")
+app = FastAPI(title="Gaurk API's")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 

@@ -1,9 +1,23 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+
+import SEO from '../components/SEO';
 
 const ContactPage = () => {
     return (
         <div className="pt-24 md:pt-32 pb-16 md:pb-24 min-h-screen bg-primary text-secondary">
+            <SEO
+                title="Contact GAURK — Customer Support & Inquiries"
+                description="Get in touch with GAURK. Email gaurkclothing@gmail.com or WhatsApp +91 92179 60147 for orders, returns, or styling assistance."
+                canonical="https://gaurk.shop/contact"
+                image="https://gaurk.shop/assets/logo/gk_logo.png"
+                jsonLd={{
+                    "@context": "https://schema.org",
+                    "@type": "ContactPage",
+                    "name": "Contact GAURK",
+                    "url": "https://gaurk.shop/contact",
+                    "mainEntity": { "@id": "https://gaurk.shop/#organization" }
+                }}
+            />
             <div className="container mx-auto px-6 max-w-4xl">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
                     <h1 className="text-5xl md:text-7xl font-serif tracking-tighter uppercase mb-6">Contact Us</h1>

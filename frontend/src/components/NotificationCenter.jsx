@@ -1,5 +1,5 @@
 import React from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import { Bell, ShoppingBag, Package, Star, X, Check } from 'lucide-react'
 import { useNotifications } from '../contexts/NotificationContext'
 

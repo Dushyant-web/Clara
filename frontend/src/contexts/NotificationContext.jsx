@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import { X, CheckCircle2, AlertCircle, Info, Bell } from 'lucide-react'
 
 const NotificationContext = createContext()

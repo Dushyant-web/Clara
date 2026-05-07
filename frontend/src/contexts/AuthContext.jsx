@@ -8,6 +8,13 @@ export const AuthProvider = ({ children }) => {
     const [token, setToken] = useState(localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
 
+    const logout = () => {
+        setToken(null);
+        setUser(null);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+    };
+
     useEffect(() => {
         const initAuth = async () => {
             const savedToken = localStorage.getItem('token');
@@ -62,13 +69,6 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
             throw error;
         }
-    };
-
-    const logout = () => {
-        setToken(null);
-        setUser(null);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
     };
 
     return (

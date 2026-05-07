@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { ChevronRight, Check, MapPin, Truck, CreditCard, ShoppingBag, ArrowLeft, Loader2 } from 'lucide-react'
 import { useCart } from '../contexts/CartContext'
@@ -49,7 +49,7 @@ const CheckoutPage = () => {
                     city: cities[0] || ''
                 }));
             }
-        } catch (e) {
+        } catch (_e) {
             console.warn("Pincode lookup failed");
         }
     };
@@ -120,7 +120,7 @@ const CheckoutPage = () => {
                 if (Array.isArray(data)) {
                     setSavedAddresses(data)
                 }
-            } catch (err) {
+            } catch (_err) {
                 console.warn("Failed to load saved addresses")
             }
         }
@@ -213,7 +213,7 @@ const CheckoutPage = () => {
                 }
             }
 
-        } catch (err) {
+        } catch (_err) {
             console.error("Save address failed", err)
             alert("Failed to save address")
         } finally {
@@ -274,7 +274,7 @@ const CheckoutPage = () => {
                     const refreshed = await addressService.getAddresses(user.id)
                     if (Array.isArray(refreshed)) setSavedAddresses(refreshed)
                 }
-            } catch (err) {
+            } catch (_err) {
                 console.error("Auto-save address failed", err)
             }
         }
@@ -353,7 +353,7 @@ const CheckoutPage = () => {
                     try {
                         const config = await orderService.getPaymentConfig();
                         if (config?.key) rzpKey = config.key;
-                    } catch (e) {
+                    } catch (_e) {
                         console.warn('Backend config fetch failed, using fallback.');
                     }
 
@@ -375,7 +375,7 @@ const CheckoutPage = () => {
 
                                 // Use React Router navigation instead of full page reload
                                 navigate(`/order-confirmation?order_id=${checkoutResponse.order_id}`)
-                            } catch (err) {
+                            } catch (_err) {
                                 console.error("Payment confirmation error:", err)
                                 navigate(`/order-confirmation?order_id=${checkoutResponse.order_id}`)
                             }

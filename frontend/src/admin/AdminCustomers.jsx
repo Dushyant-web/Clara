@@ -11,7 +11,7 @@ import {
     CreditCard,
     MessageCircle
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { adminService } from '../services/adminService';
 
 const CustomerProfileSidePanel = ({ user, onClose }) => {
@@ -24,11 +24,6 @@ const CustomerProfileSidePanel = ({ user, onClose }) => {
             const fetchData = async () => {
                 setLoading(true);
                 try {
-                    // Fetch profile and reviews independently to avoid one failure blocking the other
-                    const profilePromise = adminService.getUserProfile(user.id).catch(err => {
-                        console.error('Profile fetch failed:', err);
-                        return { orders: [] }; // Fallback to empty orders
-                    });
                     const [profileData, allReviewsResponse] = await Promise.all([
                         adminService.getUserProfile(user.id).catch(err => {
                             console.error('Profile fetch failed:', err);
