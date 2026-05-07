@@ -89,4 +89,4 @@ app.include_router(variants_router)
 
 @app.get("/")
 def root():
-    return {"message": "Name backend running"}
+    return {"message": "Gaurk backend running"}
