@@ -6,16 +6,20 @@ from app.models.product_variant import ProductVariant
 from app.models.variant_image import VariantImage
 from app.models.product import Product
 from app.models.product_image import ProductImage
+from app.utils.jwt_handler import get_current_user_id
 
 router = APIRouter()
 
 
 @router.post("/cart/add")
-def add_to_cart(data: dict, db: Session = Depends(get_db)):
+def add_to_cart(data: dict, db: Session = Depends(get_db), auth_user_id: int = Depends(get_current_user_id)):
 
     user_id = data.get("user_id")
     variant_id = data.get("variant_id")
     quantity = data.get("quantity", 1)
+
+    if user_id != auth_user_id:
+        raise HTTPException(status_code=403, detail="Cannot modify another user's cart")
 
     variant = db.query(ProductVariant).filter(ProductVariant.id == variant_id).first()
 
@@ -50,7 +54,10 @@ def add_to_cart(data: dict, db: Session = Depends(get_db)):
     return {"message": "cart updated", "item_id": item.id}
 
 @router.get("/cart/{user_id}")
-def get_cart(user_id: int, db: Session = Depends(get_db)):
+def get_cart(user_id: int, db: Session = Depends(get_db), auth_user_id: int = Depends(get_current_user_id)):
+
+    if user_id != auth_user_id:
+        raise HTTPException(status_code=403, detail="Cannot view another user's cart")
 
     items = db.query(CartItem).filter(CartItem.user_id == user_id).all()
 
@@ -126,12 +133,15 @@ def get_cart(user_id: int, db: Session = Depends(get_db)):
     }
 
 @router.delete("/cart/remove/{item_id}")
-def remove_cart_item(item_id: int, db: Session = Depends(get_db)):
+def remove_cart_item(item_id: int, db: Session = Depends(get_db), auth_user_id: int = Depends(get_current_user_id)):
 
     item = db.query(CartItem).filter(CartItem.id == item_id).first()
 
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
+
+    if item.user_id != auth_user_id:
+        raise HTTPException(status_code=403, detail="Cannot remove another user's cart item")
 
     db.delete(item)
     db.commit()
@@ -139,7 +149,7 @@ def remove_cart_item(item_id: int, db: Session = Depends(get_db)):
     return {"message": "item removed"}
 
 @router.put("/cart/update")
-def update_cart(data: dict, db: Session = Depends(get_db)):
+def update_cart(data: dict, db: Session = Depends(get_db), auth_user_id: int = Depends(get_current_user_id)):
 
     item_id = data.get("item_id")
     quantity = data.get("quantity")
@@ -148,6 +158,9 @@ def update_cart(data: dict, db: Session = Depends(get_db)):
 
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
+
+    if item.user_id != auth_user_id:
+        raise HTTPException(status_code=403, detail="Cannot modify another user's cart item")
 
     variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
 

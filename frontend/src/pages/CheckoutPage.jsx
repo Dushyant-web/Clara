@@ -69,8 +69,8 @@ const CheckoutPage = () => {
     const [cityOptions, setCityOptions] = useState([])
     const [savedAddresses, setSavedAddresses] = useState([])
     const [deliveryOptions, setDeliveryOptions] = useState([
-        { id: 'prepaid', name: 'Standard Delivery', days: '3-5 Business Days', price: 60.00 },
-        { id: 'cod', name: 'Cash on Delivery', days: '3-5 Business Days', price: 60.00, isCod: true }
+        { id: 'prepaid', name: 'Standard Delivery', days: '3-5 Business Days', price: 0 },
+        { id: 'cod', name: 'Cash on Delivery', days: '3-5 Business Days', price: 99, isCod: true }
     ])
     const [selectedDeliveryId, setSelectedDeliveryId] = useState('prepaid')
     const [loadingRates, setLoadingRates] = useState(false)
@@ -78,7 +78,7 @@ const CheckoutPage = () => {
     const [savingAddress, setSavingAddress] = useState(false)
     const [discount, setDiscount] = useState(0)
     const [applyingPromo, setApplyingPromo] = useState(false)
-    const [serverTotal, setServerTotal] = useState(null)
+    const [, setServerTotal] = useState(null)
 
     const { cartItems, cartTotal, clearCart } = useCart()
     const { user } = useAuth()
@@ -94,33 +94,16 @@ const CheckoutPage = () => {
         const fetchRates = async () => {
             if (shippingData.pincode && shippingData.pincode.length === 6) {
                 setLoadingRates(true);
-                try {
-                    const response = await orderService.getShippingRates({
-                        pincode: shippingData.pincode,
-                        city: shippingData.city,
-                        state: shippingData.state,
-                        weight: 0.5 
-                    });
-
-                    if (response && response.length > 0) {
-                        setDeliveryOptions(response.map(rate => ({
-                            id: rate.id || rate.courier_name,
-                            name: rate.name || rate.courier_name || 'Courier',
-                            days: rate.days || rate.estimated_delivery_days ? `${rate.estimated_delivery_days} Business Days` : '3-5 Business Days',
-                            price: parseFloat(rate.price || rate.rate || 0)
-                        })));
-                        setSelectedDeliveryId(response[0].id || response[0].courier_name);
-                    }
-                } catch (error) {
-                    console.log('Dynamic shipping rates not available yet, using fallback.');
-                    setDeliveryOptions([
-                        { id: 'prepaid', name: 'Standard Delivery', days: '3-5 Business Days', price: 60.00 },
-                        { id: 'cod', name: 'Cash on Delivery', days: '3-5 Business Days', price: 60.00, isCod: true }
-                    ]);
+                // Always keep prepaid (FREE) and COD (₹99) available as base options
+                const baseOptions = [
+                    { id: 'prepaid', name: 'Standard Delivery', days: '3-5 Business Days', price: 0 },
+                    { id: 'cod', name: 'Cash on Delivery', days: '3-5 Business Days', price: 99, isCod: true }
+                ];
+                setDeliveryOptions(baseOptions);
+                if (!['prepaid', 'cod'].includes(selectedDeliveryId)) {
                     setSelectedDeliveryId('prepaid');
-                } finally {
-                    setLoadingRates(false);
                 }
+                setLoadingRates(false);
             }
         };
 
@@ -147,10 +130,12 @@ const CheckoutPage = () => {
 
     const subtotal = cartTotal
     const selectedDeliveryOption = deliveryOptions.find(o => o.id === selectedDeliveryId) || deliveryOptions[0]
-    const shippingCost = selectedDeliveryOption ? selectedDeliveryOption.price : 60.00
-    const total = serverTotal !== null
-        ? serverTotal
-        : (subtotal + shippingCost) - discount
+    const shippingCost = selectedDeliveryOption ? selectedDeliveryOption.price : 0
+    const total = (subtotal + shippingCost) - discount
+
+    useEffect(() => {
+        setServerTotal(null)
+    }, [selectedDeliveryId])
 
     const handleApplyPromo = async () => {
         if (!promoCode.trim() || !user) return
@@ -194,8 +179,13 @@ const CheckoutPage = () => {
     const saveCurrentAddress = async () => {
         if (!user?.id) return
 
-        const label = prompt("Save address as (home / office / etc):")
-        if (!label) return
+        if (!validateShipping()) {
+            alert("Please fill all shipping fields before saving.")
+            return
+        }
+
+        const existingCount = savedAddresses.length
+        const label = existingCount === 0 ? "home" : `address ${existingCount + 1}`
 
         setSavingAddress(true)
 
@@ -265,6 +255,30 @@ const CheckoutPage = () => {
             return
         }
 
+        // Auto-save address when advancing from step 1 if no address is selected yet
+        if (step === 1 && !selectedAddress && user) {
+            try {
+                const saved = await addressService.createAddress({
+                    user_id: user.id,
+                    name: shippingData.fullname,
+                    phone: shippingData.phone.replace(/\D/g, ""),
+                    address_line: shippingData.address,
+                    city: shippingData.city,
+                    state: shippingData.state,
+                    postal_code: shippingData.pincode,
+                    country: "India",
+                    label: "home"
+                })
+                if (saved?.id) {
+                    setSelectedAddress(saved.id)
+                    const refreshed = await addressService.getAddresses(user.id)
+                    if (Array.isArray(refreshed)) setSavedAddresses(refreshed)
+                }
+            } catch (err) {
+                console.error("Auto-save address failed", err)
+            }
+        }
+
         if (step < 3) setStep(step + 1)
         else {
             if (!user) {
@@ -298,7 +312,8 @@ const CheckoutPage = () => {
                     user.id,
                     selectedAddress,
                     idempotencyKey,
-                    discount > 0 ? promoCode : null
+                    discount > 0 ? promoCode : null,
+                    selectedDeliveryId === 'cod' ? 'cod' : 'prepaid'
                 )
                 if (checkoutResponse?.total !== undefined) {
                     setServerTotal(checkoutResponse.total)

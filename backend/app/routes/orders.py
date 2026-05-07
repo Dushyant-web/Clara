@@ -11,17 +11,21 @@ from app.models.product_image import ProductImage
 from app.models.variant_image import VariantImage
 from app.models.address import Address
 from app.services.shiprocket_service import get_shiprocket_tracking
+from app.utils.jwt_handler import get_current_user_id
 
 router = APIRouter()
 
 
 @router.get("/order/{order_id}")
-def get_order(order_id: int, db: Session = Depends(get_db)):
+def get_order(order_id: int, db: Session = Depends(get_db), auth_user_id: int = Depends(get_current_user_id)):
 
     order = db.query(Order).filter(Order.id == order_id).first()
 
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+
+    if order.user_id != auth_user_id:
+        raise HTTPException(status_code=403, detail="Cannot view another user's order")
 
     
     # Get items with variant details
@@ -78,7 +82,9 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
     }
 
 @router.get("/orders/user/{user_id}")
-def get_user_orders(user_id: int, db: Session = Depends(get_db)):
+def get_user_orders(user_id: int, db: Session = Depends(get_db), auth_user_id: int = Depends(get_current_user_id)):
+    if user_id != auth_user_id:
+        raise HTTPException(status_code=403, detail="Cannot view another user's orders")
     rows = db.execute(
         text("""
         SELECT 
@@ -155,22 +161,27 @@ def get_user_orders(user_id: int, db: Session = Depends(get_db)):
     return list(orders_map.values())
 
 @router.delete("/orders/unpaid/{user_id}")
-def delete_unpaid_orders(user_id: int, db: Session = Depends(get_db)):
+def delete_unpaid_orders(user_id: int, db: Session = Depends(get_db), auth_user_id: int = Depends(get_current_user_id)):
+    if user_id != auth_user_id:
+        raise HTTPException(status_code=403, detail="Cannot delete another user's orders")
     db.query(Order).filter(
         Order.user_id == user_id,
         Order.status == "pending"
     ).delete()
-    
+
     db.commit()
     return {"message": "Unpaid orders cleared"}
 
 
 @router.get("/orders/{order_id}/tracking")
-def get_order_tracking(order_id: int, db: Session = Depends(get_db)):
+def get_order_tracking(order_id: int, db: Session = Depends(get_db), auth_user_id: int = Depends(get_current_user_id)):
     order = db.query(Order).filter(Order.id == order_id).first()
-    
+
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+
+    if order.user_id != auth_user_id:
+        raise HTTPException(status_code=403, detail="Cannot track another user's order")
         
     if not order.shiprocket_shipment_id:
         return {

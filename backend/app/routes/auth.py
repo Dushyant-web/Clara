@@ -4,9 +4,11 @@ from app.database.db import get_db
 from app.models.user import User
 from app.services.firebase_auth import verify_firebase_token
 from app.utils.jwt_handler import create_token
+from app.utils.rate_limiter import limiter
 
 router = APIRouter()
 
+@limiter.limit("5/minute")
 @router.post("/signup")
 def signup(data: dict, db: Session = Depends(get_db)):
 
@@ -39,9 +41,11 @@ def signup(data: dict, db: Session = Depends(get_db)):
         "access_token": jwt_token,
         "user_id": user.id,
         "name": user.name,
-        "email": user.email
+        "email": user.email,
+        "created_at": user.created_at.isoformat() if user.created_at else None
     }
 
+@limiter.limit("5/minute")
 @router.post("/login")
 def login(data: dict, db: Session = Depends(get_db)):
 
@@ -60,5 +64,6 @@ def login(data: dict, db: Session = Depends(get_db)):
         "access_token": jwt_token,
         "user_id": user.id,
         "name": user.name,
-        "email": user.email
+        "email": user.email,
+        "created_at": user.created_at.isoformat() if user.created_at else None
     }

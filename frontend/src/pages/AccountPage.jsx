@@ -48,6 +48,16 @@ const AccountPage = () => {
         { name: 'Account Settings', icon: Settings },
     ]
 
+    // Resolve a clean display name — strip '@…' if name was set to an email,
+    // and never fall through to a raw email for the heading
+    const cleanName = (val) => (val || '').split('@')[0]
+    const displayName = (() => {
+        if (user?.name && user.name !== 'Guest User') return cleanName(user.name)
+        if (user?.username) return cleanName(user.username)
+        if (user?.email) return cleanName(user.email)
+        return 'User'
+    })()
+
     if (!user) return null
 
     return (
@@ -56,29 +66,19 @@ const AccountPage = () => {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-16 gap-6">
                     <div className="flex items-center gap-6">
                         <div className="w-20 h-20 bg-secondary/5 border border-secondary/10 rounded-full flex items-center justify-center text-secondary text-2xl font-serif">
-                            {(
-                              user?.name && user.name !== 'Guest User'
-                                ? user.name
-                                : user?.username
-                                  ? user.username
-                                  : user?.email
-                                    ? user.email.split('@')[0]
-                                    : 'U'
-                            )
+                            {displayName
                               .split(' ')
+                              .filter(Boolean)
                               .map(n => n[0])
                               .join('')
+                              .slice(0, 2)
                               .toUpperCase()}
                         </div>
                         <div>
                             <h1 className="text-4xl font-serif tracking-tighter uppercase">
-                              {(user?.name && user.name !== 'Guest User')
-                                ? user.name
-                                : user?.username
-                                  ? user.username
-                                  : (user?.email ? user.email.split('@')[0] : 'User')}
+                              {displayName}
                             </h1>
-                            <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Member since {new Date().getFullYear()}</p>
+                            <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Member since {user?.created_at ? new Date(user.created_at).getFullYear() : new Date().getFullYear()}</p>
                         </div>
                     </div>
                     <button
@@ -241,7 +241,7 @@ const AccountPage = () => {
                                 </div>
 
                                 <div className="space-y-4 pt-10">
-                                    <button 
+                                    <button
                                         onClick={async () => {
                                             try {
                                                 const invoiceBlob = await orderService.getInvoice(selectedOrder.order_id);
@@ -257,12 +257,48 @@ const AccountPage = () => {
                                         }}
                                         className="w-full flex justify-between items-center p-4 border border-secondary/10 bg-primary/20 hover:border-secondary hover:bg-secondary/5 transition-all group"
                                     >
-                                        <span className="text-xs uppercase tracking-widest">Download Invoice</span>
+                                        <span className="text-xs uppercase tracking-widest">GAURK Invoice</span>
+                                        <FileText size={16} className="text-gray-500 group-hover:text-secondary" />
+                                    </button>
+
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                const data = await orderService.getRazorpayInvoice(selectedOrder.order_id);
+                                                if (data?.invoice_url) {
+                                                    window.open(data.invoice_url, '_blank', 'noopener,noreferrer');
+                                                }
+                                            } catch (err) {
+                                                const msg = err?.response?.data?.detail || 'Razorpay invoice unavailable';
+                                                alert(msg);
+                                            }
+                                        }}
+                                        className="w-full flex justify-between items-center p-4 border border-secondary/10 bg-primary/20 hover:border-secondary hover:bg-secondary/5 transition-all group"
+                                    >
+                                        <span className="text-xs uppercase tracking-widest">Razorpay Tax Invoice</span>
+                                        <FileText size={16} className="text-gray-500 group-hover:text-secondary" />
+                                    </button>
+
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                const data = await orderService.getShiprocketInvoice(selectedOrder.order_id);
+                                                if (data?.invoice_url) {
+                                                    window.open(data.invoice_url, '_blank', 'noopener,noreferrer');
+                                                }
+                                            } catch (err) {
+                                                const msg = err?.response?.data?.detail || 'Shipping invoice unavailable';
+                                                alert(msg);
+                                            }
+                                        }}
+                                        className="w-full flex justify-between items-center p-4 border border-secondary/10 bg-primary/20 hover:border-secondary hover:bg-secondary/5 transition-all group"
+                                    >
+                                        <span className="text-xs uppercase tracking-widest">Shiprocket Shipping Invoice</span>
                                         <FileText size={16} className="text-gray-500 group-hover:text-secondary" />
                                     </button>
 
                                     <button className="w-full flex justify-between items-center p-4 border border-secondary/10 bg-primary/20 hover:border-secondary hover:bg-secondary/5 transition-all group opacity-50 cursor-not-allowed">
-                                        <span className="text-xs uppercase tracking-widest">Request Refund / Return</span>
+                                        <span className="text-xs uppercase tracking-widest">Request Return</span>
                                         <RefreshCcw size={16} className="text-gray-500" />
                                     </button>
 

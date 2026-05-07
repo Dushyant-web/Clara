@@ -5,6 +5,7 @@ from openai import OpenAI
 
 from app.database.db import get_db
 from app.models.product import Product
+from app.utils.rate_limiter import limiter
 
 router = APIRouter()
 
@@ -57,7 +58,7 @@ You assist customers in a warm, sophisticated, and concise manner.
 
 Your responsibilities:
 - Help customers discover products from our catalog
-- Answer questions about shipping (3-5 business days, free above ₹500), returns (30-day window), and sizing
+- Answer questions about shipping (3-5 business days, free above ₹500), returns (7-day window), and sizing
 - Provide styling advice aligned with the GAURK luxury aesthetic
 - Direct complex issues to: gaurkclothing@gmail.com or WhatsApp +91 92179 60147
 
@@ -72,6 +73,7 @@ STRICT RULES — you must follow these without exception:
 """
 
 
+@limiter.limit("20/minute")
 @router.post("/ai/chat")
 def ai_chat(data: dict = Body(...), db: Session = Depends(get_db)):
     message = data.get("message", "").strip()
@@ -79,7 +81,7 @@ def ai_chat(data: dict = Body(...), db: Session = Depends(get_db)):
         return {"reply": "How may I assist your selection today?"}
 
     if is_abusive(message):
-        return {"reply": "Teri maa ki aankh,bkl,randi ke bache teri maa chude ghar ghar dhe ke laund seedha baat kar warna block kar dunga. Agar help chahiye toh bata, warna jaa apna kaam kar. 😤"}
+        return {"reply": "We appreciate respectful communication. Our concierge is here to assist you — please feel free to reach out with any questions about our collection."}
 
     # If NVIDIA key not configured, fall back to rule-based
     if not nvidia_client:
@@ -123,8 +125,8 @@ def _rule_based_fallback(message: str, db: Session) -> dict:
     if any(word in msg for word in ["shipping", "delivery", "track", "arrive", "time"]):
         return {"reply": "We offer complimentary express shipping on all orders above ₹500. Standard delivery takes 3-5 business days. Track your order in the 'Account' section."}
 
-    if any(word in msg for word in ["return", "exchange", "refund", "change"]):
-        return {"reply": "We offer a 30-day complimentary return and exchange window for all unworn pieces in their original packaging."}
+    if any(word in msg for word in ["return", "exchange", "change"]):
+        return {"reply": "We offer a 7-day complimentary return and exchange window for all unworn pieces in their original packaging."}
 
     if any(word in msg for word in ["human", "person", "support", "agent", "contact", "email", "whatsapp"]):
         return {"reply": "You can reach our Elite Concierge at gaurkclothing@gmail.com or WhatsApp +91 92179 60147."}

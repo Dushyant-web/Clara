@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, User, Mail, Phone, ChevronRight } from 'lucide-react'
@@ -19,7 +19,39 @@ const SignupPage = () => {
     const [otp, setOtp] = useState(['', '', '', '', '', ''])
     const [confirmationResult, setConfirmationResult] = useState(null)
     const [loading, setLoading] = useState(false)
+    const [resendCooldown, setResendCooldown] = useState(0)
     const navigate = useNavigate()
+
+    useEffect(() => {
+        if (resendCooldown > 0) {
+            const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000)
+            return () => clearTimeout(timer)
+        }
+    }, [resendCooldown])
+
+    const handleResendOtp = async () => {
+        if (!confirmationResult) return
+
+        setResendCooldown(30)
+        try {
+            const fullPhone = '+91' + formData.phone.replace(/\D/g, '')
+            const firebaseAuth = getAuth()
+            destroyRecaptcha()
+            window.recaptchaVerifier = new RecaptchaVerifier(
+                'recaptcha-container',
+                { size: 'invisible' },
+                firebaseAuth
+            )
+            const newResult = await signInWithPhoneNumber(firebaseAuth, fullPhone, window.recaptchaVerifier)
+            setConfirmationResult(newResult)
+            setOtp(['', '', '', '', '', ''])
+            showAlert('OTP resent successfully', 'success')
+        } catch (error) {
+            console.error('Resend OTP error:', error)
+            setResendCooldown(0)
+            showAlert('Failed to resend OTP. Try again.', 'error')
+        }
+    }
 
     // Safely destroys the active RecaptchaVerifier.
     // We let Firebase manage the DOM to avoid interfering with its internal
@@ -247,7 +279,18 @@ const SignupPage = () => {
                                     {loading ? 'VERIFYING...' : 'Complete Signup'} <ArrowRight size={16} />
                                 </button>
                                 <button
-                                    onClick={() => setStep('info')}
+                                    onClick={handleResendOtp}
+                                    disabled={resendCooldown > 0 || loading}
+                                    className="w-full text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-secondary transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                                >
+                                    {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend OTP'}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setStep('info')
+                                        setResendCooldown(0)
+                                        setOtp(['', '', '', '', '', ''])
+                                    }}
                                     className="w-full text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-secondary transition-all"
                                 >
                                     Change Details

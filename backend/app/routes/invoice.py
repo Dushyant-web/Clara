@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from io import BytesIO
+import os
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 
@@ -11,17 +12,23 @@ from app.models.order_item import OrderItem
 from app.models.product_variant import ProductVariant
 from app.models.product import Product
 from app.models.user import User
+from app.models.payment import Payment
+from app.utils.jwt_handler import get_current_user_id
+from app.services.shiprocket_service import get_shiprocket_invoice
 
 router = APIRouter()
 
 
 @router.get("/invoice/{order_id}")
-def generate_invoice(order_id: int, db: Session = Depends(get_db)):
+def generate_invoice(order_id: int, db: Session = Depends(get_db), auth_user_id: int = Depends(get_current_user_id)):
 
     order = db.query(Order).filter(Order.id == order_id).first()
 
     if not order:
-        return {"error": "Order not found"}
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    if order.user_id != auth_user_id:
+        raise HTTPException(status_code=403, detail="Cannot access another user's invoice")
 
     items = db.query(OrderItem).filter(OrderItem.order_id == order_id).all()
 
@@ -142,3 +149,91 @@ def generate_invoice(order_id: int, db: Session = Depends(get_db)):
             "Content-Disposition": f"attachment; filename=invoice_{order_id}.pdf"
         }
     )
+
+
+@router.get("/invoice/razorpay/{order_id}")
+def get_razorpay_invoice(order_id: int, db: Session = Depends(get_db), auth_user_id: int = Depends(get_current_user_id)):
+    """Return Razorpay-hosted tax invoice URL for prepaid orders."""
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if order.user_id != auth_user_id:
+        raise HTTPException(status_code=403, detail="Cannot access another user's invoice")
+
+    payment = db.query(Payment).filter(Payment.order_id == order_id).first()
+    if not payment or payment.provider == "cod":
+        raise HTTPException(status_code=400, detail="Razorpay invoice is only available for prepaid orders")
+    if payment.status != "paid":
+        raise HTTPException(status_code=400, detail="Razorpay invoice available only after payment is captured")
+
+    import razorpay
+    key_id = (os.getenv("RAZORPAY_KEY_ID") or "").strip()
+    key_secret = (os.getenv("RAZORPAY_KEY_SECRET") or "").strip()
+    if not key_id or not key_secret:
+        raise HTTPException(status_code=503, detail="Razorpay invoice service unavailable")
+    client = razorpay.Client(auth=(key_id, key_secret))
+
+    user = db.query(User).filter(User.id == order.user_id).first()
+    items = db.query(OrderItem).filter(OrderItem.order_id == order_id).all()
+
+    line_items = []
+    for item in items:
+        variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
+        product_name = "Item"
+        unit_price = float(item.price) if item.price else 0
+        if variant:
+            unit_price = float(variant.price)
+            product = db.query(Product).filter(Product.id == variant.product_id).first()
+            if product:
+                size = variant.size or ""
+                color = variant.color or ""
+                product_name = f"{product.name} {color} {size}".strip()
+        line_items.append({
+            "name": product_name[:255],
+            "amount": int(round(unit_price * 100)),
+            "currency": "INR",
+            "quantity": item.quantity,
+        })
+
+    try:
+        invoice = client.invoice.create({
+            "type": "invoice",
+            "description": f"GAURK Order #{order.id}",
+            "customer": {
+                "name": (user.name or "Customer")[:50] if user else "Customer",
+                "email": (user.email or "")[:80] if user else "",
+                "contact": (user.phone or "")[:15] if user else "",
+            },
+            "line_items": line_items,
+            "sms_notify": 0,
+            "email_notify": 0,
+            "currency": "INR",
+            "receipt": f"GAURK-{order.id}",
+        })
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Razorpay invoice generation failed: {str(e)}")
+
+    return {"invoice_url": invoice.get("short_url"), "invoice_id": invoice.get("id")}
+
+
+@router.get("/invoice/shiprocket/{order_id}")
+def get_shiprocket_invoice_url(order_id: int, db: Session = Depends(get_db), auth_user_id: int = Depends(get_current_user_id)):
+    """Return Shiprocket-hosted shipping invoice URL — only available after shipment is created."""
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if order.user_id != auth_user_id:
+        raise HTTPException(status_code=403, detail="Cannot access another user's invoice")
+    if not order.shiprocket_order_id:
+        raise HTTPException(status_code=400, detail="Shipping invoice not yet available — shipment is being prepared")
+
+    try:
+        data = get_shiprocket_invoice(order.shiprocket_order_id)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Shiprocket invoice fetch failed: {str(e)}")
+
+    invoice_url = data.get("invoice_url") if isinstance(data, dict) else None
+    if not invoice_url:
+        raise HTTPException(status_code=502, detail="Shiprocket did not return an invoice URL")
+
+    return {"invoice_url": invoice_url}

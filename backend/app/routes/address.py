@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database.db import get_db
 from app.models.address import Address
+from app.utils.jwt_handler import get_current_user_id
 
 router = APIRouter()
 
@@ -12,8 +13,11 @@ from app.schemas.address import AddressCreate
 @router.post("/address")
 def create_address(
     data: AddressCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    auth_user_id: int = Depends(get_current_user_id)
 ):
+    if data.user_id != auth_user_id:
+        raise HTTPException(status_code=403, detail="Cannot create address for another user")
 
     address = Address(
         user_id=data.user_id,
@@ -34,7 +38,9 @@ def create_address(
     return address
 
 @router.get("/addresses/{user_id}")
-def get_addresses(user_id: int, db: Session = Depends(get_db)):
+def get_addresses(user_id: int, db: Session = Depends(get_db), auth_user_id: int = Depends(get_current_user_id)):
+    if user_id != auth_user_id:
+        raise HTTPException(status_code=403, detail="Cannot view another user's addresses")
 
     return db.query(Address).filter(Address.user_id == user_id).all()
 
@@ -42,13 +48,17 @@ def get_addresses(user_id: int, db: Session = Depends(get_db)):
 def update_address(
     address_id: int,
     data: AddressCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    auth_user_id: int = Depends(get_current_user_id)
 ):
 
     address = db.query(Address).filter(Address.id == address_id).first()
 
     if not address:
-        return {"error": "address not found"}
+        raise HTTPException(status_code=404, detail="Address not found")
+
+    if address.user_id != auth_user_id:
+        raise HTTPException(status_code=403, detail="Cannot modify another user's address")
 
     address.name = data.name
     address.phone = data.phone
@@ -66,9 +76,17 @@ def update_address(
 
 
 @router.delete("/address/{address_id}")
-def delete_address(address_id: int, db: Session = Depends(get_db)):
+def delete_address(address_id: int, db: Session = Depends(get_db), auth_user_id: int = Depends(get_current_user_id)):
 
-    db.query(Address).filter(Address.id == address_id).delete()
+    address = db.query(Address).filter(Address.id == address_id).first()
+
+    if not address:
+        raise HTTPException(status_code=404, detail="Address not found")
+
+    if address.user_id != auth_user_id:
+        raise HTTPException(status_code=403, detail="Cannot delete another user's address")
+
+    db.delete(address)
     db.commit()
 
     return {"message": "address deleted"}

@@ -9,8 +9,8 @@ export const orderService = {
         const response = await api.get(`/order/${orderId}`);
         return response.data;
     },
-    createCheckout: async (userId, addressId, idempotencyKey = null, promoCode = null) => {
-        let url = `/checkout?user_id=${userId}&address_id=${addressId}`;
+    createCheckout: async (userId, addressId, idempotencyKey = null, promoCode = null, paymentMethod = "prepaid") => {
+        let url = `/checkout?user_id=${userId}&address_id=${addressId}&payment_method=${paymentMethod}`;
         if (idempotencyKey) url += `&idempotency_key=${idempotencyKey}`;
         if (promoCode) url += `&promo_code=${promoCode}`;
 
@@ -35,6 +35,14 @@ export const orderService = {
     },
     getInvoice: async (orderId) => {
         const response = await api.get(`/invoice/${orderId}`, { responseType: 'blob' });
+        return response.data;
+    },
+    getRazorpayInvoice: async (orderId) => {
+        const response = await api.get(`/invoice/razorpay/${orderId}`);
+        return response.data;
+    },
+    getShiprocketInvoice: async (orderId) => {
+        const response = await api.get(`/invoice/shiprocket/${orderId}`);
         return response.data;
     },
     applyPromo: async (code, userId, orderId = null) => {

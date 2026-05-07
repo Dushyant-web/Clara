@@ -12,19 +12,19 @@ from app.models.product_variant import ProductVariant
 from app.models.inventory_reservation import InventoryReservation
 from app.schemas.checkout_schema import PaymentCreateRequest, PaymentConfirmRequest
 from app.services.shiprocket_service import create_shipment
+from app.utils.jwt_handler import get_current_user_id
+from app.utils.rate_limiter import limiter
 
 from fastapi import Header
 
 razorpay_key_id = (os.getenv("RAZORPAY_KEY_ID") or "").strip()
 razorpay_key_secret = (os.getenv("RAZORPAY_KEY_SECRET") or "").strip()
 
-razorpay_client = razorpay.Client(auth=(
-    razorpay_key_id,
-    razorpay_key_secret
-))
-
 if not razorpay_key_id or not razorpay_key_secret:
-    raise Exception("Razorpay keys not set in environment variables")
+    print("WARNING: Razorpay keys not set — online payment endpoints will return errors until configured.")
+    razorpay_client = None
+else:
+    razorpay_client = razorpay.Client(auth=(razorpay_key_id, razorpay_key_secret))
 
 router = APIRouter()
 
@@ -35,14 +35,18 @@ def get_payment_config():
         "key": razorpay_key_id
     }
 
+@limiter.limit("10/minute")
 @router.post("/payment/create")
-def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db)):
+def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db), auth_user_id: int = Depends(get_current_user_id)):
     order_id = request.order_id
     provider = request.provider
 
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
-        return {"error": "Order not found"}
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    if order.user_id != auth_user_id:
+        raise HTTPException(status_code=403, detail="Cannot pay for another user's order")
 
     # Prevent creating payment for an already paid/confirmed order
     if getattr(order, "status", None) in ["paid", "confirmed"]:
@@ -75,11 +79,13 @@ def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db))
     razorpay_order = None
 
     if provider in ["upi", "card"]:
+        if not razorpay_client:
+            raise HTTPException(status_code=503, detail="Online payment temporarily unavailable")
         try:
             # Use exact order total (Razorpay expects paise)
             amount_rupees = float(order.total_amount)
             amount_paise = int(round(amount_rupees * 100))
-            
+
             razorpay_order = razorpay_client.order.create({
                 "amount": amount_paise,
                 "currency": "INR",
@@ -107,15 +113,20 @@ def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db))
         "razorpay_order_id": razorpay_order["id"] if razorpay_order else None
     }
 
+@limiter.limit("10/minute")
 @router.post("/payment/confirm")
-def confirm_payment(request: PaymentConfirmRequest, db: Session = Depends(get_db)):
+def confirm_payment(request: PaymentConfirmRequest, db: Session = Depends(get_db), auth_user_id: int = Depends(get_current_user_id)):
     payment_id = request.payment_id
     transaction_id = request.transaction_id
 
-    payment = db.query(Payment).filter(Payment.id == payment_id).first()
+    payment = db.query(Payment).filter(Payment.id == payment_id).with_for_update().first()
 
     if not payment:
-        return {"error": "Payment not found"}
+        raise HTTPException(status_code=404, detail="Payment not found")
+
+    order = db.query(Order).filter(Order.id == payment.order_id).first()
+    if not order or order.user_id != auth_user_id:
+        raise HTTPException(status_code=403, detail="Cannot confirm another user's payment")
 
     if payment.status == "paid":
         return {"message": "payment already confirmed"}
@@ -123,15 +134,13 @@ def confirm_payment(request: PaymentConfirmRequest, db: Session = Depends(get_db
     payment.status = "paid"
     payment.payment_id = transaction_id
 
-    order = db.query(Order).filter(Order.id == payment.order_id).first()
-
     if order:
         order.status = "confirmed"
 
-        # Reduce stock for purchased variants
+        # Reduce stock for purchased variants — lock variant rows for safe concurrent decrement
         items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
         for item in items:
-            variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
+            variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).with_for_update().first()
             if variant:
                 variant.stock -= item.quantity
 
@@ -160,12 +169,17 @@ def confirm_payment(request: PaymentConfirmRequest, db: Session = Depends(get_db
         "message": "payment confirmed"
     }
 
+@limiter.limit("10/minute")
 @router.post("/payment/cod-confirm")
-def confirm_cod_payment(order_id: int, db: Session = Depends(get_db)):
-    order = db.query(Order).filter(Order.id == order_id).first()
+def confirm_cod_payment(order_id: int, db: Session = Depends(get_db), auth_user_id: int = Depends(get_current_user_id)):
+    # Lock order row so double-click / parallel calls cannot both pass the status check
+    order = db.query(Order).filter(Order.id == order_id).with_for_update().first()
 
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+
+    if order.user_id != auth_user_id:
+        raise HTTPException(status_code=403, detail="Cannot confirm another user's order")
 
     if order.status not in ["pending"]:
         return {"message": "Order already processed"}
@@ -183,10 +197,10 @@ def confirm_cod_payment(order_id: int, db: Session = Depends(get_db)):
         )
         db.add(cod_payment)
 
-    # Deduct stock for purchased variants
+    # Deduct stock for purchased variants — lock variant rows for safe concurrent decrement
     items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
     for item in items:
-        variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
+        variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).with_for_update().first()
         if variant:
             variant.stock -= item.quantity
 
@@ -259,10 +273,12 @@ async def razorpay_webhook(request: Request, db: Session = Depends(get_db)):
     razorpay_payment_id = payment_entity.get("id")
     razorpay_order_id = payment_entity.get("order_id")
 
+    # Lock the payment row so concurrent webhook deliveries cannot both pass the status check
+    # and double-deduct stock. The lock is released when this transaction commits.
     payment = db.query(Payment).filter(
         (Payment.payment_id == razorpay_payment_id) |
         (Payment.razorpay_order_id == razorpay_order_id)
-    ).first()
+    ).with_for_update().first()
 
     if not payment:
         return {"message": "payment not tracked"}
@@ -278,10 +294,10 @@ async def razorpay_webhook(request: Request, db: Session = Depends(get_db)):
     if order:
         order.status = "confirmed"
 
-        # Reduce stock for purchased variants
+        # Reduce stock for purchased variants — lock variant rows so concurrent decrements are safe
         items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
         for item in items:
-            variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
+            variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).with_for_update().first()
             if variant:
                 variant.stock -= item.quantity
 

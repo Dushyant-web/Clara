@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from dotenv import load_dotenv
 import os
+from app.utils.rate_limiter import limiter
 
 load_dotenv()
 
@@ -35,6 +36,7 @@ from app.routes.variants import router as variants_router
 
 
 app = FastAPI(title="NAME API")
+app.state.limiter = limiter
 
 # Ensure all database tables exist (important for production deploys)
 Base.metadata.create_all(bind=engine)
@@ -46,8 +48,6 @@ origins = [
     "http://127.0.0.1:5173",
     "http://127.0.0.1:5174",
     "http://127.0.0.1:5175",
-    "https://clara-test-v1.netlify.app",
-    "https://gaurk.netlify.app",
     "https://gaurk.shop",
     "https://www.gaurk.shop",
 ]
@@ -57,7 +57,6 @@ origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_origin_regex="https://.*\\.netlify\\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

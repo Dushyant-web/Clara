@@ -32,12 +32,19 @@ def get_shiprocket_token():
 
 def create_shipment(order, db: Session):
 
+    from app.models.payment import Payment
+
     token = get_shiprocket_token()
 
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
+
+    # Determine payment method from the Payment record (COD vs Prepaid)
+    # Wrong value here breaks Shiprocket COD remittance and shipping label
+    payment = db.query(Payment).filter(Payment.order_id == order.id).first()
+    sr_payment_method = "COD" if payment and payment.provider == "cod" else "Prepaid"
 
     # Get order items
     items_db = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
@@ -95,7 +102,7 @@ def create_shipment(order, db: Session):
 
         "order_items": order_items,
 
-        "payment_method": "Prepaid",
+        "payment_method": sr_payment_method,
         "sub_total": float(order.total_amount),
 
         "length": 10,
@@ -128,6 +135,26 @@ def get_shiprocket_tracking(shipment_id: str):
     response = requests.get(
         f"{BASE_URL}/courier/track/shipment/{shipment_id}",
         headers=headers
+    )
+
+    data = response.json()
+    return data
+
+
+def get_shiprocket_invoice(shiprocket_order_id: str):
+    """Fetch the Shiprocket-hosted tax/shipping invoice URL for a given order."""
+    token = get_shiprocket_token()
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+
+    response = requests.post(
+        f"{BASE_URL}/orders/print/invoice",
+        json={"ids": [shiprocket_order_id]},
+        headers=headers,
+        timeout=15
     )
 
     data = response.json()

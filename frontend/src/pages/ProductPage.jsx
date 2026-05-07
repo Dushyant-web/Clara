@@ -30,6 +30,30 @@ const ProductPage = () => {
     // detect if current user already reviewed this product
     const userReview = reviews.find(r => r.user_id === user?.id)
 
+    // Touch swipe state for mobile gallery
+    const [touchStartX, setTouchStartX] = useState(null)
+
+    const navigateGallery = (direction) => {
+        const gallery = variantImages.length ? variantImages : product?.images || []
+        if (gallery.length < 2) return
+        const idx = gallery.indexOf(activeImage)
+        const nextIdx = direction === 'next'
+            ? (idx + 1) % gallery.length
+            : (idx - 1 + gallery.length) % gallery.length
+        setActiveImage(gallery[nextIdx])
+    }
+
+    const handleTouchStart = (e) => setTouchStartX(e.changedTouches[0].clientX)
+    const handleTouchEnd = (e) => {
+        if (touchStartX === null) return
+        const deltaX = e.changedTouches[0].clientX - touchStartX
+        // 40px threshold to register as a swipe
+        if (Math.abs(deltaX) > 40) {
+            navigateGallery(deltaX < 0 ? 'next' : 'prev')
+        }
+        setTouchStartX(null)
+    }
+
     useEffect(() => {
         const fetchProductDetails = async () => {
             setLoading(true)
@@ -194,7 +218,11 @@ const ProductPage = () => {
                             ))}
                         </div>
                         <div className="md:col-span-10 order-1 md:order-2">
-                            <div className="aspect-[3/4] overflow-hidden bg-secondary/5 group relative">
+                            <div
+                                className="aspect-[3/4] overflow-hidden bg-secondary/5 group relative touch-pan-y select-none"
+                                onTouchStart={handleTouchStart}
+                                onTouchEnd={handleTouchEnd}
+                            >
                                 <AnimatePresence mode="wait">
                                     <motion.img
                                         key={activeImage}
@@ -204,7 +232,8 @@ const ProductPage = () => {
                                         transition={{ duration: 0.5 }}
                                         src={activeImage || 'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200'}
                                         style={{ imageRendering: '-webkit-optimize-contrast' }}
-                                        className="w-full h-full object-cover"
+                                        className="w-full h-full object-cover pointer-events-none"
+                                        draggable={false}
                                         alt={product.name}
                                         onError={(e) => {
                                             e.target.src = 'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200';
@@ -213,30 +242,20 @@ const ProductPage = () => {
                                     />
                                 </AnimatePresence>
 
-                                {/* Navigation Arrows */}
+                                {/* Navigation Arrows — always visible on mobile, hover-reveal on desktop */}
                                 {(variantImages.length ? variantImages : product.images).length > 1 && (
                                     <>
                                         <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                const gallery = variantImages.length ? variantImages : product.images;
-                                                const idx = gallery.indexOf(activeImage);
-                                                const prevIdx = (idx - 1 + gallery.length) % gallery.length;
-                                                setActiveImage(gallery[prevIdx]);
-                                            }}
-                                            className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-primary/20 backdrop-blur-md text-secondary opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-primary/40 rounded-full"
+                                            onClick={(e) => { e.stopPropagation(); navigateGallery('prev'); }}
+                                            aria-label="Previous image"
+                                            className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 p-3 bg-primary/40 md:bg-primary/20 backdrop-blur-md text-secondary opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-300 hover:bg-primary/40 rounded-full"
                                         >
                                             <ChevronLeft size={20} />
                                         </button>
                                         <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                const gallery = variantImages.length ? variantImages : product.images;
-                                                const idx = gallery.indexOf(activeImage);
-                                                const nextIdx = (idx + 1) % gallery.length;
-                                                setActiveImage(gallery[nextIdx]);
-                                            }}
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-primary/20 backdrop-blur-md text-secondary opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-primary/40 rounded-full"
+                                            onClick={(e) => { e.stopPropagation(); navigateGallery('next'); }}
+                                            aria-label="Next image"
+                                            className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 p-3 bg-primary/40 md:bg-primary/20 backdrop-blur-md text-secondary opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-300 hover:bg-primary/40 rounded-full"
                                         >
                                             <ChevronRight size={20} />
                                         </button>
@@ -376,7 +395,7 @@ const ProductPage = () => {
                                 <RotateCcw size={20} className="text-gray-500" />
                                 <div>
                                     <h4 className="text-[10px] uppercase tracking-widest font-bold mb-1">Returns & Exchanges</h4>
-                                    <p className="text-[10px] text-gray-500 leading-relaxed uppercase tracking-widest font-bold">30-day effortless return policy. See terms for details.</p>
+                                    <p className="text-[10px] text-gray-500 leading-relaxed uppercase tracking-widest font-bold">7-day effortless return policy. See terms for details.</p>
                                 </div>
                             </div>
                         </div>

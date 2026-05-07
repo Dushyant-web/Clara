@@ -32,7 +32,8 @@ export const AuthProvider = ({ children }) => {
             const userObj = {
                 id: data.user_id,
                 name: data.name || name || "User",
-                email: data.email || email
+                email: data.email || email,
+                created_at: data.created_at || null
             };
             setToken(data.access_token);
             setUser(userObj);
@@ -50,7 +51,8 @@ export const AuthProvider = ({ children }) => {
             const userObj = {
                 id: data.user_id,
                 name: data.name || name || "User",
-                email: data.email || email
+                email: data.email || email,
+                created_at: data.created_at || null
             };
             setToken(data.access_token);
             setUser(userObj);

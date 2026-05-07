@@ -3,11 +3,13 @@ from sqlalchemy.orm import Session
 from app.database.db import get_db
 from app.models.promo_code import PromoCode
 from app.schemas.checkout_schema import PromoApplyRequest
+from app.utils.rate_limiter import limiter
 from datetime import datetime
 
 router = APIRouter()
 
 
+@limiter.limit("10/minute")
 @router.post("/promo/apply")
 def apply_promo(request: PromoApplyRequest, db: Session = Depends(get_db)):
     code = request.code

@@ -197,6 +197,20 @@ export const CartProvider = ({ children }) => {
 
     const isInWishlist = (productId) => wishlist.some(item => item.id === productId);
 
+    const clearCart = async () => {
+        setCartItems([]);
+        try {
+            localStorage.removeItem('cart');
+        } catch (e) {}
+        if (user) {
+            try {
+                await cartService.clearCart?.(user.id);
+            } catch (e) {
+                console.error('Failed to clear server cart', e);
+            }
+        }
+    };
+
     return (
         <CartContext.Provider value={{
             cartItems,
@@ -208,7 +222,8 @@ export const CartProvider = ({ children }) => {
             cartTotal,
             cartCount,
             isCartOpen,
-            setIsCartOpen
+            setIsCartOpen,
+            clearCart
         }}>
             {children}
         </CartContext.Provider>
