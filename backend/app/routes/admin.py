@@ -9,7 +9,6 @@ from app.models.user import User
 from app.models.review import Review
 from sqlalchemy import func
 from sqlalchemy import text
-from datetime import datetime
 from app.models.product_image import ProductImage
 from app.models.variant_image import VariantImage
 from app.models.collection import CollectionImage

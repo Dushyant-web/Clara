@@ -10,7 +10,7 @@ import {
     Percent,
     Infinity as InfinityIcon
 } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { adminService } from '../services/adminService';
 
 const AdminPromos = () => {

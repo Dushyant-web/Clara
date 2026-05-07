@@ -1,5 +1,5 @@
 import os
-from fastapi import APIRouter, Depends, Body, HTTPException, Request
+from fastapi import APIRouter, Depends, Body, Request
 from sqlalchemy.orm import Session
 from openai import OpenAI
 

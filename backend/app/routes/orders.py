@@ -9,7 +9,6 @@ from app.models.product_variant import ProductVariant
 from app.models.product import Product
 from app.models.product_image import ProductImage
 from app.models.variant_image import VariantImage
-from app.models.address import Address
 from app.services.shiprocket_service import get_shiprocket_tracking
 from app.utils.jwt_handler import get_current_user_id
 

@@ -15,7 +15,6 @@ from app.services.shiprocket_service import create_shipment
 from app.utils.jwt_handler import get_current_user_id
 from app.utils.rate_limiter import limiter
 
-from fastapi import Header
 
 razorpay_key_id = (os.getenv("RAZORPAY_KEY_ID") or "").strip()
 razorpay_key_secret = (os.getenv("RAZORPAY_KEY_SECRET") or "").strip()

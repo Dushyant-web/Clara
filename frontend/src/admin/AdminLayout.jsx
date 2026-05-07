@@ -22,7 +22,7 @@ import {
     X,
     User
 } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const AdminLayout = () => {
     const location = useLocation();

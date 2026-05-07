@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Plus, Trash2, Image as ImageIcon } from 'lucide-react';
 import { lookbookService } from '../services/lookbookService';
 import { adminService } from '../services/adminService';

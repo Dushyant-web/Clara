@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { ChevronRight, Check, MapPin, Truck, CreditCard, ShoppingBag, ArrowLeft, Loader2 } from 'lucide-react'
 import { useCart } from '../contexts/CartContext'

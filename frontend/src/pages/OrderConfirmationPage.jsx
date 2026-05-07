@@ -1,4 +1,5 @@
 import React from 'react'
+import { motion } from 'framer-motion';
 import { useSearchParams, Link } from 'react-router-dom'
 import { CheckCircle, ShoppingBag, ArrowRight, Truck } from 'lucide-react'
 

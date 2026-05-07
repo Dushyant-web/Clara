@@ -1,4 +1,5 @@
 import { Heart, ShoppingBag } from 'lucide-react'
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom'
 import { useCart } from '../contexts/CartContext'
 

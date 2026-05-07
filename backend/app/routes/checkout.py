@@ -10,7 +10,6 @@ from app.models.product import Product
 from app.models.inventory_reservation import InventoryReservation
 from app.models.order import Order
 from app.models.order_item import OrderItem
-from app.models.user import User
 from app.models.payment import Payment
 from app.utils.jwt_handler import get_current_user_id
 

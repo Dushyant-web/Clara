@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Filter, X, ChevronDown } from 'lucide-react'
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, User, Mail, Phone, ChevronRight } from 'lucide-react'
 import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth"

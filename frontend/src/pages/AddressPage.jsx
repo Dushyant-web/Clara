@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Plus, Trash2, Edit2, Check, X, Loader2, ChevronLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { addressService } from '../services/addressService';

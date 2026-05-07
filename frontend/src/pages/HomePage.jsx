@@ -1,4 +1,4 @@
-import { useScroll, useTransform } from 'framer-motion'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import { ArrowRight, ChevronDown } from 'lucide-react'
 import { useRef, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'

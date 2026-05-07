@@ -1,4 +1,4 @@
-from fastapi import Header, HTTPException, Depends
+from fastapi import Header, HTTPException
 import os
 
 def admin_required(x_admin_password: str = Header(None)):

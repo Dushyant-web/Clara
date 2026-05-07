@@ -11,7 +11,7 @@ import {
     CreditCard,
     MessageCircle
 } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { adminService } from '../services/adminService';
 
 const CustomerProfileSidePanel = ({ user, onClose }) => {

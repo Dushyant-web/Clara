@@ -12,7 +12,7 @@ import {
     Loader2,
     Save
 } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { productService } from '../services/productService';
 import { adminService } from '../services/adminService';
 
