@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.database.db import get_db
 from app.models.promo_code import PromoCode
@@ -9,14 +9,13 @@ from datetime import datetime
 router = APIRouter()
 
 
-@limiter.limit("10/minute")
-@router.post("/promo/apply")
-def apply_promo(request: PromoApplyRequest, db: Session = Depends(get_db)):
-    code = request.code
+def _apply_promo_core(payload: PromoApplyRequest, db: Session):
+    """Core promo logic — callable from other routes (e.g. checkout) without slowapi/Request."""
+    code = payload.code
     # If order_id is provided, use order total. Otherwise, calculate from user's cart.
-    if request.order_id:
+    if payload.order_id:
         from app.models.order import Order
-        order = db.query(Order).filter(Order.id == request.order_id).first()
+        order = db.query(Order).filter(Order.id == payload.order_id).first()
         if not order:
             raise HTTPException(status_code=404, detail="Order not found")
         order_amount = float(order.total_amount)
@@ -26,10 +25,10 @@ def apply_promo(request: PromoApplyRequest, db: Session = Depends(get_db)):
     else:
         from app.models.cart_item import CartItem
         from app.models.product_variant import ProductVariant
-        cart_items = db.query(CartItem).filter(CartItem.user_id == request.user_id).all()
+        cart_items = db.query(CartItem).filter(CartItem.user_id == payload.user_id).all()
         if not cart_items:
             raise HTTPException(status_code=400, detail="Cart is empty")
-        
+
         order_amount = 0
         for item in cart_items:
             variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
@@ -71,7 +70,7 @@ def apply_promo(request: PromoApplyRequest, db: Session = Depends(get_db)):
         final_amount = 0
 
     # Only update DB if an actual order exists (final checkout step)
-    if request.order_id:
+    if payload.order_id:
         order.total_amount = final_amount
         order.promo_code = promo.code
         if promo.usage_limit is not None:
@@ -83,3 +82,9 @@ def apply_promo(request: PromoApplyRequest, db: Session = Depends(get_db)):
         "discount": discount,
         "final_amount": final_amount
     }
+
+
+@limiter.limit("10/minute")
+@router.post("/promo/apply")
+def apply_promo(request: Request, payload: PromoApplyRequest, db: Session = Depends(get_db)):
+    return _apply_promo_core(payload, db)

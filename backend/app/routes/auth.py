@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.database.db import get_db
 from app.models.user import User
@@ -10,7 +10,7 @@ router = APIRouter()
 
 @limiter.limit("5/minute")
 @router.post("/signup")
-def signup(data: dict, db: Session = Depends(get_db)):
+def signup(request: Request, data: dict, db: Session = Depends(get_db)):
 
     token = data.get("id_token")
 
@@ -47,7 +47,7 @@ def signup(data: dict, db: Session = Depends(get_db)):
 
 @limiter.limit("5/minute")
 @router.post("/login")
-def login(data: dict, db: Session = Depends(get_db)):
+def login(request: Request, data: dict, db: Session = Depends(get_db)):
 
     token = data.get("id_token")
 

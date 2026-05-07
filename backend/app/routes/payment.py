@@ -37,9 +37,9 @@ def get_payment_config():
 
 @limiter.limit("10/minute")
 @router.post("/payment/create")
-def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db), auth_user_id: int = Depends(get_current_user_id)):
-    order_id = request.order_id
-    provider = request.provider
+def create_payment(request: Request, payload: PaymentCreateRequest, db: Session = Depends(get_db), auth_user_id: int = Depends(get_current_user_id)):
+    order_id = payload.order_id
+    provider = payload.provider
 
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
@@ -115,9 +115,9 @@ def create_payment(request: PaymentCreateRequest, db: Session = Depends(get_db),
 
 @limiter.limit("10/minute")
 @router.post("/payment/confirm")
-def confirm_payment(request: PaymentConfirmRequest, db: Session = Depends(get_db), auth_user_id: int = Depends(get_current_user_id)):
-    payment_id = request.payment_id
-    transaction_id = request.transaction_id
+def confirm_payment(request: Request, payload: PaymentConfirmRequest, db: Session = Depends(get_db), auth_user_id: int = Depends(get_current_user_id)):
+    payment_id = payload.payment_id
+    transaction_id = payload.transaction_id
 
     payment = db.query(Payment).filter(Payment.id == payment_id).with_for_update().first()
 
@@ -171,7 +171,7 @@ def confirm_payment(request: PaymentConfirmRequest, db: Session = Depends(get_db
 
 @limiter.limit("10/minute")
 @router.post("/payment/cod-confirm")
-def confirm_cod_payment(order_id: int, db: Session = Depends(get_db), auth_user_id: int = Depends(get_current_user_id)):
+def confirm_cod_payment(request: Request, order_id: int, db: Session = Depends(get_db), auth_user_id: int = Depends(get_current_user_id)):
     # Lock order row so double-click / parallel calls cannot both pass the status check
     order = db.query(Order).filter(Order.id == order_id).with_for_update().first()
 

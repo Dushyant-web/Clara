@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from dotenv import load_dotenv
 import os
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
 from app.utils.rate_limiter import limiter
 
 load_dotenv()
@@ -37,6 +39,7 @@ from app.routes.variants import router as variants_router
 
 app = FastAPI(title="NAME API")
 app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Ensure all database tables exist (important for production deploys)
 Base.metadata.create_all(bind=engine)

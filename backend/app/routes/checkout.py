@@ -150,11 +150,11 @@ def checkout(user_id: int, address_id: int, payment_method: str = "prepaid", pro
 
     order_amount = total
     if promo_code:
-        from app.routes.promo import apply_promo
+        from app.routes.promo import _apply_promo_core
         from app.schemas.checkout_schema import PromoApplyRequest
 
         # Validation only (order not created yet) — raises HTTPException if invalid
-        promo_result = apply_promo(
+        promo_result = _apply_promo_core(
             PromoApplyRequest(code=promo_code, user_id=user_id),
             db
         )

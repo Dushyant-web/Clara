@@ -1,5 +1,5 @@
 import os
-from fastapi import APIRouter, Depends, Body, HTTPException
+from fastapi import APIRouter, Depends, Body, HTTPException, Request
 from sqlalchemy.orm import Session
 from openai import OpenAI
 
@@ -75,7 +75,7 @@ STRICT RULES — you must follow these without exception:
 
 @limiter.limit("20/minute")
 @router.post("/ai/chat")
-def ai_chat(data: dict = Body(...), db: Session = Depends(get_db)):
+def ai_chat(request: Request, data: dict = Body(...), db: Session = Depends(get_db)):
     message = data.get("message", "").strip()
     if not message:
         return {"reply": "How may I assist your selection today?"}
