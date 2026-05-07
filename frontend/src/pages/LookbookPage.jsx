@@ -113,14 +113,14 @@ const LookbookPage = () => {
                                 images: Array.isArray(images) ? images : [],
                                 image_url: images?.[0]?.image_url || look.image_url || null
                             };
-                        } catch (_e) {
+                        } catch (e) {
                             return look;
                         }
                     })
                 );
 
                 setLookbooks(lookbooksWithImages);
-            } catch (_err) {
+            } catch (err) {
                 console.error('Failed to load lookbooks', err);
             } finally {
                 setIsLoading(false);
