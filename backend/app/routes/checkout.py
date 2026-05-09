@@ -61,6 +61,12 @@ def checkout(user_id: int, address_id: int, payment_method: str = "prepaid", pro
     if auth_user_id != user_id:
         raise HTTPException(status_code=403, detail="Cannot checkout for another user")
 
+    # Validate address belongs to user
+    from app.models.address import Address
+    address = db.query(Address).filter(Address.id == address_id, Address.user_id == user_id).first()
+    if not address:
+        raise HTTPException(status_code=400, detail="Invalid shipping address. Please select a valid address.")
+
     # Server-side shipping cost — never trust frontend.
     # Prepaid = free, COD = ₹99 handling fee.
     if payment_method == "cod":
@@ -119,8 +125,16 @@ def checkout(user_id: int, address_id: int, payment_method: str = "prepaid", pro
             ProductVariant.id == item.variant_id
         ).with_for_update().first()
 
+        if not variant:
+            # Cart item references a variant that was deleted — clean it up
+            db.query(CartItem).filter(CartItem.id == item.id).delete()
+            db.commit()
+            raise HTTPException(status_code=400, detail="One or more cart items are no longer available. Please refresh your cart.")
+
         product = db.query(Product).filter(Product.id == variant.product_id).first()
-        if not product or product.status != "active":
+        if not product:
+            raise HTTPException(status_code=400, detail="One or more cart items are no longer available. Please refresh your cart.")
+        if product.status != "active":
             raise HTTPException(status_code=403, detail=f"Item {product.name} is no longer available")
 
         # Calculate reserved quantity that has not expired

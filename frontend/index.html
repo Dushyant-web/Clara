@@ -181,9 +181,10 @@
 </head>
 
 <body>
-  <!-- Visible H1-style content for crawlers before React hydrates (helps SEO + AI parsing) -->
+  <!-- H1 visible to crawlers immediately (offscreen, accessible). React may render its own H1; this guarantees Bing/Google find one before hydration. -->
+  <h1 style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">GAURK — Luxury Streetwear & Designer Fashion in India</h1>
+
   <noscript>
-    <h1>GAURK — Luxury Streetwear & Designer Fashion in India</h1>
     <p>GAURK is an emerging Indian luxury streetwear brand offering exclusive premium clothing, designer hoodies, t-shirts, and limited-edition pieces. Shop at gaurk.shop with free prepaid delivery, 3-day returns, and Cash on Delivery available across India.</p>
     <p>Please enable JavaScript to browse the GAURK collection.</p>
   </noscript>
