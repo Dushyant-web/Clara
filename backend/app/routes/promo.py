@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
+from decimal import Decimal
 from app.database.db import get_db
 from app.models.promo_code import PromoCode
 from app.schemas.checkout_schema import PromoApplyRequest
@@ -55,16 +56,16 @@ def _apply_promo_core(payload: PromoApplyRequest, db: Session):
         raise HTTPException(status_code=400, detail="Minimum order not met")
 
     if promo.discount_type == "percentage":
-        discount = order_amount * float(promo.discount_value) / 100
+        discount = Decimal(str(order_amount)) * Decimal(str(promo.discount_value)) / Decimal("100")
 
         if promo.max_discount:
-            discount = min(discount, float(promo.max_discount))
+            discount = min(discount, Decimal(str(promo.max_discount)))
 
     else:
-        discount = float(promo.discount_value)
+        discount = Decimal(str(promo.discount_value))
 
-    # Ensure the final payable amount never goes below ₹0 (₹1 minimum was causing incorrect totals like ₹3 → ₹1)
-    final_amount = round(order_amount - discount, 2)
+    # Ensure the final payable amount never goes below ₹0
+    final_amount = round(Decimal(str(order_amount)) - discount, 2)
 
     if final_amount < 0:
         final_amount = 0

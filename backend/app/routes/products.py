@@ -22,13 +22,16 @@ def get_products(
 
     offset = (page - 1) * limit
 
-    query = db.query(Product, Category.name.label("category")).outerjoin(Category, Product.category_id == Category.id)
-    
+    base_query = db.query(Product, Category.name.label("category")).outerjoin(Category, Product.category_id == Category.id)
+
     if status and status != "all":
-        query = query.filter(Product.status == status)
+        base_query = base_query.filter(Product.status == status)
+
+    # Count total before pagination
+    total = base_query.count()
 
     results = (
-        query
+        base_query
         .offset(offset)
         .limit(limit)
         .all()
@@ -37,13 +40,6 @@ def get_products(
     products = []
 
     for product, category in results:
-        # Standardize image fallback
-        display_image = product.main_image or product.hover_image
-        if not display_image:
-            first_img = db.query(ProductImage).filter(ProductImage.product_id == product.id).order_by(ProductImage.position).first()
-            if first_img:
-                display_image = first_img.image_url
-
         products.append({
             "id": product.id,
             "name": product.name,
@@ -54,9 +50,12 @@ def get_products(
             "is_active": product.status == "active"
         })
 
+    import math
     return {
         "page": page,
         "limit": limit,
+        "total": total,
+        "pages": math.ceil(total / limit) if limit else 1,
         "products": products
     }
 

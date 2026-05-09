@@ -198,7 +198,7 @@ useEffect(() => {
                     <div>
                         <h1 className="text-5xl md:text-7xl font-serif tracking-tighter mb-4">THE SHOP</h1>
                         <p className="text-gray-500 text-xs uppercase tracking-[0.3em]">
-                            Showing {filteredProducts.length ? (page - 1) * 40 + 1 : 0}–{(page - 1) * 40 + filteredProducts.length} of {totalProducts} Premium Pieces
+                            Showing {filteredProducts.length ? (page - 1) * 40 + 1 : 0}–{(page - 1) * 40 + filteredProducts.length} of {totalProducts || filteredProducts.length} Premium Pieces
                         </p>
                     </div>
                 </div>

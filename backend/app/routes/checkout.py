@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from decimal import Decimal
 
 from datetime import datetime, timedelta
 
@@ -70,9 +71,9 @@ def checkout(user_id: int, address_id: int, payment_method: str = "prepaid", pro
     # Server-side shipping cost — never trust frontend.
     # Prepaid = free, COD = ₹99 handling fee.
     if payment_method == "cod":
-        shipping_cost = 99.0
+        shipping_cost = Decimal("99.00")
     elif payment_method == "prepaid":
-        shipping_cost = 0.0
+        shipping_cost = Decimal("0.00")
     else:
         raise HTTPException(status_code=400, detail="Invalid payment method")
 
