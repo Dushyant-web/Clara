@@ -353,7 +353,7 @@ const AccountPage = () => {
                                 <p className="text-xs text-gray-500">No recently viewed products</p>
                             ) : (
                                 recentlyViewed.map((p) => (
-                                    <Link key={p.id} to={`/products/${p.slug}`}>
+                                    <Link key={p.id} to={`/products/${p.id}`}>
                                         <div className="aspect-[3/4] border border-secondary/10 bg-secondary/5 flex items-center justify-center text-xs">
                                             {p.name}
                                         </div>

@@ -225,16 +225,28 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
     from app.models.product_variant import ProductVariant
     from app.models.product_image import ProductImage
     from app.models.variant_image import VariantImage
+    from app.models.wishlist import Wishlist
+    from app.models.review import Review
+    from app.models.cart_item import CartItem
+    from app.models.order_item import OrderItem
 
-    # Delete related data first
-    variants = db.query(ProductVariant).filter(ProductVariant.product_id == product_id).all()
-    for v in variants:
-        db.query(VariantImage).filter(VariantImage.variant_id == v.id).delete(synchronize_session=False)
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    variant_ids = [v.id for v in db.query(ProductVariant.id).filter(ProductVariant.product_id == product_id).all()]
+
+    # Delete dependents that block deletion via FK
+    db.query(Wishlist).filter(Wishlist.product_id == product_id).delete(synchronize_session=False)
+    db.query(Review).filter(Review.product_id == product_id).delete(synchronize_session=False)
+
+    if variant_ids:
+        db.query(CartItem).filter(CartItem.variant_id.in_(variant_ids)).delete(synchronize_session=False)
+        db.query(OrderItem).filter(OrderItem.variant_id.in_(variant_ids)).delete(synchronize_session=False)
+        db.query(VariantImage).filter(VariantImage.variant_id.in_(variant_ids)).delete(synchronize_session=False)
 
     db.query(ProductImage).filter(ProductImage.product_id == product_id).delete(synchronize_session=False)
     db.query(ProductVariant).filter(ProductVariant.product_id == product_id).delete(synchronize_session=False)
-
-    # Finally delete the product
     db.query(Product).filter(Product.id == product_id).delete(synchronize_session=False)
 
     db.commit()

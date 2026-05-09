@@ -133,7 +133,7 @@ const SearchOverlay = ({ isOpen, onClose }) => {
                                             <button
                                                 key={product.id}
                                                 onClick={() => {
-                                                    navigate(`/product/${product.id}`);
+                                                    navigate(`/products/${product.id}`);
                                                     onClose();
                                                 }}
                                                 className="px-6 py-3 bg-secondary/5 hover:bg-secondary text-secondary hover:text-primary text-[10px] uppercase tracking-widest font-bold transition-all border border-secondary/10 rounded-full"

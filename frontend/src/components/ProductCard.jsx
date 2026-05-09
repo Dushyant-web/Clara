@@ -1,4 +1,5 @@
-import { Heart, ShoppingBag } from 'lucide-react'
+import { useState } from 'react'
+import { Heart, ShoppingBag, Loader2 } from 'lucide-react'
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom'
 import { useCart } from '../contexts/CartContext'
@@ -6,6 +7,7 @@ import { useCart } from '../contexts/CartContext'
 const ProductCard = ({ product }) => {
     const { toggleWishlist, isInWishlist, addToCart } = useCart()
     const isWishlisted = isInWishlist(product.id)
+    const [imgLoaded, setImgLoaded] = useState(false)
 
     // Determine product images with correct priority
     const mainImage =
@@ -30,14 +32,22 @@ const ProductCard = ({ product }) => {
             className="group relative"
         >
             <div className="relative aspect-[3/4] overflow-hidden bg-neutral-900 group">
+                {!imgLoaded && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-secondary/5 z-[1]">
+                        <Loader2 className="animate-spin text-white/40" size={28} strokeWidth={1} />
+                    </div>
+                )}
                 <Link to={`/products/${product.id}`}>
                     <motion.img
                         src={mainImage}
                         alt={product.name}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        loading="lazy"
+                        onLoad={() => setImgLoaded(true)}
+                        className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
                         onError={(e) => {
                             e.target.src = 'https://images.unsplash.com/photo-1539109132335-34a91bfd89da?auto=format&fit=crop&q=90&w=1200';
                             e.target.onerror = null;
+                            setImgLoaded(true);
                         }}
                     />
                     {hoverImage && (

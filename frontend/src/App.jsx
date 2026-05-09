@@ -8,6 +8,7 @@ import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
 import SearchOverlay from './components/SearchOverlay';
 import ChatWidget from './components/ChatWidget';
+import TopLoadingBar from './components/TopLoadingBar';
 
 // Pages
 import HomePage from './pages/HomePage';
@@ -64,6 +65,7 @@ function App() {
         <CartProvider>
           <NotificationProvider>
             <div className="min-h-screen flex flex-col bg-primary text-secondary overflow-hidden">
+              <TopLoadingBar />
               {!isAdminPath && <Navbar />}
               {!isAdminPath && <CartDrawer />}
               <ChatWidget />

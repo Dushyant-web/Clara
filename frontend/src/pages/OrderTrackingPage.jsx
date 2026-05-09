@@ -42,7 +42,7 @@ const OrderTrackingPage = () => {
                         }
                         setOrder({...data});
                     }
-                } catch (_e) {
+                } catch (e) {
                     console.warn('Shiprocket tracking fetch failed', e);
                 }
 

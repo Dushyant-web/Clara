@@ -135,12 +135,17 @@ def create_category(data: CategoryCreate, db: Session = Depends(get_db)):
 # Delete category (admin)
 @router.delete("/admin/category/{category_id}", dependencies=[Depends(admin_required)])
 def delete_category(category_id: int, db: Session = Depends(get_db)):
-
+    from app.models.product import Product
 
     category = db.query(Category).filter(Category.id == category_id).first()
 
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
+
+    # Detach products from this category instead of blocking delete via FK
+    db.query(Product).filter(Product.category_id == category_id).update(
+        {Product.category_id: None}, synchronize_session=False
+    )
 
     db.delete(category)
     db.commit()

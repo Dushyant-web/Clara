@@ -29,7 +29,7 @@ const ProductPage = () => {
     const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false)
 
     // detect if current user already reviewed this product
-    const userReview = reviews.find(r => r.user_id === user?.id)
+    const userReview = Array.isArray(reviews) ? reviews.find(r => r.user_id === user?.id) : undefined
 
     // Touch swipe state for mobile gallery
     const [touchStartX, setTouchStartX] = useState(null)
@@ -253,7 +253,7 @@ const ProductPage = () => {
                 "@type": "MerchantReturnPolicy",
                 "applicableCountry": "IN",
                 "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
-                "merchantReturnDays": 7,
+                "merchantReturnDays": 3,
                 "returnMethod": "https://schema.org/ReturnByMail",
                 "returnFees": "https://schema.org/FreeReturn"
             }
@@ -273,7 +273,7 @@ const ProductPage = () => {
         <div className="pt-32 pb-24 bg-primary min-h-screen transition-colors duration-500">
             <SEO
                 title={`${product.name} — GAURK Luxury Streetwear`}
-                description={`${product.description ? product.description.slice(0, 155) : `Shop ${product.name} from GAURK — premium Indian luxury streetwear. ₹${productPrice}. Free prepaid delivery, 7-day returns.`}`}
+                description={`${product.description ? product.description.slice(0, 155) : `Shop ${product.name} from GAURK — premium Indian luxury streetwear. ₹${productPrice}. Free prepaid delivery, 3-day returns.`}`}
                 canonical={productUrl}
                 image={productImage}
                 type="product"
@@ -477,7 +477,7 @@ const ProductPage = () => {
                                 <RotateCcw size={20} className="text-gray-500" />
                                 <div>
                                     <h4 className="text-[10px] uppercase tracking-widest font-bold mb-1">Returns & Exchanges</h4>
-                                    <p className="text-[10px] text-gray-500 leading-relaxed uppercase tracking-widest font-bold">7-day effortless return policy. See terms for details.</p>
+                                    <p className="text-[10px] text-gray-500 leading-relaxed uppercase tracking-widest font-bold">3-day effortless return policy. See terms for details.</p>
                                 </div>
                             </div>
                         </div>

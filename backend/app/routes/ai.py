@@ -58,7 +58,7 @@ You assist customers in a warm, sophisticated, and concise manner.
 
 Your responsibilities:
 - Help customers discover products from our catalog
-- Answer questions about shipping (3-5 business days, free above ₹500), returns (7-day window), and sizing
+- Answer questions about shipping (3-5 business days, free above ₹500), returns (3-day window), and sizing
 - Provide styling advice aligned with the GAURK luxury aesthetic
 - Direct complex issues to: gaurkclothing@gmail.com or WhatsApp +91 92179 60147
 
@@ -126,7 +126,7 @@ def _rule_based_fallback(message: str, db: Session) -> dict:
         return {"reply": "We offer complimentary express shipping on all orders above ₹500. Standard delivery takes 3-5 business days. Track your order in the 'Account' section."}
 
     if any(word in msg for word in ["return", "exchange", "change"]):
-        return {"reply": "We offer a 7-day complimentary return and exchange window for all unworn pieces in their original packaging."}
+        return {"reply": "We offer a 3-day complimentary return and exchange window for all unworn pieces in their original packaging."}
 
     if any(word in msg for word in ["human", "person", "support", "agent", "contact", "email", "whatsapp"]):
         return {"reply": "You can reach our Elite Concierge at gaurkclothing@gmail.com or WhatsApp +91 92179 60147."}

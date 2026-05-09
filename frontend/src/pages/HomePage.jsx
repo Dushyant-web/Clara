@@ -37,7 +37,7 @@ const HomePage = () => {
         <div ref={containerRef} className="relative w-full">
             <SEO
                 title="GAURK — Luxury Streetwear & Designer Fashion in India | gaurk.shop"
-                description="GAURK is India's emerging luxury streetwear and designer fashion brand. Shop exclusive premium clothing, hoodies, t-shirts, and limited-edition pieces. Free prepaid delivery, 7-day returns, COD available across India."
+                description="GAURK is India's emerging luxury streetwear and designer fashion brand. Shop exclusive premium clothing, hoodies, t-shirts, and limited-edition pieces. Free prepaid delivery, 3-day returns, COD available across India."
                 canonical="https://gaurk.shop/"
                 image="https://gaurk.shop/assets/logo/gk_logo.png"
                 jsonLd={{

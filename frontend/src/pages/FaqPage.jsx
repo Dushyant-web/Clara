@@ -8,7 +8,7 @@ const FaqPage = () => {
         <div className="pt-32 pb-24 min-h-screen bg-primary text-secondary">
             <SEO
                 title="FAQ — Shipping, Returns, Sizing | GAURK"
-                description="Frequently asked questions about GAURK orders, shipping (3-5 business days), 7-day returns, sizing, and Cash on Delivery across India."
+                description="Frequently asked questions about GAURK orders, shipping (3-5 business days), 3-day returns, sizing, and Cash on Delivery across India."
                 canonical="https://gaurk.shop/faq"
                 image="https://gaurk.shop/assets/logo/gk_logo.png"
                 jsonLd={{
@@ -36,7 +36,7 @@ const FaqPage = () => {
                             "name": "What is the return policy?",
                             "acceptedAnswer": {
                                 "@type": "Answer",
-                                "text": "GAURK offers a 7-day return and exchange window for unworn pieces in their original packaging."
+                                "text": "GAURK offers a 3-day return and exchange window for unworn pieces in their original packaging."
                             }
                         },
                         {

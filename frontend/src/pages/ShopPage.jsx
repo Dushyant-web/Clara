@@ -180,7 +180,7 @@ useEffect(() => {
         <div className="pt-32 pb-24 min-h-screen bg-primary transition-colors duration-500">
             <SEO
                 title="Shop All — Luxury Streetwear & Designer Fashion | GAURK"
-                description="Browse the complete GAURK collection — premium hoodies, designer t-shirts, exclusive limited-edition pieces. Free prepaid delivery across India, 7-day returns."
+                description="Browse the complete GAURK collection — premium hoodies, designer t-shirts, exclusive limited-edition pieces. Free prepaid delivery across India, 3-day returns."
                 canonical="https://gaurk.shop/shop"
                 image="https://gaurk.shop/assets/logo/gk_logo.png"
                 jsonLd={{
