@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(python3 -m py_compile /Users/dushyant/Calra/Clara/backend/app/routes/checkout.py /Users/dushyant/Calra/Clara/backend/app/routes/promo.py)",
-      "Bash(python3 -m py_compile /Users/dushyant/Calra/Clara/backend/app/routes/products.py)"
+      "Bash(python3 -m py_compile /Users/dushyant/Calra/Clara/backend/app/routes/products.py)",
+      "Bash(python3 -m py_compile /Users/dushyant/Calra/Clara/backend/app/routes/admin.py)"
     ]
   }
 }

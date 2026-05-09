@@ -669,8 +669,35 @@ def admin_user_profile(user_id: int, db: Session = Depends(get_db)):
 
 @router.get("/orders")
 def admin_orders(db: Session = Depends(get_db)):
-    orders = db.query(Order).all()
-    return orders
+    from app.models.user import User
+    from app.models.address import Address
+
+    rows = (
+        db.query(Order, User.name, User.email, User.phone, Address.name.label("addr_name"), Address.phone.label("addr_phone"))
+        .outerjoin(User, Order.user_id == User.id)
+        .outerjoin(Address, Order.shipping_address_id == Address.id)
+        .order_by(Order.created_at.desc())
+        .all()
+    )
+
+    result = []
+    for order, user_name, user_email, user_phone, addr_name, addr_phone in rows:
+        result.append({
+            "id": order.id,
+            "user_id": order.user_id,
+            "status": order.status,
+            "total_amount": float(order.total_amount) if order.total_amount else 0,
+            "created_at": order.created_at.isoformat() if order.created_at else None,
+            "shiprocket_order_id": order.shiprocket_order_id,
+            "shiprocket_shipment_id": order.shiprocket_shipment_id,
+            "promo_code": order.promo_code,
+            "shipping_address_id": order.shipping_address_id,
+            "shipping_name": addr_name or user_name or "Guest",
+            "email": user_email or "No Email",
+            "phone": addr_phone or user_phone or "",
+        })
+
+    return result
 
 
 @router.get("/order/{order_id}")
