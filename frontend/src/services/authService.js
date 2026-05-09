@@ -1,8 +1,8 @@
 import api from './api';
 
 export const authService = {
-    signup: async (idToken, email, name) => {
-        const response = await api.post('/auth/signup', { id_token: idToken, email, name });
+    signup: async (idToken, name, email) => {
+        const response = await api.post('/auth/signup', { id_token: idToken, name, email });
         return response.data;
     },
     login: async (idToken) => {

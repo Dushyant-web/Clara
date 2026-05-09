@@ -73,10 +73,11 @@ def create_shipment(order, db: Session):
         Address.id == order.shipping_address_id
     ).first()
 
-    # Get User email
+    # Get User email — Shiprocket requires a valid email format.
+    # Phone-OTP users may not have email set; fall back to a brand placeholder.
     from app.models.user import User
     user = db.query(User).filter(User.id == order.user_id).first()
-    customer_email = user.email if user else "customer@email.com"
+    customer_email = (user.email if user and user.email else None) or "orders@gaurk.shop"
 
     # Split name into first and last (Shiprocket requires both)
     name_parts = (address.name or "Customer").strip().split(" ", 1)
