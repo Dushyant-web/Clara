@@ -212,6 +212,9 @@ def confirm_cod_payment(request: Request, order_id: int, db: Session = Depends(g
     # Clear cart
     db.query(CartItem).filter(CartItem.user_id == order.user_id).delete()
 
+    # Flush so the COD Payment record is visible to create_shipment's query
+    db.flush()
+
     # Create shipment in Shiprocket
     try:
         ship_data = create_shipment(order, db)
@@ -222,6 +225,28 @@ def confirm_cod_payment(request: Request, order_id: int, db: Session = Depends(g
         print("Shiprocket shipment creation failed:", str(e))
 
     db.commit()
+
+    # Send order confirmation email (best-effort — never crash the order flow)
+    try:
+        from app.services.email_service import send_order_confirmed
+        from app.models.user import User
+        from app.models.product_variant import ProductVariant as PV
+        from app.models.product import Product as Prod
+        user = db.query(User).filter(User.id == order.user_id).first()
+        if user and user.email:
+            items_data = []
+            for oi in items:
+                variant = db.query(PV).filter(PV.id == oi.variant_id).first()
+                product = db.query(Prod).filter(Prod.id == variant.product_id).first() if variant else None
+                items_data.append({
+                    "name": product.name if product else "Item",
+                    "qty": oi.quantity,
+                    "price": float(oi.price) * oi.quantity,
+                })
+            send_order_confirmed(user.email, user.name or "Customer", order.id,
+                                 float(order.total_amount), "cod", items_data)
+    except Exception as e:
+        print(f"Order confirmation email failed: {e}")
 
     return {"message": "COD order confirmed", "order_id": order_id}
 
