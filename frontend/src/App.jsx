@@ -69,7 +69,7 @@ function App() {
               <TopLoadingBar />
               {!isAdminPath && <Navbar />}
               {!isAdminPath && <CartDrawer />}
-              <ChatWidget />
+              {!isAdminPath && <ChatWidget />}
 
               <main className="flex-1">
                 <AnimatePresence mode="wait">
