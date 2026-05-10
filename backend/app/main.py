@@ -28,6 +28,7 @@ from app.routes import ai
 from app.routes import reviews
 from app.routes import upload
 from app.routes import wishlist
+from app.routes import owner_ai
 
 from app.database.db import engine
 from app.database.db import Base
@@ -85,6 +86,7 @@ app.include_router(reviews.router)
 app.include_router(upload.router)
 app.include_router(wishlist.router)
 app.include_router(variants_router)
+app.include_router(owner_ai.router)
 
 
 @app.get("/")

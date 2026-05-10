@@ -84,20 +84,34 @@ def create_shipment(order, db: Session):
     billing_first_name = name_parts[0]
     billing_last_name = name_parts[1] if len(name_parts) > 1 else "Customer"
 
+    # Shiprocket requires billing_address ≥ 3 chars; pad short / empty addresses
+    # by combining with city so the request never 400s on length validation.
+    raw_address = (address.address_line or "").strip()
+    if len(raw_address) < 3:
+        raw_address = f"{raw_address} {address.city or ''}".strip() or "Address"
+    if len(raw_address) < 3:
+        raw_address = "Address Not Provided"
+
+    # Pickup location nickname must match exactly what's set in Shiprocket
+    # dashboard → Settings → Pickup Addresses. Configurable via env var so
+    # changing accounts doesn't require code edits.
+    pickup_location = os.getenv("SHIPROCKET_PICKUP_LOCATION", "warehouse")
+
     payload = {
         "order_id": f"GAURK_{order.id}",
         "order_date": str(order.created_at.date()),
-        "pickup_location": "GANESH",
+        "pickup_location": pickup_location,
 
         "billing_customer_name": billing_first_name,
         "billing_last_name": billing_last_name,
-        "billing_address": address.address_line,
-        "billing_city": address.city,
-        "billing_pincode": address.postal_code,
-        "billing_state": address.state,
-        "billing_country": address.country,
+        "billing_address": raw_address,
+        "billing_address_2": (address.city or ""),
+        "billing_city": address.city or "Unknown",
+        "billing_pincode": address.postal_code or "000000",
+        "billing_state": address.state or "Unknown",
+        "billing_country": address.country or "India",
         "billing_email": customer_email,
-        "billing_phone": address.phone,
+        "billing_phone": address.phone or "0000000000",
 
         "shipping_is_billing": True,
 

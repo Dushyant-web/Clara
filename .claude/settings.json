@@ -7,7 +7,9 @@
       "Bash(python3 -m py_compile /Users/dushyant/Calra/Clara/backend/app/services/shiprocket_service.py)",
       "Bash(PGPASSWORD='udYYjI1Z21Pwi0GL67N9ZumQHvOFd3wB' psql -h dpg-d6m7kjtactks73ftcb8g-a.oregon-postgres.render.com -U clara -d clara_uqyw -c \"SELECT id, status, total_amount, created_at FROM orders ORDER BY id;\")",
       "Bash(PGPASSWORD='udYYjI1Z21Pwi0GL67N9ZumQHvOFd3wB' psql -h dpg-d6m7kjtactks73ftcb8g-a.oregon-postgres.render.com -U clara -d clara_uqyw)",
-      "Bash(PGPASSWORD='udYYjI1Z21Pwi0GL67N9ZumQHvOFd3wB' psql -h dpg-d6m7kjtactks73ftcb8g-a.oregon-postgres.render.com -U clara -d clara_uqyw -c \"SELECT id, name, email, phone FROM users ORDER BY id;\")"
+      "Bash(PGPASSWORD='udYYjI1Z21Pwi0GL67N9ZumQHvOFd3wB' psql -h dpg-d6m7kjtactks73ftcb8g-a.oregon-postgres.render.com -U clara -d clara_uqyw -c \"SELECT id, name, email, phone FROM users ORDER BY id;\")",
+      "Bash(python3 -m py_compile /Users/dushyant/Calra/Clara/backend/app/routes/owner_ai.py /Users/dushyant/Calra/Clara/backend/app/main.py)",
+      "Bash(python3 -m py_compile /Users/dushyant/Calra/Clara/backend/app/routes/owner_ai.py /Users/dushyant/Calra/Clara/backend/app/services/shiprocket_service.py)"
     ]
   }
 }

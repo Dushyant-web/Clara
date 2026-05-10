@@ -20,7 +20,8 @@ import {
     Image as ImageIcon,
     Menu,
     X,
-    User
+    User,
+    Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -44,6 +45,7 @@ const AdminLayout = () => {
 
     const menuItems = [
         { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
+        { name: 'Gaurav ka AI', path: '/admin/ai', icon: Sparkles },
         { name: 'Inventory', path: '/admin/products', icon: Box },
         { name: 'Orders', path: '/admin/orders', icon: ShoppingBag },
         { name: 'Customers', path: '/admin/customers', icon: Users },
