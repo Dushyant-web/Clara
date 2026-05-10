@@ -405,7 +405,8 @@ const CheckoutPage = () => {
                 console.error('Checkout error:', error)
                 const errorMessage = error.response?.data?.error || error.response?.data?.detail || error.message || 'Order creation failed. Please try again.';
                 alert(errorMessage)
-            } finally {
+                // Only reset on error so we stay on confirmation page after success.
+                // (After clearCart(), the cart-empty guard would otherwise yank us back to /cart.)
                 setIsProcessing(false)
             }
         }
