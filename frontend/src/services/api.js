@@ -5,9 +5,11 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'https://clara-xpfh.onrender.com',
 });
 
-// Add a request interceptor to include the Bearer token in all requests
+// Add a request interceptor to include the Bearer token in all requests.
+// Pass `{ silent: true }` in the axios config to skip the global TopLoadingBar
+// (useful for long-running calls that have their own inline loader, e.g. AI chat).
 api.interceptors.request.use((config) => {
-  startLoading();
+  if (!config.silent) startLoading();
 
   const token = localStorage.getItem('token');
   if (token) {
@@ -21,15 +23,15 @@ api.interceptors.request.use((config) => {
 
   return config;
 }, (error) => {
-  stopLoading();
+  if (!error?.config?.silent) stopLoading();
   return Promise.reject(error);
 });
 
 api.interceptors.response.use((response) => {
-  stopLoading();
+  if (!response?.config?.silent) stopLoading();
   return response;
 }, (error) => {
-  stopLoading();
+  if (!error?.config?.silent) stopLoading();
   return Promise.reject(error);
 });
 

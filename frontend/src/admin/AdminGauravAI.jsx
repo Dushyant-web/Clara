@@ -49,7 +49,7 @@ const AdminGauravAI = () => {
             const res = await api.post('/admin/owner-ai/chat', {
                 messages: buildPayload(updated),
                 confirmed_sql: [...confirmedSql, ...extraConfirmed],
-            });
+            }, { silent: true });
             const reply = res.data.reply || '(no reply)';
             const tool_calls = res.data.tool_calls || [];
             const pending = res.data.pending_confirmations || [];
@@ -71,7 +71,7 @@ const AdminGauravAI = () => {
     const handleConfirm = async (sql) => {
         setConfirming(sql);
         try {
-            const res = await api.post('/admin/owner-ai/execute-confirmed', { query: sql });
+            const res = await api.post('/admin/owner-ai/execute-confirmed', { query: sql }, { silent: true });
             const result = res.data?.result || {};
             const summary = result.ok
                 ? (result.row_count !== undefined
@@ -312,7 +312,7 @@ const AdminGauravAI = () => {
             </div>
 
             <p className="text-[9px] text-white/30 mt-2 uppercase tracking-widest">
-                ⚠ DELETE / DROP / TRUNCATE / mass-UPDATE require explicit confirmation. Other queries auto-execute.
+                ⚠ All DB writes (INSERT / UPDATE / DELETE / DROP) require explicit confirmation. Reads auto-execute.
             </p>
         </div>
     );
