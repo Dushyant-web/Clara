@@ -15,7 +15,7 @@ def create_token(data: dict):
 
     payload = data.copy()
 
-    payload["exp"] = datetime.datetime.utcnow() + datetime.timedelta(days=7)
+    payload["exp"] = datetime.datetime.utcnow() + datetime.timedelta(days=30)
 
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
